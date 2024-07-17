@@ -9,10 +9,10 @@ public class UniversityNameId implements Serializable {
     private Long universityId;
     private Long languageId;
 
-    // Default constructor
+    
     public UniversityNameId() {}
 
-    // Parameterized constructor
+    
     public UniversityNameId(Long universityId, Long languageId) {
         this.universityId = universityId;
         this.languageId = languageId;

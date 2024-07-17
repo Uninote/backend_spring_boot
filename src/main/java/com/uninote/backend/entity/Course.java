@@ -20,6 +20,9 @@ public class Course {
     @Column(name = "course_code", nullable = false)
     private String code;
 
+    @Column(name="semester",nullable = false)
+    private int semester;
+
     // Getters and setters
     public Long getId() {
         return id;
@@ -43,5 +46,13 @@ public class Course {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public void setSemester(int sem) {
+        this.semester = sem;
+    }
+
+    public int getmSemester() {
+        return this.semester;
     }
 }

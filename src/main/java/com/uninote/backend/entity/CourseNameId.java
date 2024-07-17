@@ -10,16 +10,16 @@ public class CourseNameId implements Serializable {
     private Long courseId;
     private Long languageId;
 
-    // Default constructor
+    
     public CourseNameId() {}
 
-    // Parameterized constructor
+    
     public CourseNameId(Long courseId, Long languageId) {
         this.courseId = courseId;
         this.languageId = languageId;
     }
 
-    // Getters and setters
+    
     public Long getCourseId() {
         return courseId;
     }
@@ -36,7 +36,7 @@ public class CourseNameId implements Serializable {
         this.languageId = languageId;
     }
 
-    // Overriding equals method
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -46,7 +46,7 @@ public class CourseNameId implements Serializable {
                Objects.equals(languageId, that.languageId);
     }
 
-    // Overriding hashCode method
+    
     @Override
     public int hashCode() {
         return Objects.hash(courseId, languageId);

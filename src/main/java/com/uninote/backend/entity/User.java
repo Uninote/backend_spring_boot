@@ -95,10 +95,28 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    public User(Long id) {
+    public User() {}
+
+    // All-argument constructor
+    public User(Long id, String firebaseUid, int streak, int uniscore, LocalDateTime updatedAt, LocalDateTime lastLogin, String name, Department department, University university, String email, int noteClicks, Rank rank, String username, String profileImageUrl, int notesNumber, int publicNotesNumber) {
         this.id = id;
+        this.firebaseUid = firebaseUid;
+        this.streak = streak;
+        this.uniscore = uniscore;
+        this.updatedAt = updatedAt;
+        this.lastLogin = lastLogin;
+        this.name = name;
+        this.department = department;
+        this.university = university;
+        this.email = email;
+        this.noteClicks = noteClicks;
+        this.rank = rank;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.notesNumber = notesNumber;
+        this.publicNotesNumber = publicNotesNumber;
     }
-    
+
    public Long getId() {
         return id;
     }
