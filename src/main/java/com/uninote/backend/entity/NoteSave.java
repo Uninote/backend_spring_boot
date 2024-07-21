@@ -22,6 +22,9 @@ public class NoteSave {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive;
+
     public NoteSave() {
         this.createdAt = LocalDateTime.now();
     }
@@ -63,5 +66,13 @@ public class NoteSave {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 }

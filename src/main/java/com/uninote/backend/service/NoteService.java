@@ -13,12 +13,16 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 public class NoteService {
 
     @Autowired
     private NoteRepository noteRepository;
-
+    
+    
+    @Cacheable("notes")
     public NoteDTO getNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
         return convertToDTO(note);

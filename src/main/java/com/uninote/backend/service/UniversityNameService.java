@@ -35,7 +35,7 @@ public class UniversityNameService {
                         Long.parseLong(universityNameDTO.getUniversityId()),
                         Long.parseLong(universityNameDTO.getLanguageId())
                 ),
-                null, // Assign University and Language properly
+                null, 
                 null,
                 universityNameDTO.getName(),
                 universityNameDTO.getFullName()

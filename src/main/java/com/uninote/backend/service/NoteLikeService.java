@@ -1,13 +1,7 @@
 package com.uninote.backend.service;
 
-import com.uninote.backend.entity.Note;
-import com.uninote.backend.entity.NoteLike;
-import com.uninote.backend.entity.NoteLikeId;
-import com.uninote.backend.entity.User;
-import com.uninote.backend.repository.NoteLikeRepository;
-import com.uninote.backend.repository.NoteRepository;
-import com.uninote.backend.repository.UserRepository;
-
+import com.uninote.backend.entity.*;
+import com.uninote.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,25 +14,47 @@ public class NoteLikeService {
 
     @Autowired
     private NoteRepository noteRepository;
+
     @Autowired
     private UserRepository userRepository;
-    /*@Transactional
+
+    @Autowired
+    private UniscoreIncreaseTypeRepository uniscoreIncreaseTypeRepository;
+
+    @Autowired
+    private UniscoreIncreaseLogRepository uniscoreIncreaseLogRepository;
+
+    @Transactional
     public void likeNote(Long noteId, Long userId) {
-        Note noteD = noteRepository.findById(noteId)
+        Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Check if the user has already liked the note
-        if (!noteLikeRepository.existsByNoteIdAndUserId(noteId, userId)) {
-            NoteLikeId noteLikeId = new NoteLikeId(noteId, userId);
-            NoteLike noteLike = new NoteLike(noteLikeId, note, user);
-            noteLikeRepository.save(noteLike);
+        User noteCreator = note.getUser();
 
-            // Increment the likes counter
-            note.setLikes(note.getLikes() + 1);
-            noteRepository.save(note);
+        NoteLike noteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
+        if (noteLike == null) {
+            NoteLikeId noteLikeId = new NoteLikeId(noteId, userId);
+            noteLike = new NoteLike(noteLikeId, note, user);
+            noteLike.setActive(true);
+            noteLikeRepository.save(noteLike); 
+
+           
+            UniscoreIncreaseType likeIncreaseType = uniscoreIncreaseTypeRepository.findById(1L)
+                    .orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
+            noteCreator.setUniscore(user.getUniscore() + likeIncreaseType.getIncreaseAmount());
+
+            
+            UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(noteCreator, likeIncreaseType);
+            uniscoreIncreaseLogRepository.save(increaseLog);
+        } else if (!noteLike.isActive()) {
+            
+            noteLike.setActive(true);
+
+            
+            
         }
     }
 
@@ -47,15 +63,15 @@ public class NoteLikeService {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 
-        // Check if the user has liked the note
+        User user = userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("User Note found"));
         NoteLike noteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
-        if (noteLike != null) {
-            // Remove the like
-            noteLikeRepository.delete(noteLike);
+        if (noteLike != null && noteLike.isActive()) {
+           
+            noteLike.setActive(false);
 
-            // Decrement the likes counter
-            note.setLikes(note.getLikes() - 1);
-            noteRepository.save(note);
+
+            
         }
-    }*/
+    }
 }

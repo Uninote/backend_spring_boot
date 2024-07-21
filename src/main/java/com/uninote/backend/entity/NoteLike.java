@@ -23,9 +23,13 @@ public class NoteLike {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.isActive = true; 
     }
 
     // Constructors
@@ -36,6 +40,7 @@ public class NoteLike {
         this.note = note;
         this.user = user;
         this.createdAt = LocalDateTime.now();
+        this.isActive = true; // By default, a new like is active
     }
 
     // Getters and setters
@@ -70,4 +75,13 @@ public class NoteLike {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 }
+
