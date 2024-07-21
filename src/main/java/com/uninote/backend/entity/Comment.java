@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 public class Comment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_comment_seq")
-    @SequenceGenerator(name = "seq_comment_id", sequenceName = "seq_comment_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_comment_id")
+    @SequenceGenerator(name = "seq_comment_id", sequenceName = "seq_comment_id", allocationSize = 1)
     @Column(name = "comment_id", nullable = false, updatable = false)
     private Long commentId;
 
@@ -21,6 +21,7 @@ public class Comment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Lob
     @Column(name = "content", nullable = false)
     private String content;
 

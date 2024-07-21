@@ -97,7 +97,7 @@ public class User {
 
     public User() {}
 
-    // All-argument constructor
+   
     public User(Long id, String firebaseUid, int streak, int uniscore, LocalDateTime updatedAt, LocalDateTime lastLogin, String name, Department department, University university, String email, int noteClicks, Rank rank, String username, String profileImageUrl, int notesNumber, int publicNotesNumber) {
         this.id = id;
         this.firebaseUid = firebaseUid;
