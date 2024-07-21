@@ -25,7 +25,7 @@ public class Rank {
     @OneToMany(mappedBy = "rank", cascade = CascadeType.ALL, orphanRemoval = false)
     private Set<User> users = new HashSet<>();
 
-    // Getters and setters
+    
     public Long getId() {
         return id;
     }

@@ -9,7 +9,7 @@ public class UniversityName {
     @EmbeddedId
     private UniversityNameId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("universityId")
     @JoinColumn(name = "university_id", nullable = false)
     private University university;
@@ -25,7 +25,7 @@ public class UniversityName {
     @Column(name = "university_full_name")
     private String fullName;
 
-    // Constructors
+    
     public UniversityName() {}
 
     public UniversityName(UniversityNameId id, University university, Language language, String name, String fullName) {
@@ -36,7 +36,7 @@ public class UniversityName {
         this.fullName = fullName;
     }
 
-    // Getters and setters
+    
     public UniversityNameId getId() {
         return id;
     }

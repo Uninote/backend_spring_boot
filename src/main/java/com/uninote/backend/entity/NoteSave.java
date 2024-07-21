@@ -32,7 +32,7 @@ public class NoteSave {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and setters
+    
     public Long getSaveId() {
         return saveId;
     }

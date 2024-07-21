@@ -19,7 +19,7 @@ public class NoteLikeId implements Serializable {
         this.userId = userId;
     }
 
-    // Getters and setters
+    
     public Long getNoteId() {
         return noteId;
     }

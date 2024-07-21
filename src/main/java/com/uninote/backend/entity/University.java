@@ -26,7 +26,7 @@ public class University {
     private Set<UniversityName> universityNames = new HashSet<>();
 
     
-    // Getters and setters
+    
     public Long getId() {
         return id;
     }
@@ -37,5 +37,12 @@ public class University {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+    public Set<UniversityName> getUniversityNames() {
+        return universityNames;
+    }
+
+    public void setUniversityNames(Set<UniversityName> universityNames) {
+        this.universityNames = universityNames;
     }
 }

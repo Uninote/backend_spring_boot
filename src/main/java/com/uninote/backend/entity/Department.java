@@ -31,7 +31,7 @@ public class Department {
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Course> courses = new HashSet<>();
 
-    // Getters and setters
+    
     public Long getId() {
         return id;
     }

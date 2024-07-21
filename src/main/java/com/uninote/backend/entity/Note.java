@@ -43,6 +43,9 @@ public class Note {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "isPublic", nullable = false)
+    private boolean isPublic;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -133,5 +136,12 @@ public class Note {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    public boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(boolean isPublic) {
+        this.isPublic = isPublic;
     }
 }

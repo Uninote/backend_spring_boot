@@ -18,7 +18,7 @@ public class UniversityNameId implements Serializable {
         this.languageId = languageId;
     }
 
-    // Getters and setters
+    
     public Long getUniversityId() {
         return universityId;
     }

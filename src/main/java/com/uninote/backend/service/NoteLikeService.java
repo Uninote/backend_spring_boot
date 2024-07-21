@@ -22,9 +22,9 @@ public class NoteLikeService {
     private NoteRepository noteRepository;
     @Autowired
     private UserRepository userRepository;
-    @Transactional
+    /*@Transactional
     public void likeNote(Long noteId, Long userId) {
-        Note note = noteRepository.findById(noteId)
+        Note noteD = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 
         User user = userRepository.findById(userId)
@@ -57,5 +57,5 @@ public class NoteLikeService {
             note.setLikes(note.getLikes() - 1);
             noteRepository.save(note);
         }
-    }
+    }*/
 }
