@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -38,19 +40,11 @@ public class QuestionService {
     @Autowired
     private TrueFalseQuestionRepository tfqRepository;
 
-    public List<Question> getQuestionsByCourseId(Long courseId) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course Not found"));
-        return questionRepository.findByCourse(course);
-    }
-
-    public List<Flashcard> getFlashcardsByCourseId(Long courseId) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course Not found"));
-        return flashcardRepository.findByQuestionCourse(course);
-    }
-
-    public List<TrueFalseQuestion> getTrueFalseQuestionsByCourseId(Long courseId) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course Not found"));
-        return tfqRepository.findByQuestionCourse(course);
+    public List<QuestionDTO> getQuestionsByCourseId(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Course Not found"));
+        List<Question> questions = questionRepository.findByCourse(course);
+        return questions.stream().map(EntityToDTOConverter::convertQuestionToDTO).collect(Collectors.toList());
     }
 
     @Transactional
@@ -89,5 +83,19 @@ public class QuestionService {
         trueFalseQuestion.setCorrectAnswer(trueFalseQuestionDTO.getCorrectAnswer());
 
         return tfqRepository.save(trueFalseQuestion);
+    }
+
+    @Transactional
+    public List<FlashcardDTO> getFlashcardsByCourseId(Long courseId) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        List<Flashcard> flashcards = flashcardRepository.findByQuestionCourse(course);
+        return flashcards.stream().map(EntityToDTOConverter::convertFlashcardToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<TrueFalseQuestionDTO> getTrueFalseQuestionsByCourseId(Long courseId) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        List<TrueFalseQuestion> trueFalseQuestions = tfqRepository.findByQuestionCourse(course);
+        return trueFalseQuestions.stream().map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
     }
 }

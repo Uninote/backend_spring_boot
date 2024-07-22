@@ -20,8 +20,10 @@ public class DepartmentService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
+
     @Autowired
     private UserRepository userRepository;
+    
     @Autowired
     private CourseRepository courseRepository;
 

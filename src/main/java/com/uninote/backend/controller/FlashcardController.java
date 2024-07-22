@@ -1,9 +1,8 @@
 package com.uninote.backend.controller;
 
-import com.uninote.backend.entity.Course;
+import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.entity.Flashcard;
-import com.uninote.backend.repository.CourseRepository;
-import com.uninote.backend.service.FlashcardService;
+import com.uninote.backend.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,14 +14,17 @@ import java.util.List;
 public class FlashcardController {
 
     @Autowired
-    private FlashcardService flashcardService;
+    private QuestionService questionService;
 
-    @Autowired
-    private CourseRepository courseRepository;
+    @PostMapping
+    public ResponseEntity<Flashcard> createFlashcard(@RequestBody FlashcardDTO flashcardDTO) {
+        Flashcard createdFlashcard = questionService.createFlashcard(flashcardDTO);
+        return ResponseEntity.ok(createdFlashcard);
+    }
 
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<List<Flashcard>> getFlashcardsByCourseId(@PathVariable Long courseId) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course Not found"));
-        return ResponseEntity.ok(flashcardService.getFlashcardsByCourse(course));
-    }   
+    public ResponseEntity<List<FlashcardDTO>> getFlashcardsByCourseId(@PathVariable Long courseId) {
+        List<FlashcardDTO> flashcards = questionService.getFlashcardsByCourseId(courseId);
+        return ResponseEntity.ok(flashcards);
+    }
 }

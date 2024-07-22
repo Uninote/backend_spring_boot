@@ -21,8 +21,9 @@ public class QuestionController {
     private QuestionService questionService;
 
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<List<Question>> getQuestionsByCourseId(@PathVariable Long courseId) {
-        return ResponseEntity.ok(questionService.getQuestionsByCourseId(courseId));
+    public ResponseEntity<List<QuestionDTO>> getQuestionsByCourseId(@PathVariable Long courseId) {
+        List<QuestionDTO> questions = questionService.getQuestionsByCourseId(courseId);
+        return ResponseEntity.ok(questions);
     }
 
     @PostMapping

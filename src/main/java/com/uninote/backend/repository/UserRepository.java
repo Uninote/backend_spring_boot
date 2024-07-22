@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.uninote.backend.entity.Course;
+
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;

@@ -6,11 +6,17 @@ import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
+import com.uninote.backend.dto.FlashcardDTO;
+import com.uninote.backend.dto.QuestionDTO;
+import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
+import com.uninote.backend.entity.Flashcard;
+import com.uninote.backend.entity.Question;
+import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.entity.User;
 
 public class EntityToDTOConverter {
@@ -65,5 +71,38 @@ public class EntityToDTOConverter {
         userDTO.setUsername(user.getUsername());
         userDTO.setProfileImageUrl(user.getProfileImageUrl());
         return userDTO;
+    }
+
+    public static QuestionDTO convertQuestionToDTO(Question question) {
+        QuestionDTO questionDTO = new QuestionDTO();
+        questionDTO.setId(question.getId());
+        questionDTO.setCourseId(question.getCourse().getId());
+        questionDTO.setQuestionTypeId(question.getQuestionType().getId());
+        questionDTO.setQuestionText(question.getQuestionText());
+        questionDTO.setIsDifficult(question.getIsDifficult());
+        return questionDTO;
+    }
+
+
+    public static FlashcardDTO convertFlashcardToDTO(Flashcard flashcard) {
+        FlashcardDTO flashcardDTO = new FlashcardDTO();
+        flashcardDTO.setId(flashcard.getQuestion().getId());
+        flashcardDTO.setCourseId(flashcard.getQuestion().getCourse().getId());
+        flashcardDTO.setQuestionTypeId(flashcard.getQuestion().getQuestionType().getId());
+        flashcardDTO.setQuestionText(flashcard.getQuestion().getQuestionText());
+        flashcardDTO.setIsDifficult(flashcard.getQuestion().getIsDifficult());
+        flashcardDTO.setAnswer(flashcard.getAnswer());
+        return flashcardDTO;
+    }
+
+    public static TrueFalseQuestionDTO convertTrueFalseQuestionToDTO(TrueFalseQuestion trueFalseQuestion) {
+        TrueFalseQuestionDTO trueFalseQuestionDTO = new TrueFalseQuestionDTO();
+        trueFalseQuestionDTO.setId(trueFalseQuestion.getQuestion().getId());
+        trueFalseQuestionDTO.setCourseId(trueFalseQuestion.getQuestion().getCourse().getId());
+        trueFalseQuestionDTO.setQuestionTypeId(trueFalseQuestion.getQuestion().getQuestionType().getId());
+        trueFalseQuestionDTO.setQuestionText(trueFalseQuestion.getQuestion().getQuestionText());
+        trueFalseQuestionDTO.setIsDifficult(trueFalseQuestion.getQuestion().getIsDifficult());
+        trueFalseQuestionDTO.setCorrectAnswer(trueFalseQuestion.getCorrectAnswer());
+        return trueFalseQuestionDTO;
     }
 }

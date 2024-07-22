@@ -1,6 +1,7 @@
 package com.uninote.backend.dto;
 
 public class QuestionDTO {
+    private Long id;
     private Long courseId;
     private Long questionTypeId;
     private String questionText;
@@ -12,6 +13,14 @@ public class QuestionDTO {
 
    public void setIsDifficult(Boolean isDifficult){
     this.isDifficult = isDifficult;
+   }
+
+   public void setId(Long id){
+    this.id = id;
+   }
+
+   public Long getId(){
+    return id;
    }
     
 
