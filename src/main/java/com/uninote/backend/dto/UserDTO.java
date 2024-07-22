@@ -11,13 +11,12 @@ public class UserDTO {
     private String email;
     private String username;
     private String profileImageUrl;
-    private Boolean isPublic;
     private Long uniscore;
     
     public UserDTO() {}
 
     
-    public UserDTO( Long id,String firebaseUid, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl, boolean isPublic) {
+    public UserDTO( Long id,String firebaseUid, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl) {
         this.id = id;
         this.firebaseUid = firebaseUid;
         this.name = name;
@@ -26,10 +25,9 @@ public class UserDTO {
         this.email = email;
         this.username = username;
         this.profileImageUrl = profileImageUrl;
-        this.isPublic = isPublic;
     }
 
-    public UserDTO( Long id,String firebaseUid,Long uniscore, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl, boolean isPublic) {
+    public UserDTO( Long id,String firebaseUid,Long uniscore, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl) {
         this.id = id;
         this.firebaseUid = firebaseUid;
         this.name = name;
@@ -39,7 +37,7 @@ public class UserDTO {
         this.username = username;
         this.uniscore=uniscore;
         this.profileImageUrl = profileImageUrl;
-        this.isPublic = isPublic;
+        
     }
 
     public Long getId(){
@@ -104,13 +102,6 @@ public class UserDTO {
 
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
-    }
-    public Boolean getIsPublic() {
-        return isPublic;
-    }
-
-    public void setIsPublic(Boolean isPublic) {
-        this.isPublic = isPublic;
     }
 
     public Long getUniscore(){
