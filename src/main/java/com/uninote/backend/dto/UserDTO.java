@@ -103,7 +103,7 @@ public class UserDTO {
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
-
+    
     public Long getUniscore(){
         return uniscore;
     }

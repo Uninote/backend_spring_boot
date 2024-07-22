@@ -24,7 +24,16 @@ public class Question {
     @Column(name = "question_text", nullable = false)
     private String questionText;
 
-    // Getters and Setters
+    @Column(name = "is_difficult", nullable = false)
+    private Boolean isDifficult;
+
+   public Boolean getIsDifficult(){
+    return isDifficult;
+   }
+
+   public void setIsDifficult(Boolean isDifficult){
+    this.isDifficult = isDifficult;
+   }
 
     public Long getId() {
         return id;

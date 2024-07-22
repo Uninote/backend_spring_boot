@@ -11,5 +11,5 @@ import java.util.List;
 public interface FlashcardRepository extends JpaRepository<Flashcard, Long> {
 
     @Query("SELECT f FROM Flashcard f JOIN f.question q JOIN q.course c WHERE c = :course")
-    List<Flashcard> findByQuestionCourseId(@Param("course") Course course);
+    List<Flashcard> findByQuestionCourse(@Param("course") Course course);
 }

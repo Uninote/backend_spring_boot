@@ -1,0 +1,41 @@
+package com.uninote.backend.dto;
+
+public class QuestionDTO {
+    private Long courseId;
+    private Long questionTypeId;
+    private String questionText;
+    private Boolean isDifficult;
+
+   public Boolean getIsDifficult(){
+    return isDifficult;
+   }
+
+   public void setIsDifficult(Boolean isDifficult){
+    this.isDifficult = isDifficult;
+   }
+    
+
+    public Long getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Long courseId) {
+        this.courseId = courseId;
+    }
+
+    public Long getQuestionTypeId() {
+        return questionTypeId;
+    }
+
+    public void setQuestionTypeId(Long questionTypeId) {
+        this.questionTypeId = questionTypeId;
+    }
+
+    public String getQuestionText() {
+        return questionText;
+    }
+
+    public void setQuestionText(String questionText) {
+        this.questionText = questionText;
+    }
+}
