@@ -25,4 +25,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u  WHERE u.university = :university ORDER BY u.uniscore DESC" )
     List<User> findTop100ByUniscoreByUniversity(@Param("university") University university);
+
+    Optional<User> findByFirebaseUid(String firebaseUid);
 }

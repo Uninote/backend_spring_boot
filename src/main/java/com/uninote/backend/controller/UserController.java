@@ -10,6 +10,7 @@ import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.service.UserService;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -92,17 +93,16 @@ public class UserController {
         return ResponseEntity.ok(leaderboard);
     }
 
-    @PutMapping("/{userId}/login")
-    public ResponseEntity<UserDTO> updateStreakOnLogin(@PathVariable Long userId) {
-        try {
-            User updatedUser = userService.updateStreakOnLogin(userId);
-            UserDTO updatedUserDTO = EntityToDTOConverter.convertUserToDTO(updatedUser);
-            return ResponseEntity.ok(updatedUserDTO);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PutMapping("/{id}/login")
+    public ResponseEntity<User> loginUserAndUpdateStreak(@PathVariable Long id) {
+        User updatedUser = userService.loginUserAndUpdateStreak(id);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @GetMapping("/firebase/{firebaseUid}")
+    public ResponseEntity<UserDTO> findByFirebaseUid(@PathVariable String firebaseUid) {
+        UserDTO userDTO = userService.findByFirebaseUid(firebaseUid);
+        return userDTO != null ? ResponseEntity.ok(userDTO) : ResponseEntity.notFound().build();
     }
 
     

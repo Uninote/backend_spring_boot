@@ -6,9 +6,11 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.RankRepository;
 import com.uninote.backend.repository.UniversityRepository;
+import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,33 @@ public class UserService {
     
     @Autowired
     private final RankRepository rankRepository = null;
+
+    @Autowired
+    private UserLoginRepository userLoginRepository;
+
+    public User loginUserAndUpdateStreak(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        LocalDate lastLoginDate = (user.getLastLogin() != null) ? user.getLastLogin().toLocalDate() : null;
+        LocalDate today = LocalDate.now();
+
+        if (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1))) {
+            user.setStreak(1);
+        } else if (lastLoginDate.isEqual(today.minusDays(1))) {
+            user.setStreak(user.getStreak() + 1);
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        UserLogin userLogin = new UserLogin();
+        userLogin.setUser(user);
+        userLogin.setLoginTimestamp(LocalDateTime.now());
+        userLoginRepository.save(userLogin);
+
+        return user;
+    }
 
     public User findById(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
@@ -163,5 +192,14 @@ public class UserService {
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
         return user;
+    }
+
+    public UserDTO findByFirebaseUid(String firebaseUid) {
+        Optional<User> userOptional = userRepository.findByFirebaseUid(firebaseUid);
+        if (userOptional.isPresent()) {
+            return EntityToDTOConverter.convertUserToDTO(userOptional.get());
+        } else {
+            return null;
+        }
     }
 }
