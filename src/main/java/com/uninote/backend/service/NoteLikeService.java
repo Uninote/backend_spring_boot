@@ -2,6 +2,9 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.entity.*;
 import com.uninote.backend.repository.*;
+
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +37,8 @@ public class NoteLikeService {
 
         User noteCreator = note.getUser();
 
-        NoteLike noteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
+        Optional<NoteLike> checknoteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
+        NoteLike noteLike = checknoteLike.orElse(null);
         if (noteLike == null) {
             NoteLikeId noteLikeId = new NoteLikeId(noteId, userId);
             noteLike = new NoteLike(noteLikeId, note, user);
@@ -65,7 +69,8 @@ public class NoteLikeService {
 
         User user = userRepository.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException("User Note found"));
-        NoteLike noteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
+        Optional<NoteLike> checknoteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
+        NoteLike noteLike = checknoteLike.orElse(null);
         if (noteLike != null && noteLike.isActive()) {
            
             noteLike.setActive(false);

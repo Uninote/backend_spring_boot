@@ -13,6 +13,7 @@ import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -142,4 +143,25 @@ public class UserService {
         List<User> topUsers = userRepository.findTop100ByUniscoreByUniversity(university);
         return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
     }
-}   
+
+    
+    public User updateStreakOnLogin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        LocalDate lastLoginDate = (user.getLastLogin() != null) ? user.getLastLogin().toLocalDate() : null;
+        LocalDate today = LocalDate.now();
+
+        if (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1))) {
+           
+            user.setStreak(1);
+        } else if (lastLoginDate.isEqual(today.minusDays(1))) {
+           
+            user.setStreak(user.getStreak() + 1);
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+        return user;
+    }
+}

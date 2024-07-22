@@ -31,12 +31,6 @@ public class Note {
     @Column(name = "pdf_url", nullable = false)
     private String pdfUrl;
 
-    @Column(name = "likes", nullable = false)
-    private int likes;
-
-    @Column(name = "views", nullable = false)
-    private int views;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -115,22 +109,6 @@ public class Note {
 
     public void setPdfUrl(String pdfUrl) {
         this.pdfUrl = pdfUrl;
-    }
-
-    public int getLikes() {
-        return likes;
-    }
-
-    public void setLikes(int likes) {
-        this.likes = likes;
-    }
-
-    public int getViews() {
-        return views;
-    }
-
-    public void setViews(int views) {
-        this.views = views;
     }
 
     public LocalDateTime getCreatedAt() {

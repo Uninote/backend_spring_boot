@@ -37,6 +37,19 @@ public class NoteController {
     @Autowired
     private UniversityRepository universityRepository;
 
+
+    @GetMapping("/{noteId}/likes/count")
+    public ResponseEntity<Long> getTotalLikes(@PathVariable Long noteId) {
+        long totalLikes = noteService.getTotalLikes(noteId);
+        return ResponseEntity.ok(totalLikes);
+    }
+
+    @GetMapping("/{noteId}/likes/user/{userId}")
+    public ResponseEntity<Boolean> hasUserLiked(@PathVariable Long noteId, @PathVariable Long userId) {
+        boolean hasLiked = noteService.hasUserLiked(noteId, userId);
+        return ResponseEntity.ok(hasLiked);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id) {
         try {
@@ -240,6 +253,12 @@ public class NoteController {
         University university = universityRepository.findById(universityId).orElseThrow(() -> new IllegalArgumentException("University not found"));
         List<NoteDTO> notes = noteService.getPublicNotesByUserAndUniversity(user, university);
         return ResponseEntity.ok(notes);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody NoteDTO noteDto) {
+        Note updatedNote = noteService.updateNote(id, noteDto);
+        return ResponseEntity.ok(updatedNote);
     }
     
 }

@@ -57,6 +57,7 @@ public class UserController {
         List <UserDTO> leaderborad = userService.getTop100UsersByUniscore();
         return ResponseEntity.ok(leaderborad);
     }
+
     @PutMapping("/{userId}/update")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long userId, @RequestBody UserDTO userDto) {
         try {
@@ -89,6 +90,19 @@ public class UserController {
                 .orElseThrow(() -> new IllegalArgumentException("Department not found"));
         List<UserDTO> leaderboard = userService.getTop100UsersByUniscoreByDepartment(department);
         return ResponseEntity.ok(leaderboard);
+    }
+
+    @PutMapping("/{userId}/login")
+    public ResponseEntity<UserDTO> updateStreakOnLogin(@PathVariable Long userId) {
+        try {
+            User updatedUser = userService.updateStreakOnLogin(userId);
+            UserDTO updatedUserDTO = EntityToDTOConverter.convertUserToDTO(updatedUser);
+            return ResponseEntity.ok(updatedUserDTO);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     

@@ -24,13 +24,16 @@ public class User {
     private int streak = 0;
 
     @Column(name = "uniscore", nullable = false)
-    private int uniscore = 0;
+    private Long uniscore = (long) 0;
 
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();;
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column(name = "last_login", nullable = false)
-    private LocalDateTime lastLogin = LocalDateTime.now();;
+    private LocalDateTime lastLogin = LocalDateTime.now();
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -46,8 +49,7 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "note_clicks", nullable = false)
-    private int noteClicks = 0 ;
+   
 
     @ManyToOne
     @JoinColumn(name = "rank_id", nullable = false)
@@ -59,11 +61,6 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    @Column(name = "notes_number", nullable = false)
-    private int notesNumber = 0;
-
-    @Column(name = "public_notes_number", nullable = false)
-    private int publicNotesNumber  = 0;
 
     @PrePersist
     protected void onCreate() {
@@ -71,16 +68,7 @@ public class User {
             streak = 0;
         }
         if (uniscore == 0) {
-            uniscore = 0;
-        }
-        if (noteClicks == 0) {
-            noteClicks = 0;
-        }
-        if (notesNumber == 0) {
-            notesNumber = 0;
-        }
-        if (publicNotesNumber == 0) {
-            publicNotesNumber = 0;
+            uniscore =(long) 0;
         }
         if (rank == null) {
             rank = new Rank();
@@ -88,6 +76,7 @@ public class User {
         }
         updatedAt = LocalDateTime.now();
         lastLogin = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -98,7 +87,7 @@ public class User {
     public User() {}
 
    
-    public User(Long id, String firebaseUid, int streak, int uniscore, LocalDateTime updatedAt, LocalDateTime lastLogin, String name, Department department, University university, String email, int noteClicks, Rank rank, String username, String profileImageUrl, int notesNumber, int publicNotesNumber) {
+    public User(Long id, String firebaseUid, int streak, long uniscore, LocalDateTime updatedAt, LocalDateTime lastLogin, String name, Department department, University university, String email, Rank rank, String username, String profileImageUrl) {
         this.id = id;
         this.firebaseUid = firebaseUid;
         this.streak = streak;
@@ -109,12 +98,10 @@ public class User {
         this.department = department;
         this.university = university;
         this.email = email;
-        this.noteClicks = noteClicks;
         this.rank = rank;
         this.username = username;
         this.profileImageUrl = profileImageUrl;
-        this.notesNumber = notesNumber;
-        this.publicNotesNumber = publicNotesNumber;
+        
     }
 
    public Long getId() {
@@ -141,11 +128,11 @@ public class User {
         this.streak = streak;
     }
 
-    public int getUniscore() {
+    public long getUniscore() {
         return uniscore;
     }
 
-    public void setUniscore(int uniscore) {
+    public void setUniscore(long uniscore) {
         this.uniscore = uniscore;
     }
 
@@ -154,6 +141,14 @@ public class User {
     }
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return updatedAt;
+    }
+
+    public void setCreatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -203,30 +198,6 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public int getNoteClicks() {
-        return noteClicks;
-    }
-
-    public void setNoteClicks(int noteClicks) {
-        this.noteClicks = noteClicks;
-    }
-
-    public int getNotesNumber() {
-        return notesNumber;
-    }
-
-    public void setNotesNumber(int notesNumber) {
-        this.notesNumber = notesNumber;
-    }
-
-    public int getPublicNotesNumber() {
-        return publicNotesNumber;
-    }
-
-    public void setPublicNotesNumber(int publicNotesNumber) {
-        this.publicNotesNumber = publicNotesNumber;
     }
 
     public String getUsername() {

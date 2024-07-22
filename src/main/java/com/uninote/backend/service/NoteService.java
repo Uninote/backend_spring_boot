@@ -4,16 +4,20 @@ import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.CourseRepository;
+import com.uninote.backend.repository.NoteLikeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -29,6 +33,58 @@ public class NoteService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private NoteLikeRepository likeRepository;
+
+     public Note updateNote(Long noteId, NoteDTO noteDto) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+
+        if (noteDto.getCourseId() != null) {
+            Course course = courseRepository.findById(noteDto.getCourseId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid course ID: " + noteDto.getCourseId()));
+            note.setCourse(course);
+        }
+        if (noteDto.getUserId() != null) {
+            User user = userRepository.findById(noteDto.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + noteDto.getUserId()));
+            note.setUser(user);
+        }
+        if (noteDto.getTitle() != null) {
+            note.setTitle(noteDto.getTitle());
+        }
+        if (noteDto.getDescription() != null) {
+            note.setDescription(noteDto.getDescription());
+        }
+        if (noteDto.getPdfUrl() != null) {
+            note.setPdfUrl(noteDto.getPdfUrl());
+        }
+        if (noteDto.getIsPublic() != null) {
+            note.setIsPublic(noteDto.getIsPublic());
+        }
+        if (noteDto.getFilename() != null) {
+            note.setFilename(noteDto.getFilename());
+        }
+
+        note.setUpdatedAt(LocalDateTime.now());
+
+        return noteRepository.save(note);
+    }
+
+    public long getTotalLikes(Long noteId) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+        return likeRepository.countByNote(note);
+    }
+
+    public boolean hasUserLiked(Long noteId, Long userId) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+        
+                Optional<NoteLike> like = likeRepository.findByNoteIdAndUserId(noteId, userId);
+                return like.isPresent();
+            }
     
     @Cacheable("notes")
     public NoteDTO getNoteById(Long id) {
@@ -130,8 +186,6 @@ public class NoteService {
                 note.getDescription(),
                 note.getPdfUrl(),
                 note.getFilename(),
-                note.getViews(),
-                note.getLikes(),
                 note.getIsPublic()
         );
     }
@@ -150,8 +204,6 @@ public class NoteService {
         note.setDescription(noteDto.getDescription());
         note.setPdfUrl(noteDto.getPdfUrl());
         note.setFilename(noteDto.getFilename());
-        note.setLikes(noteDto.getLikes());
-        note.setViews(noteDto.getViews());
         note.setIsPublic(noteDto.getIsPublic());
 
         return noteRepository.save(note);

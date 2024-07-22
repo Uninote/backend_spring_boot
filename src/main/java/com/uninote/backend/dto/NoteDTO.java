@@ -7,20 +7,16 @@ public class NoteDTO {
     private String description;
     private String pdfUrl;
     private String filename;
-    private int views;
-    private int likes;
-    private boolean isPublic;
+    private Boolean isPublic;
 
     
-    public NoteDTO(Long courseId, Long userId, String title, String description, String pdfUrl, String filename, int views, int likes, boolean isPublic) {
+    public NoteDTO(Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic) {
         this.courseId = courseId;
         this.userId = userId;
         this.title = title;
         this.description = description;
         this.pdfUrl = pdfUrl;
         this.filename = filename;
-        this.views = views;
-        this.likes = likes;
         this.isPublic = isPublic;
     }
 
@@ -72,27 +68,11 @@ public class NoteDTO {
         this.pdfUrl = pdfUrl;
     }
 
-    public int getViews() {
-        return views;
-    }
-
-    public void setViews(int views) {
-        this.views = views;
-    }
-
-    public int getLikes() {
-        return likes;
-    }
-
-    public void setLikes(int likes) {
-        this.likes = likes;
-    }
-
-    public boolean getIsPublic() {
+    public Boolean getIsPublic() {
         return isPublic;
     }
 
-    public void setIsPublic(boolean isPublic) {
+    public void setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
     }
 }

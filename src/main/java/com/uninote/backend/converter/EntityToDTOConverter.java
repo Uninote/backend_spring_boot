@@ -60,6 +60,7 @@ public class EntityToDTOConverter {
         userDTO.setName(user.getName());
         userDTO.setDepartmentId(user.getDepartment().getId());
         userDTO.setUniversityId(user.getUniversity().getId());
+        userDTO.setUniscore(user.getUniscore());
         userDTO.setEmail(user.getEmail());
         userDTO.setUsername(user.getUsername());
         userDTO.setProfileImageUrl(user.getProfileImageUrl());

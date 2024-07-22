@@ -32,7 +32,7 @@ public class NoteLike {
         this.isActive = true; 
     }
 
-    // Constructors
+    
     public NoteLike() {}
 
     public NoteLike(NoteLikeId id, Note note, User user) {
