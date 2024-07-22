@@ -46,6 +46,9 @@ public class Note {
     @Column(name = "isPublic", nullable = false)
     private boolean isPublic;
 
+    @Column(nullable = false)  
+    private String filename;
+    
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -72,6 +75,14 @@ public class Note {
 
     public void setCourse(Course course) {
         this.course = course;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
     public User getUser() {

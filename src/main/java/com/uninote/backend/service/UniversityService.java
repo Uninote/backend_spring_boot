@@ -2,6 +2,7 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.dto.UniversityDTO;
 import com.uninote.backend.dto.UniversityNameDTO;
+import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.repository.UniversityRepository;
@@ -28,12 +29,13 @@ public class UniversityService {
         return convertToDTO(university);
     }
     private UniversityDTO convertToDTO(University university) {
-        return new UniversityDTO(
-            university.getId(),
-            university.getLocation(),
-            university.getUniversityNames().stream().map(this::convertNameToDTO).collect(Collectors.toSet())
-        );
-    }
+    return new UniversityDTO(
+        university.getId(),
+        university.getLocation(),
+        university.getUniversityNames().stream().map(this::convertNameToDTO).collect(Collectors.toSet()),
+        university.getDepartments().stream().map(Department::getId).collect(Collectors.toSet())
+    );
+}
 
     private UniversityNameDTO convertNameToDTO(UniversityName universityName) {
         return new UniversityNameDTO(

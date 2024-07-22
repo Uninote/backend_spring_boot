@@ -6,7 +6,10 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.NoteRepository;
+import com.uninote.backend.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +24,11 @@ public class NoteService {
     @Autowired
     private NoteRepository noteRepository;
     
+     @Autowired
+    private CourseRepository courseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
     
     @Cacheable("notes")
     public NoteDTO getNoteById(Long id) {
@@ -116,17 +124,38 @@ public class NoteService {
 
     private NoteDTO convertToDTO(Note note) {
         return new NoteDTO(
-                note.getId(),
+                note.getCourse().getId(),
+                note.getUser().getId(),
                 note.getTitle(),
                 note.getDescription(),
-                note.getCreatedAt(),
-                note.getUpdatedAt(),
                 note.getPdfUrl(),
-                note.getCourse().getDepartment().getId(),
-                note.getCourse().getDepartment().getUniversity().getId(),
+                note.getFilename(),
                 note.getViews(),
                 note.getLikes(),
                 note.getIsPublic()
         );
     }
+
+    
+    public Note saveNote(NoteDTO noteDto) {
+        Course course = courseRepository.findById(noteDto.getCourseId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid course ID"));
+        User user = userRepository.findById(noteDto.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
+        System.out.println(course.toString()+user.toString());
+        Note note = new Note();
+        note.setCourse(course);
+        note.setUser(user);
+        note.setTitle(noteDto.getTitle());
+        note.setDescription(noteDto.getDescription());
+        note.setPdfUrl(noteDto.getPdfUrl());
+        note.setFilename(noteDto.getFilename());
+        note.setLikes(noteDto.getLikes());
+        note.setViews(noteDto.getViews());
+        note.setIsPublic(noteDto.getIsPublic());
+
+        return noteRepository.save(note);
+    }
+
+    
 }

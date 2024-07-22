@@ -35,6 +35,10 @@ public class NoteSave {
         this.createdAt = LocalDateTime.now();
     }
 
+    @PrePersist
+    protected void onCreate() {
+        this.isActive = true; 
+    }
     
     public Long getSaveId() {
         return saveId;

@@ -1,0 +1,47 @@
+package com.uninote.backend.controller;
+
+import com.uninote.backend.dto.CourseDTO;
+import com.uninote.backend.service.CourseService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/courses")
+public class CourseController {
+
+    private final CourseService courseService;
+
+    @Autowired
+    public CourseController(CourseService courseService) {
+        this.courseService = courseService;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CourseDTO> getCourse(@PathVariable Long id) {
+        CourseDTO courseDTO = courseService.getCourse(id);
+        return ResponseEntity.ok(courseDTO);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CourseDTO>> getAllCourses() {
+        List<CourseDTO> courses = courseService.getAllCourses();
+        return ResponseEntity.ok(courses);
+    }
+
+    @PostMapping
+    public ResponseEntity<CourseDTO> createCourse(@RequestBody CourseDTO courseDTO) {
+        CourseDTO createdCourse = courseService.createCourse(courseDTO);
+        return ResponseEntity.ok(createdCourse);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+        courseService.deleteCourse(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    
+}

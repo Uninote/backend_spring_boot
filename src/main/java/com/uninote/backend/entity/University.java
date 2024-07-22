@@ -25,7 +25,13 @@ public class University {
     @OneToMany(mappedBy = "university", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UniversityName> universityNames = new HashSet<>();
 
-    
+    public Set<Department> getDepartments(){
+        return departments;
+    }
+
+    public void setDepartments(Set<Department> departments){
+        this.departments = departments;
+    }
     
     public Long getId() {
         return id;

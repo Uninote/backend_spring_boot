@@ -40,10 +40,10 @@ public class NoteLike {
         this.note = note;
         this.user = user;
         this.createdAt = LocalDateTime.now();
-        this.isActive = true; // By default, a new like is active
+        this.isActive = true; 
     }
 
-    // Getters and setters
+    
     public NoteLikeId getId() {
         return id;
     }

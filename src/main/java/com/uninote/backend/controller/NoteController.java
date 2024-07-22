@@ -108,7 +108,7 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<Note> saveNote(@RequestBody Note note) {
+    public ResponseEntity<Note> saveNote(@RequestBody NoteDTO note) {
         Note savedNote = noteService.saveNote(note);
         return ResponseEntity.ok(savedNote);
     }
@@ -241,4 +241,5 @@ public class NoteController {
         List<NoteDTO> notes = noteService.getPublicNotesByUserAndUniversity(user, university);
         return ResponseEntity.ok(notes);
     }
+    
 }

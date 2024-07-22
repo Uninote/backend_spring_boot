@@ -1,5 +1,8 @@
 package com.uninote.backend.entity;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.*;
 
 @Entity
@@ -23,6 +26,9 @@ public class Course {
     @Column(name="semester",nullable = false)
     private int semester;
 
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CourseName> courseNames = new HashSet<>()
+    ;
     // Getters and setters
     public Long getId() {
         return id;
@@ -54,5 +60,13 @@ public class Course {
 
     public int getmSemester() {
         return this.semester;
+    }
+
+    public Set<CourseName> getCourseNames() {
+        return courseNames;
+    }
+
+    public void setCourseNames(Set<CourseName> courseNames) {
+        this.courseNames = courseNames;
     }
 }
