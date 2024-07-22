@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
@@ -11,8 +12,9 @@ import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -86,34 +88,58 @@ public class UserService {
         
         return userRepository.save(user);
     }
-    public User updateUser(Long userId, User userDetails) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            user.setFirebaseUid(userDetails.getFirebaseUid());
-            user.setStreak(userDetails.getStreak());
-            user.setUniscore(userDetails.getUniscore());
-            user.setUpdatedAt(userDetails.getUpdatedAt());
-            user.setLastLogin(userDetails.getLastLogin());
-            user.setName(userDetails.getName());
-            user.setDepartment(userDetails.getDepartment());
-            user.setUniversity(userDetails.getUniversity());
-            user.setEmail(userDetails.getEmail());
-            user.setNoteClicks(userDetails.getNoteClicks());
-            user.setRank(userDetails.getRank());
-            user.setUsername(userDetails.getUsername());
-            user.setProfileImageUrl(userDetails.getProfileImageUrl());
-            user.setNotesNumber(userDetails.getNotesNumber());
-            user.setPublicNotesNumber(userDetails.getPublicNotesNumber());
-            return userRepository.save(user);
+    public User updateUser(Long userId, UserDTO userDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        if (userDto.getFirebaseUid() != null) {
+            user.setFirebaseUid(userDto.getFirebaseUid());
         }
-        return null;
+        if (userDto.getName() != null) {
+            user.setName(userDto.getName());
+        }
+        if (userDto.getDepartmentId() != null) {
+            Department department = departmentRepository.findById(userDto.getDepartmentId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + userDto.getDepartmentId()));
+            user.setDepartment(department);
+        }
+        if (userDto.getUniversityId() != null) {
+            University university = universityRepository.findById(userDto.getUniversityId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid university ID: " + userDto.getUniversityId()));
+            user.setUniversity(university);
+        }
+        if (userDto.getEmail() != null) {
+            user.setEmail(userDto.getEmail());
+        }
+        if (userDto.getUsername() != null) {
+            user.setUsername(userDto.getUsername());
+        }
+        if (userDto.getProfileImageUrl() != null) {
+            user.setProfileImageUrl(userDto.getProfileImageUrl());
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+
+        return userRepository.save(user);
     }
 
     public User getUserById(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
         return userOptional.orElse(null);
     }
-
     
-}
+
+    public List<UserDTO> getTop100UsersByUniscore(){
+        List<User> topUsers = userRepository.findTop100ByUniscore();
+        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    }
+
+    public List<UserDTO> getTop100UsersByUniscoreByDepartment(Department department){
+        List<User> topUsers = userRepository.findTop100ByUniscoreByDepartment(department);
+        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    }
+    public List<UserDTO> getTop100UsersByUniscoreByUniversity(University university){
+        List<User> topUsers = userRepository.findTop100ByUniscoreByUniversity(university);
+        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    }
+}   

@@ -1,7 +1,9 @@
 package com.uninote.backend.dto;
 
+import oracle.net.aso.l;
 
 public class UserDTO {
+    private Long id;
     private String firebaseUid;
     private String name;
     private Long departmentId;
@@ -14,7 +16,8 @@ public class UserDTO {
     public UserDTO() {}
 
     
-    public UserDTO(String firebaseUid, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl) {
+    public UserDTO( Long id,String firebaseUid, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl) {
+        this.id = id;
         this.firebaseUid = firebaseUid;
         this.name = name;
         this.departmentId = departmentId;
@@ -24,7 +27,13 @@ public class UserDTO {
         this.profileImageUrl = profileImageUrl;
     }
 
-    
+    public Long getId(){
+        return id;
+    }
+
+    public void setId(Long id){
+        this.id =id;
+    }
 
     public String getFirebaseUid() {
         return firebaseUid;

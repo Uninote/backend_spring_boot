@@ -6,10 +6,12 @@ import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
+import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
+import com.uninote.backend.entity.User;
 
 public class EntityToDTOConverter {
     public static DepartmentDTO convertDepartmentToDTO(Department department){
@@ -51,4 +53,16 @@ public class EntityToDTOConverter {
             courseName.getName()
         );
     }  
+    public static UserDTO convertUserToDTO(User user) {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(user.getId());
+        userDTO.setFirebaseUid(user.getFirebaseUid());
+        userDTO.setName(user.getName());
+        userDTO.setDepartmentId(user.getDepartment().getId());
+        userDTO.setUniversityId(user.getUniversity().getId());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setUsername(user.getUsername());
+        userDTO.setProfileImageUrl(user.getProfileImageUrl());
+        return userDTO;
+    }
 }
