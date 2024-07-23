@@ -48,13 +48,6 @@ public class NoteSaveService {
         if (noteSave == null) {
             noteSave = new NoteSave(noteId, userId);
             noteSaveRepository.save(noteSave);
-
-            /*UniscoreIncreaseType saveIncreaseType = uniscoreIncreaseTypeRepository.findById(2L) 
-                    .orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
-            noteCreator.setUniscore(user.getUniscore() + saveIncreaseType.getIncreaseAmount());
-
-            UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(noteCreator, saveIncreaseType);
-            uniscoreIncreaseLogRepository.save(increaseLog);*/
             userService.updateUniScore(noteCreator, 2l);
         } else if (!noteSave.getIsActive()) {
             noteSave.setIsActive(true);

@@ -24,6 +24,9 @@ public class CollectionSaveService {
     @Autowired
     private UniscoreIncreaseLogRepository uniscoreIncreaseLogRepository;
 
+    @Autowired
+    private UserService userService;
+
     @Transactional
     public void saveCollection(Long collectionId, Long userId) {
         NoteCollection collection = noteCollectionRepository.findById(collectionId)
@@ -37,13 +40,7 @@ public class CollectionSaveService {
             CollectionSaveId collectionSaveId = new CollectionSaveId(collectionId, userId);
             collectionSave = new CollectionSave(collection, user);
             collectionSaveRepository.save(collectionSave);
-            UniscoreIncreaseType likeIncreaseType = uniscoreIncreaseTypeRepository.findById(5L)
-                    .orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
-            collectionAdmin.setUniscore(user.getUniscore() + likeIncreaseType.getIncreaseAmount());
-
-            
-            UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(collectionAdmin, likeIncreaseType);
-            uniscoreIncreaseLogRepository.save(increaseLog);
+            userService.updateUniScore(collectionAdmin, 5L);
         } else if (!collectionSave.isActive()) {
             collectionSave.setActive(true);
         }

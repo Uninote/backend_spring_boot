@@ -32,6 +32,9 @@ public class NoteViewService {
     private UniscoreIncreaseLogRepository uniscoreIncreaseLogRepository;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private UniscoreIncreaseTypeRepository uniscoreIncreaseTypeRepository;
     public NoteView trackView(Long noteId, Long userId) {
         Note note = noteRepository.findById(noteId)
@@ -53,12 +56,8 @@ public class NoteViewService {
             noteView.setUserId(userId);
             noteView.setViewCount(1L); 
         }
-        UniscoreIncreaseType saveIncreaseType = uniscoreIncreaseTypeRepository.findById(3L) 
-                    .orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
-            noteCreator.setUniscore(user.getUniscore() + saveIncreaseType.getIncreaseAmount());
 
-        UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(noteCreator, saveIncreaseType);
-        uniscoreIncreaseLogRepository.save(increaseLog);
+        userService.updateUniScore(noteCreator, 3L);
         return noteViewRepository.save(noteView);
     }
 }
