@@ -22,7 +22,7 @@ public class Test {
     @JoinColumn(name = "course_id")
     private Course course;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "test_type_id", nullable = false)
     private TestType testType;
 

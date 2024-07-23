@@ -10,6 +10,7 @@ import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -33,7 +34,7 @@ public class TestService {
         test.setUser(userRepository.findById(testDTO.getUserId()).orElse(null));
         test.setCourse(courseRepository.findById(testDTO.getCourseId()).orElse(null));
         test.setTestType(testTypeRepository.findById(testDTO.getTestTypeId()).orElse(null));
-        test.setDateTaken(testDTO.getDateTaken());
+        test.setDateTaken(LocalDateTime.now());
         return testRepository.save(test);
     }
 

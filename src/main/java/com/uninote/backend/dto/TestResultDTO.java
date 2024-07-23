@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 public class TestResultDTO {
     private Long id;
     private Long testId;
-    private Long userId;
     private BigDecimal score;
    
 
@@ -26,13 +25,6 @@ public class TestResultDTO {
         this.testId = testId;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
 
     public BigDecimal getScore() {
         return score;

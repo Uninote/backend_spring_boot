@@ -13,7 +13,7 @@ public class TestResult {
     @SequenceGenerator(name = "test_results_seq", sequenceName = "test_results_seq", allocationSize = 1)
     private Long id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "test_id", nullable = false)
     private Test test;
 
