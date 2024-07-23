@@ -4,12 +4,14 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
+import com.uninote.backend.entity.UniscoreIncreaseLog;
 import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.RankRepository;
+import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserLoginRepository;
@@ -48,6 +50,9 @@ public class UserService {
 
     @Autowired
     private UniscoreIncreaseTypeRepository uniScoreIncreaseTypeRepository;
+
+    @Autowired
+    private UniscoreIncreaseLogRepository uniscoreIncreaseLogRepository;
 
     public User loginUserAndUpdateStreak(Long userId) {
         User user = userRepository.findById(userId)
@@ -207,10 +212,12 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUniScore(User user, String activityType) {
-        UniscoreIncreaseType uniScoreIncreaseType = uniScoreIncreaseTypeRepository.findByName(activityType);
+    public void updateUniScore(User user, Long activityType) {
+        UniscoreIncreaseType uniScoreIncreaseType = uniScoreIncreaseTypeRepository.findById(activityType).orElseThrow(() -> new IllegalArgumentException("Invalid increase Type"));
         if (uniScoreIncreaseType != null) {
             user.setUniscore(user.getUniscore() + uniScoreIncreaseType.getIncreaseAmount());
+            UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(user, uniScoreIncreaseType);
+            uniscoreIncreaseLogRepository.save(increaseLog);
             userRepository.save(user);
         } else {
             throw new IllegalArgumentException("Unknown activity type: " + activityType);
