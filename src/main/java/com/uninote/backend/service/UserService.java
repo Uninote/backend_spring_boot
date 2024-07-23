@@ -70,6 +70,7 @@ public class UserService {
             user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
             updateUniScore(user, 25L);
+            
         } else if (lastLoginDate.isEqual(today)) {
             user.setLastLogin(LocalDateTime.now());
         }
@@ -81,7 +82,7 @@ public class UserService {
         userLogin.setUser(user);
         userLogin.setLoginTimestamp(LocalDateTime.now());
         userLoginRepository.save(userLogin);
-
+        badgeService.checkBadgesForUser(userId);
         return user;
     }
 
@@ -197,26 +198,7 @@ public class UserService {
     }
 
     
-    public User updateStreakOnLogin(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
-
-        LocalDate lastLoginDate = (user.getLastLogin() != null) ? user.getLastLogin().toLocalDate() : null;
-        LocalDate today = LocalDate.now();
-
-        if (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1))) {
-           
-            user.setStreak(1);
-        } else if (lastLoginDate.isEqual(today.minusDays(1))) {
-           
-            user.setStreak(user.getStreak() + 1);
-        }
-
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-        badgeService.checkBadgesForUser(userId);
-        return user;
-    }
+    
 
     @Transactional
     public void updateUniScore(User user, Long activityType) {
