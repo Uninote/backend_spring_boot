@@ -4,17 +4,22 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
+import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.RankRepository;
+import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
+
+import javax.transaction.Transactional;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +45,9 @@ public class UserService {
 
     @Autowired
     private BadgeService badgeService;
+
+    @Autowired
+    private UniscoreIncreaseTypeRepository uniScoreIncreaseTypeRepository;
 
     public User loginUserAndUpdateStreak(Long userId) {
         User user = userRepository.findById(userId)
@@ -196,6 +204,17 @@ public class UserService {
         userRepository.save(user);
         badgeService.checkBadgesForUser(userId);
         return user;
+    }
+
+    @Transactional
+    public void updateUniScore(User user, String activityType) {
+        UniscoreIncreaseType uniScoreIncreaseType = uniScoreIncreaseTypeRepository.findByName(activityType);
+        if (uniScoreIncreaseType != null) {
+            user.setUniscore(user.getUniscore() + uniScoreIncreaseType.getIncreaseAmount());
+            userRepository.save(user);
+        } else {
+            throw new IllegalArgumentException("Unknown activity type: " + activityType);
+        }
     }
 
     public UserDTO findByFirebaseUid(String firebaseUid) {

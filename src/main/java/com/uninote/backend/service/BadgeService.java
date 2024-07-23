@@ -91,7 +91,6 @@ public class BadgeService {
         Badge badge = badgeRepository.findById(badgeId)
                 .orElseThrow(() -> new IllegalArgumentException("Badge not found"));
 
-        // Check requirements based on badge type and requirement
         if (!meetsRequirement(user, badge)) {
             throw new IllegalArgumentException("User does not meet the requirements for this badge.");
         }
@@ -119,6 +118,8 @@ public class BadgeService {
                 return inviteRepository.countByUserId(user.getId()) >= badge.getRequirement();
                 case 3: 
                     return user.getStreak() >=badge.getRequirement();
+                case 4:
+                    return user.getUniscore() >=badge.getRequirement();
                 default:
                     return false;
             }
