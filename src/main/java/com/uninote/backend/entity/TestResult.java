@@ -2,6 +2,7 @@ package com.uninote.backend.entity;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "test_results")
@@ -20,6 +21,8 @@ public class TestResult {
     @Column(name = "score", nullable = false)
     private BigDecimal score;
 
+    @OneToMany(mappedBy = "testResult")
+    private List<TestResultDetail> testResultDetails;
     
 
     
@@ -47,5 +50,11 @@ public class TestResult {
         this.score = score;
     }
 
-    
+    public List<TestResultDetail> getTestResultDetails() {
+        return testResultDetails;
+    }
+
+    public void setTestResultDetails(List<TestResultDetail> testResultDetails) {
+        this.testResultDetails = testResultDetails;
+    }
 }

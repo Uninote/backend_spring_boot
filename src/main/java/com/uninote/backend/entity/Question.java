@@ -1,5 +1,7 @@
 package com.uninote.backend.entity;
 
+import java.util.List;
+
 import javax.persistence.*;
 
 @Entity
@@ -26,6 +28,9 @@ public class Question {
 
     @Column(name = "is_difficult", nullable = false)
     private Boolean isDifficult;
+
+    @OneToMany(mappedBy = "question")
+    private List<TestResultDetail> testResultDetails;
 
    public Boolean getIsDifficult(){
     return isDifficult;
@@ -65,5 +70,13 @@ public class Question {
 
     public void setQuestionText(String questionText) {
         this.questionText = questionText;
+    }
+
+    public List<TestResultDetail> getTestResultDetails() {
+        return testResultDetails;
+    }
+
+    public void setTestResultDetails(List<TestResultDetail> testResultDetails) {
+        this.testResultDetails = testResultDetails;
     }
 }
