@@ -4,9 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.CommentDTO;
+import com.uninote.backend.dto.InviteDTO;
 import com.uninote.backend.entity.Badge;
 import com.uninote.backend.entity.BadgeType;
 import com.uninote.backend.entity.Comment;
+import com.uninote.backend.entity.Invite;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.BadgeTypeRepository;
@@ -35,5 +37,15 @@ public class DTOToEntityConverter {
         comment.setContent(commentDTO.getContent());
         comment.setCreatedAt(commentDTO.getCreatedAt());
         return comment;
+    }
+
+    public static Invite convertDTOToInvite(InviteDTO inviteDTO, User user, User invitee) {
+        Invite invite = new Invite();
+        invite.setId(inviteDTO.getId());
+        invite.setUser(user);
+        invite.setInvitee(invitee);
+        invite.setDateOfInvite(inviteDTO.getDateOfInvite());
+        invite.setDateOfSignUp(inviteDTO.getDateOfSignUp());
+        return invite;
     }
 }

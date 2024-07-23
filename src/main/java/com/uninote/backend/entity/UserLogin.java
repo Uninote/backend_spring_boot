@@ -20,7 +20,7 @@ public class UserLogin {
     @Column(name = "login_timestamp", nullable = false)
     private LocalDateTime loginTimestamp;
 
-    // Getters and setters
+    
     public Long getId() {
         return id;
     }

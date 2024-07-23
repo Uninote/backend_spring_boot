@@ -9,6 +9,7 @@ import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.dto.FlashcardDTO;
+import com.uninote.backend.dto.InviteDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.dto.UserDTO;
@@ -19,6 +20,7 @@ import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Flashcard;
+import com.uninote.backend.entity.Invite;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.entity.User;
@@ -140,6 +142,16 @@ public class EntityToDTOConverter {
             comment.getUser().getId(),
             comment.getContent(),
             comment.getCreatedAt()
+        );
+    }
+
+    public static InviteDTO convertInviteToDTO(Invite invite) {
+        return new InviteDTO(
+                invite.getId(),
+                invite.getUser().getId(),
+                invite.getInvitee() != null ? invite.getInvitee().getId() : null,
+                invite.getDateOfInvite(),
+                invite.getDateOfSignUp()
         );
     }
 }

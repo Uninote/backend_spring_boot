@@ -10,6 +10,7 @@ import com.uninote.backend.entity.UserBadge;
 import com.uninote.backend.entity.UserBadgeId;
 import com.uninote.backend.repository.BadgeRepository;
 import com.uninote.backend.repository.BadgeTypeRepository;
+import com.uninote.backend.repository.InviteRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserBadgeRepository;
 import com.uninote.backend.repository.UserRepository;
@@ -40,6 +41,9 @@ public class BadgeService {
 
     @Autowired
     private NoteRepository noteRepository;
+
+    @Autowired
+    private InviteRepository inviteRepository;
 
     public BadgeDTO saveBadge(BadgeDTO badgeDTO) {
         Badge badge = DTOToEntityConverter.convertDTOToBadge(badgeDTO,badgeTypeRepository);
@@ -111,10 +115,10 @@ public class BadgeService {
             switch (badge.getType().getId().intValue()) {
                 case 1:     
                 return noteRepository.countByUserId(user.getId()) >= badge.getRequirement();
-                case 2: 
-                    return false;
+                case 2:         
+                return inviteRepository.countByUserId(user.getId()) >= badge.getRequirement();
                 case 3: 
-                    return false;
+                    return user.getStreak() >=badge.getRequirement();
                 default:
                     return false;
             }
@@ -127,7 +131,7 @@ public class BadgeService {
         for (Badge badge : badges) {
             if (meetsRequirement(user, badge)) {
                 if (!userBadgeRepository.existsById(new UserBadgeId(user.getId(), badge.getId()))) {
-                    assignBadgeToUser(user.getId(), badge.getId());
+                    assignBadgeToUser(user  .getId(), badge.getId());
                 }
             }
         }

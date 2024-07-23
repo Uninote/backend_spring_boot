@@ -38,6 +38,9 @@ public class UserService {
     @Autowired
     private UserLoginRepository userLoginRepository;
 
+    @Autowired
+    private BadgeService badgeService;
+
     public User loginUserAndUpdateStreak(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -191,6 +194,7 @@ public class UserService {
 
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
+        badgeService.checkBadgesForUser(userId);
         return user;
     }
 
