@@ -83,6 +83,7 @@ public class EntityToDTOConverter {
         userDTO.setEmail(user.getEmail());
         userDTO.setUsername(user.getUsername());
         userDTO.setProfileImageUrl(user.getProfileImageUrl());
+        userDTO.setRoleId(user.getRole().getId());
         return userDTO;
     }
 

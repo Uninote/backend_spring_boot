@@ -2,8 +2,11 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.BadgeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +17,20 @@ public class BadgeController {
 
     @Autowired
     private BadgeService badgeService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private final SimpMessagingTemplate template;
+
+    public BadgeController(SimpMessagingTemplate template) {
+        this.template = template;
+    }
+
+    public void sendBadgeNotification(String userId, Long badge) {
+        String destination = "/topic/badges/" + userId;
+        this.template.convertAndSend(destination, badge);
+    }
 
     @PostMapping
     public BadgeDTO createBadge(@RequestBody BadgeDTO badgeDTO) {
@@ -39,7 +56,13 @@ public class BadgeController {
 
     @PostMapping("/assign")
     public UserBadgeDTO assignBadgeToUser(@RequestBody UserBadgeDTO userBadgeDTO) {
-        return badgeService.assignBadgeToUser(userBadgeDTO);
+        UserBadgeDTO assignedBadge = badgeService.assignBadgeToUser(userBadgeDTO);
+        User user = userRepository.findById(userBadgeDTO.getUserId())
+                                  .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        sendBadgeNotification(user.getFirebaseUid(), userBadgeDTO.getBadgeId());
+
+        return assignedBadge;
     }
 
     @GetMapping("/user/{userId}")

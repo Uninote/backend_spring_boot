@@ -20,7 +20,7 @@ public class UniversityController {
             return ResponseEntity.ok(university);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
-        } catch (Exception e) {
+        } catch (Exception e) { 
             return ResponseEntity.status(500).body(null);
         }
     }
