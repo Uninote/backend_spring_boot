@@ -23,6 +23,9 @@ public class InviteService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserService userService;
+
     public InviteDTO saveInvite(InviteDTO inviteDTO) {
         User user = userRepository.findById(inviteDTO.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
@@ -36,13 +39,16 @@ public class InviteService {
         return invites.stream().map(EntityToDTOConverter::convertInviteToDTO).collect(Collectors.toList());
     }
 
-    public InviteDTO updateSignUpDate(Long inviteId, Long inviteeId) {
+    public InviteDTO acceptInvite(Long inviteId, Long inviteeId) {
         Invite invite = inviteRepository.findById(inviteId)
                 .orElseThrow(() -> new IllegalArgumentException("Invite not found"));
         User invitee = userRepository.findById(inviteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Invitee not found"));
+
+
         invite.setInvitee(invitee);
         invite.setDateOfSignUp(LocalDateTime.now());
+        userService.updateUniScore(invite.getUser(), 21L);
         invite = inviteRepository.save(invite);
         return EntityToDTOConverter.convertInviteToDTO(invite);
     }

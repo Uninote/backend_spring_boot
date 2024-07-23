@@ -40,6 +40,9 @@ public class NoteService {
     @Autowired
     private BadgeService badgeService; 
 
+    @Autowired
+    private UserService userService;
+
 
      public Note updateNote(Long noteId, NoteDTO noteDto) {
         Note note = noteRepository.findById(noteId)
@@ -209,6 +212,12 @@ public class NoteService {
         note.setIsPublic(noteDto.getIsPublic());
 
         Note savedNote = noteRepository.save(note);
+        long noteCount = noteRepository.countByUserId(user.getId());
+        if (noteCount == 1) {
+            userService.updateUniScore(user, 22L); // Assign a higher UniScore for the first note upload
+        } else {
+            userService.updateUniScore(user, 23L); // Regular UniScore for subsequent note uploads
+        }
         badgeService.checkBadgesForUser(user.getId()); 
         return savedNote;
     }
