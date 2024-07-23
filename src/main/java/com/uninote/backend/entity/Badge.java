@@ -19,40 +19,41 @@ public class Badge {
     @Column(name = "badge_description")
     private String description;
 
-    @OneToMany(mappedBy = "badge")
-    private List<UserBadge> userBadges;
+    @Column(name = "image_url")
+    private String imageUrl;
 
-    // Getters
+   
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public List<UserBadge> getUserBadges() {
-        return userBadges;
-    }
-
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public void setDescription(String description) {
         this.description = description;
     }
 
-    public void setUserBadges(List<UserBadge> userBadges) {
-        this.userBadges = userBadges;
+    public String getImageUrl() {
+        return imageUrl;
     }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+   
 }
