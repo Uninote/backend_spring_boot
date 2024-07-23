@@ -78,7 +78,7 @@ public class UserService {
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
-        UserLogin userLogin = new UserLogin();
+        UserLogin userLogin = new UserLogin();  
         userLogin.setUser(user);
         userLogin.setLoginTimestamp(LocalDateTime.now());
         userLoginRepository.save(userLogin);
