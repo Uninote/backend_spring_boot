@@ -12,4 +12,9 @@ public interface TrueFalseQuestionRepository extends JpaRepository<TrueFalseQues
 
     @Query("SELECT tfq FROM TrueFalseQuestion tfq JOIN tfq.question q JOIN q.course c WHERE c = :course")
     List<TrueFalseQuestion> findByQuestionCourse(@Param("course") Course course);
+
+    @Query("SELECT tf FROM TrueFalseQuestion tf JOIN tf.question q JOIN q.course c WHERE c = :course")
+    List<TrueFalseQuestion> findByCourse(@Param("course") Course course);
 }
+
+

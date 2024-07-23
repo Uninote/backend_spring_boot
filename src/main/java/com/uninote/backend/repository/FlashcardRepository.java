@@ -12,4 +12,8 @@ public interface FlashcardRepository extends JpaRepository<Flashcard, Long> {
 
     @Query("SELECT f FROM Flashcard f JOIN f.question q JOIN q.course c WHERE c = :course")
     List<Flashcard> findByQuestionCourse(@Param("course") Course course);
+
+    @Query("SELECT f FROM Flashcard f JOIN f.question q JOIN q.course c WHERE c = :course")
+    List<Flashcard> findByCourse(@Param("course") Course course);
+    
 }

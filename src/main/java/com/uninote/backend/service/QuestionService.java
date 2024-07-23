@@ -17,7 +17,9 @@ import com.uninote.backend.repository.TrueFalseQuestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -30,6 +32,9 @@ public class QuestionService {
 
     @Autowired
     private FlashcardRepository flashcardRepository;
+
+    @Autowired
+    private TrueFalseQuestionRepository trueFalseQuestionRepository;
 
     @Autowired
     private QuestionTypeRepository questionTypeRepository;
@@ -97,5 +102,26 @@ public class QuestionService {
         Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
         List<TrueFalseQuestion> trueFalseQuestions = tfqRepository.findByQuestionCourse(course);
         return trueFalseQuestions.stream().map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
+    }
+
+    public List<QuestionDTO> getRandomQuestionsByCourse(Long courseId, int count) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
+        List<Question> questions = questionRepository.findByCourse(course);
+        Collections.shuffle(questions); 
+        return questions.stream().limit(count).map(EntityToDTOConverter::convertQuestionToDTO).collect(Collectors.toList());
+    }
+
+    public List<FlashcardDTO> getRandomFlashcardsByCourse(Long courseId, int count) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
+        List<Flashcard> flashcards = flashcardRepository.findByCourse(course);
+        Collections.shuffle(flashcards); 
+        return flashcards.stream().limit(count).map(EntityToDTOConverter::convertFlashcardToDTO).collect(Collectors.toList());
+    }
+
+    public List<TrueFalseQuestionDTO> getRandomTrueFalseQuestionsByCourse(Long courseId, int count) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
+        List<TrueFalseQuestion> trueFalseQuestions = trueFalseQuestionRepository.findByCourse(course);
+        Collections.shuffle(trueFalseQuestions); 
+        return trueFalseQuestions.stream().limit(count).map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
     }
 }

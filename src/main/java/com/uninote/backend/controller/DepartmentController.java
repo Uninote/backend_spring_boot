@@ -42,6 +42,4 @@ public class DepartmentController {
         departmentService.deleteDepartment(id);
         return ResponseEntity.noContent().build();
     }
-
-    // Additional endpoints for update, etc., can be added here
 }

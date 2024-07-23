@@ -43,4 +43,17 @@ public class QuestionController {
         TrueFalseQuestion createdTrueFalseQuestion = questionService.createTrueFalseQuestion(trueFalseQuestionDTO);
         return ResponseEntity.ok(createdTrueFalseQuestion);
     }
+
+    @GetMapping("/random_test")
+    public ResponseEntity<?> getRandomTest(@RequestParam Long courseId, @RequestParam String type, @RequestParam int count) {
+        if (type.equalsIgnoreCase("flashcard")) {
+            List<FlashcardDTO> flashcards = questionService.getRandomFlashcardsByCourse(courseId, count);
+            return ResponseEntity.ok(flashcards);
+        } else if (type.equalsIgnoreCase("true_false")) {
+            List<TrueFalseQuestionDTO> trueFalseQuestions = questionService.getRandomTrueFalseQuestionsByCourse(courseId, count);
+            return ResponseEntity.ok(trueFalseQuestions);
+        } else {
+            return ResponseEntity.badRequest().body("Invalid test type specified");
+        }
+    }
 }
