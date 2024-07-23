@@ -31,6 +31,9 @@ public class NoteSaveService {
     @Autowired
     private UniscoreIncreaseLogRepository uniscoreIncreaseLogRepository;
 
+    @Autowired
+    private UserService userService;
+
     @Transactional
     public void saveNote(Long noteId, Long userId) {
         Note note = noteRepository.findById(noteId)
@@ -46,12 +49,13 @@ public class NoteSaveService {
             noteSave = new NoteSave(noteId, userId);
             noteSaveRepository.save(noteSave);
 
-            UniscoreIncreaseType saveIncreaseType = uniscoreIncreaseTypeRepository.findById(2L) 
+            /*UniscoreIncreaseType saveIncreaseType = uniscoreIncreaseTypeRepository.findById(2L) 
                     .orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
             noteCreator.setUniscore(user.getUniscore() + saveIncreaseType.getIncreaseAmount());
 
             UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(noteCreator, saveIncreaseType);
-            uniscoreIncreaseLogRepository.save(increaseLog);
+            uniscoreIncreaseLogRepository.save(increaseLog);*/
+            userService.updateUniScore(noteCreator, 2l);
         } else if (!noteSave.getIsActive()) {
             noteSave.setIsActive(true);
             noteSaveRepository.save(noteSave);
