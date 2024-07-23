@@ -11,6 +11,9 @@ import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.InviteDTO;
 import com.uninote.backend.dto.QuestionDTO;
+import com.uninote.backend.dto.TestDTO;
+import com.uninote.backend.dto.TestResultDTO;
+import com.uninote.backend.dto.TestResultDetailDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Badge;
@@ -22,6 +25,9 @@ import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.Invite;
 import com.uninote.backend.entity.Question;
+import com.uninote.backend.entity.Test;
+import com.uninote.backend.entity.TestResult;
+import com.uninote.backend.entity.TestResultDetail;
 import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
@@ -153,5 +159,32 @@ public class EntityToDTOConverter {
                 invite.getDateOfInvite(),
                 invite.getDateOfSignUp()
         );
+    }
+
+    public static TestResultDTO convertTestResultToDto(TestResult testResult) {
+        TestResultDTO testResultDTO = new TestResultDTO();
+        testResultDTO.setId(testResult.getId());
+        testResultDTO.setTestId(testResult.getTest().getId());
+        testResultDTO.setScore(testResult.getScore());
+        return testResultDTO;
+    }
+
+    public static TestDTO convertTestToDto(Test test) {
+        TestDTO testDTO = new TestDTO();
+        testDTO.setId(test.getId());
+        testDTO.setUserId(test.getUser().getId());
+        testDTO.setCourseId(test.getCourse().getId());
+        testDTO.setTestTypeId(test.getTestType().getId());
+        testDTO.setDateTaken(test.getDateTaken());
+        return testDTO;
+    }
+
+    public static TestResultDetailDTO convertTestResultDetailToDto(TestResultDetail testResultDetail) {
+        TestResultDetailDTO testResultDetailDTO = new TestResultDetailDTO();
+        testResultDetailDTO.setId(testResultDetail.getId());
+        testResultDetailDTO.setTestResultId(testResultDetail.getTestResult().getId());
+        testResultDetailDTO.setQuestionId(testResultDetail.getQuestion().getId());
+        testResultDetailDTO.setCorrect(testResultDetail.isCorrect());
+        return testResultDetailDTO;
     }
 }
