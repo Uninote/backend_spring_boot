@@ -121,8 +121,8 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<Note> saveNote(@RequestBody NoteDTO note) {
-        Note savedNote = noteService.saveNote(note);
+    public ResponseEntity<Note> saveNote(@RequestBody NoteDTO notedto) {
+        Note savedNote = noteService.saveNote(notedto);
         return ResponseEntity.ok(savedNote);
     }
 

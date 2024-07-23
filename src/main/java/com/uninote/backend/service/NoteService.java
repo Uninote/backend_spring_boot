@@ -37,6 +37,10 @@ public class NoteService {
     @Autowired
     private NoteLikeRepository likeRepository;
 
+    @Autowired
+    private BadgeService badgeService; 
+
+
      public Note updateNote(Long noteId, NoteDTO noteDto) {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
@@ -136,9 +140,7 @@ public class NoteService {
         return noteRepository.findByDepartmentAndSemester(departmentId, semester).stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    public Note saveNote(Note note) {
-        return noteRepository.save(note);
-    }
+    
 
     public void deleteNoteById(Long id) {
         noteRepository.deleteById(id);
@@ -206,7 +208,9 @@ public class NoteService {
         note.setFilename(noteDto.getFilename());
         note.setIsPublic(noteDto.getIsPublic());
 
-        return noteRepository.save(note);
+        Note savedNote = noteRepository.save(note);
+        badgeService.checkBadgesForUser(user.getId()); 
+        return savedNote;
     }
 
     

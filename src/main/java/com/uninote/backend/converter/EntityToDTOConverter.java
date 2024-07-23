@@ -2,6 +2,7 @@ package com.uninote.backend.converter;
 
 import java.util.stream.Collectors;
 
+import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.DepartmentDTO;
@@ -10,6 +11,7 @@ import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.entity.Badge;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
@@ -18,6 +20,7 @@ import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.entity.UserBadge;
 
 public class EntityToDTOConverter {
     public static DepartmentDTO convertDepartmentToDTO(Department department){
@@ -83,6 +86,17 @@ public class EntityToDTOConverter {
         return questionDTO;
     }
 
+    public static BadgeDTO convertBadgeToBadgeDTO(Badge badge) {
+        BadgeDTO dto = new BadgeDTO();
+        dto.setId(badge.getId());
+        dto.setName(badge.getName());
+        dto.setDescription(badge.getDescription());
+        dto.setImageUrl(badge.getImageUrl());
+        dto.setRequirement(badge.getRequirement());
+        dto.setTypeName(badge.getType().getName());
+        return dto;
+    }
+
 
     public static FlashcardDTO convertFlashcardToDTO(Flashcard flashcard) {
         FlashcardDTO flashcardDTO = new FlashcardDTO();
@@ -104,5 +118,16 @@ public class EntityToDTOConverter {
         trueFalseQuestionDTO.setIsDifficult(trueFalseQuestion.getQuestion().getIsDifficult());
         trueFalseQuestionDTO.setCorrectAnswer(trueFalseQuestion.getCorrectAnswer());
         return trueFalseQuestionDTO;
+    }
+
+    public static BadgeDTO convertUserBadgeToBadgeDTO(UserBadge userBadge) {
+        Badge badge = userBadge.getBadge();
+        BadgeDTO dto = new BadgeDTO();
+        dto.setId(badge.getId());
+        dto.setName(badge.getName());
+        dto.setDescription(badge.getDescription());
+        dto.setImageUrl(badge.getImageUrl());
+        dto.setTypeName(badge.getType().getName());
+        return dto;
     }
 }

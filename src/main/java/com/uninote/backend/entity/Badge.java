@@ -16,13 +16,25 @@ public class Badge {
     @Column(name = "badge_name", nullable = false)
     private String name;
 
+    @Lob
     @Column(name = "badge_description")
     private String description;
 
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "requirement")
+    private int requirement;
+
+    @OneToMany(mappedBy = "badge")
+    private List<UserBadge> userBadges;
+
+    @ManyToOne
+    @JoinColumn(name = "badge_type_id", nullable = false)
+    private BadgeType type;
    
+
+    
     public Long getId() {
         return id;
     }
@@ -47,6 +59,14 @@ public class Badge {
         this.description = description;
     }
 
+    public int getRequirement() {
+        return requirement;
+    }
+
+    public void setRequirement(int requirement) {
+        this.requirement = requirement;
+    }
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -55,5 +75,20 @@ public class Badge {
         this.imageUrl = imageUrl;
     }
 
-   
+    public List<UserBadge> getUserBadges() {
+        return userBadges;
+    }
+
+    public void setUserBadges(List<UserBadge> userBadges) {
+        this.userBadges = userBadges;
+    }
+
+    public BadgeType getType() {
+        return type;
+    }
+
+    public void setType(BadgeType type) {
+        this.type = type;
+    }   
+
 }

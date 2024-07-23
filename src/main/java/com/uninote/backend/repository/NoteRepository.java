@@ -73,4 +73,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.user = :user AND n.course.department.id = :departmentId AND n.course.semester = :semester")
     List<Note> findPublicNotesByUserAndDepartmentAndSemester(@Param("user") User user, @Param("departmentId") Long departmentId, @Param("semester") int semester);
+
+    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
+    long countByUserId(@Param("userId") Long userId);
 }

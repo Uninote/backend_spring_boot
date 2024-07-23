@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
-import com.uninote.backend.entity.Badge;
+import com.uninote.backend.dto.BadgeDTO;
+import com.uninote.backend.dto.UserBadgeDTO;
 import com.uninote.backend.service.BadgeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -8,29 +9,41 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/badges")
+@RequestMapping("/badges")
 public class BadgeController {
 
     @Autowired
     private BadgeService badgeService;
 
     @PostMapping
-    public Badge createBadge(@RequestBody Badge badge) {
-        return badgeService.saveBadge(badge);
-    }
+    public BadgeDTO createBadge(@RequestBody BadgeDTO badgeDTO) {
+        return badgeService.saveBadge(badgeDTO);
+    }   
 
     @GetMapping("/{id}")
-    public Badge getBadge(@PathVariable Long id) {
+    public BadgeDTO getBadge(@PathVariable Long id) {   
         return badgeService.getBadgeById(id);
     }
 
     @GetMapping
-    public List<Badge> getAllBadges() {
+    public List<BadgeDTO> getAllBadges() {
         return badgeService.getAllBadges();
     }
 
     @DeleteMapping("/{id}")
     public void deleteBadge(@PathVariable Long id) {
         badgeService.deleteBadge(id);
+    }
+
+    
+
+    @PostMapping("/assign")
+    public UserBadgeDTO assignBadgeToUser(@RequestBody UserBadgeDTO userBadgeDTO) {
+        return badgeService.assignBadgeToUser(userBadgeDTO);
+    }
+
+    @GetMapping("/user/{userId}")
+    public List<BadgeDTO> getUserBadges(@PathVariable Long userId) {
+        return badgeService.getUserBadges(userId);
     }
 }
