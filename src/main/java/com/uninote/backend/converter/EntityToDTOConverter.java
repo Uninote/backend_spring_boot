@@ -3,6 +3,7 @@ package com.uninote.backend.converter;
 import java.util.stream.Collectors;
 
 import com.uninote.backend.dto.BadgeDTO;
+import com.uninote.backend.dto.CommentDTO;
 import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.DepartmentDTO;
@@ -12,6 +13,7 @@ import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Badge;
+import com.uninote.backend.entity.Comment;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
@@ -129,5 +131,15 @@ public class EntityToDTOConverter {
         dto.setImageUrl(badge.getImageUrl());
         dto.setTypeName(badge.getType().getName());
         return dto;
+    }
+
+    public static CommentDTO convertCommentToDTO(Comment comment) {
+        return new CommentDTO(
+            comment.getCommentId(),
+            comment.getNote().getId(),
+            comment.getUser().getId(),
+            comment.getContent(),
+            comment.getCreatedAt()
+        );
     }
 }

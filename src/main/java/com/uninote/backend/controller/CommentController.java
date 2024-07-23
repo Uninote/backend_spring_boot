@@ -1,5 +1,6 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.dto.CommentDTO;
 import com.uninote.backend.entity.Comment;
 import com.uninote.backend.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,8 @@ public class CommentController {
     }
 
     @GetMapping("/{noteId}")
-    public ResponseEntity<List<Comment>> getCommentsByNoteId(@PathVariable Long noteId) {
-        List<Comment> comments = commentService.getCommentsByNoteId(noteId);
+    public ResponseEntity<List<CommentDTO>> getCommentsByNoteId(@PathVariable Long noteId) {
+        List<CommentDTO> comments = commentService.getCommentsByNoteId(noteId);
         return ResponseEntity.ok(comments);
     }
 
