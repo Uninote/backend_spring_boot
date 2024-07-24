@@ -4,6 +4,7 @@ import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteLikeId;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,6 @@ public interface NoteLikeRepository extends JpaRepository<NoteLike, NoteLikeId> 
     boolean existsByNoteIdAndUserId(Long noteId, Long userId);
     long countByNote(Note note);
     Optional<NoteLike> findByNoteIdAndUserId(Long noteId, Long userId);
+    List<NoteLike> findByNoteId(Long noteId);
+    List<NoteLike> findByUserId(Long userId);
 }

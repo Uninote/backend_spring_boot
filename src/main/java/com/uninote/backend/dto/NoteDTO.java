@@ -1,6 +1,7 @@
 package com.uninote.backend.dto;
 
 public class NoteDTO {
+    private Long noteId;
     private Long courseId;
     private Long userId;
     private String title;
@@ -8,9 +9,10 @@ public class NoteDTO {
     private String pdfUrl;
     private String filename;
     private Boolean isPublic;
+        
 
     
-    public NoteDTO(Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic) {
+    public NoteDTO(Long noteId,Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic) {
         this.courseId = courseId;
         this.userId = userId;
         this.title = title;
@@ -18,7 +20,10 @@ public class NoteDTO {
         this.pdfUrl = pdfUrl;
         this.filename = filename;
         this.isPublic = isPublic;
+        this.noteId = noteId;
     }
+    
+    public NoteDTO() {};
 
     
     public Long getCourseId() {
@@ -74,5 +79,13 @@ public class NoteDTO {
 
     public void setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    public void setNotesId(Long noteId){
+        this.noteId = noteId;
+    }
+
+    public Long getNoteId(){
+        return noteId;
     }
 }

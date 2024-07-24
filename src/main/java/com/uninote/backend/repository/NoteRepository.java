@@ -1,6 +1,7 @@
 package com.uninote.backend.repository;
 
 import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -76,4 +78,6 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
     long countByUserId(@Param("userId") Long userId);
+
+    
 }

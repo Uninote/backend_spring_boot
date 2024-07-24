@@ -10,6 +10,7 @@ import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.InviteDTO;
+import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TestDTO;
 import com.uninote.backend.dto.TestResultDTO;
@@ -24,6 +25,7 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.Invite;
+import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.Test;
 import com.uninote.backend.entity.TestResult;
@@ -187,5 +189,19 @@ public class EntityToDTOConverter {
         testResultDetailDTO.setQuestionId(testResultDetail.getQuestion().getId());
         testResultDetailDTO.setCorrect(testResultDetail.isCorrect());
         return testResultDetailDTO;
+    }
+
+    public static NoteDTO convertNoteToDTO(Note note) {
+        NoteDTO dto = new NoteDTO(
+            note.getId(),
+            note.getCourse().getId(),
+            note.getUser().getId(),
+            note.getTitle(),
+            note.getDescription(),
+            note.getPdfUrl(),
+            note.getFilename(),
+            note.getIsPublic()
+        );
+        return dto;
     }
 }
