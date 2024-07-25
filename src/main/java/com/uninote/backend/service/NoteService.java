@@ -35,7 +35,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
 public class NoteService {
@@ -72,6 +75,8 @@ public class NoteService {
     @Autowired
     private UserService userService;
 
+
+    private RealMatrix ratingsMatrix;
     private static final double CLICK_WEIGHT = 0.05;
     private static final double VIEW_WEIGHT = 0.2;
     private static final double LIKE_WEIGHT = 0.3;
@@ -80,7 +85,25 @@ public class NoteService {
     private Map<Long, Integer> userIndexMap = new HashMap<>();
     private Map<Long, Integer> noteIndexMap = new HashMap<>();
     private Map<Integer, Long> indexNoteMap = new HashMap<>();
+    private LocalDateTime lastUpdate;
 
+
+
+    @PostConstruct
+    public void init() {
+        recomputeRatingsMatrix();
+    }
+
+    @Scheduled(fixedRate = 3600000) 
+    public void recomputeRatingsMatrix() {
+        if (ratingsMatrix == null) {
+            ratingsMatrix = createRatingsMatrix();
+            lastUpdate = LocalDateTime.now();
+
+        } else {
+            updateRatingsMatrix();
+        }
+    }
 
     public double calculateCompositeScore(Long noteId) {
         long clickCount = clickRepository.findByNoteId(noteId).size();
@@ -154,25 +177,48 @@ public class NoteService {
         return matrix;
     }
 
-    private int findUserIndex(Long userId) {
-        return userIndexMap.getOrDefault(userId, -1);
-    }
+    private void updateRatingsMatrix() {
+        List<NoteClick> newClicks = clickRepository.findByCreatedAtAfter(lastUpdate);
+        List<NoteView> newViews = viewRepository.findByCreatedAtAfter(lastUpdate);
+        List<NoteLike> newLikes = likeRepository.findByCreatedAtAfter(lastUpdate);
+        List<NoteSave> newSaves = saveRepository.findByCreatedAtAfter(lastUpdate);
 
-    private Long findNoteId(int index) {
-        return indexNoteMap.get(index);
-    }
+        for (NoteClick click : newClicks) {
+            int userIndex = userIndexMap.get(click.getUserId());
+            int noteIndex = noteIndexMap.get(click.getNoteId());
+            ratingsMatrix.addToEntry(userIndex, noteIndex, CLICK_WEIGHT);
+        }
 
+        for (NoteView view : newViews) {
+            int userIndex = userIndexMap.get(view.getUserId());
+            int noteIndex = noteIndexMap.get(view.getNoteId());
+            ratingsMatrix.addToEntry(userIndex, noteIndex, VIEW_WEIGHT);
+        }
+
+        for (NoteLike like : newLikes) {
+            int userIndex = userIndexMap.get(like.getUser().getId());
+            int noteIndex = noteIndexMap.get(like.getNote().getId());
+            ratingsMatrix.addToEntry(userIndex, noteIndex, LIKE_WEIGHT);
+        }
+
+        for (NoteSave save : newSaves) {
+            int userIndex = userIndexMap.get(save.getUserId());
+            int noteIndex = noteIndexMap.get(save.getNoteId());
+            ratingsMatrix.addToEntry(userIndex, noteIndex, SAVE_WEIGHT);
+        }
+        lastUpdate = LocalDateTime.now();
+
+        
+    }
 
     public List<NoteDTO> recommendNotes(Long userId) {
-        
         List<NoteClick> userClicks = clickRepository.findByUserId(userId);
         List<NoteView> userViews = viewRepository.findByUserId(userId);
         List<NoteLike> userLikes = likeRepository.findByUserId(userId);
         List<NoteSave> userSaves = saveRepository.findByUserId(userId);
 
-        
         if (userClicks.isEmpty() && userViews.isEmpty() && userLikes.isEmpty() && userSaves.isEmpty()) {
-            List<Object []> topViewedNotes = noteViewRepository.findTop10ByOrderByViewCountDesc();
+            List<Object[]> topViewedNotes = noteViewRepository.findTop10ByOrderByViewCountDesc();
             return topViewedNotes.stream()
                     .map(result -> noteRepository.findById((Long) result[0]).orElse(null))
                     .filter(Objects::nonNull)
@@ -184,7 +230,7 @@ public class NoteService {
         Set<Long> userDepartmentIds = new HashSet<>();
         Set<Long> userUniversityIds = new HashSet<>();
         userClicks.forEach(click -> {
-            Note note = noteRepository.findById(click.getId()).orElse(null);
+            Note note = noteRepository.findById(click.getNoteId()).orElse(null);
             if (note != null) {
                 userCourseIds.add(note.getCourse().getId());
                 userDepartmentIds.add(note.getCourse().getDepartment().getId());
@@ -192,7 +238,7 @@ public class NoteService {
             }
         });
         userViews.forEach(view -> {
-            Note note = noteRepository.findById(view.getId()).orElse(null);
+            Note note = noteRepository.findById(view.getNoteId()).orElse(null);
             if (note != null) {
                 userCourseIds.add(note.getCourse().getId());
                 userDepartmentIds.add(note.getCourse().getDepartment().getId());
@@ -212,16 +258,18 @@ public class NoteService {
                 userUniversityIds.add(note.getCourse().getDepartment().getUniversity().getId());
             }
         });
-
         List<Note> contentBasedRecommendations = noteRepository.findAll().stream()
-            .filter(note -> 
-                userCourseIds.contains(note.getCourse().getId()) ||
-                userDepartmentIds.contains(note.getCourse().getDepartment().getId()) ||
-                userUniversityIds.contains(note.getCourse().getDepartment().getUniversity().getId())
-            )
-            .collect(Collectors.toList());
-        
-        RealMatrix ratingsMatrix = createRatingsMatrix();
+        .filter(note -> 
+            userCourseIds.contains(note.getCourse().getId()) ||
+            userDepartmentIds.contains(note.getCourse().getDepartment().getId()) ||
+            userUniversityIds.contains(note.getCourse().getDepartment().getUniversity().getId())
+        )
+        .collect(Collectors.toList());
+        if (ratingsMatrix == null) {
+            recomputeRatingsMatrix();
+        }
+
+        // Perform SVD on the ratings matrix
         SingularValueDecomposition svd = new SingularValueDecomposition(ratingsMatrix);
         RealMatrix userFeatures = svd.getU();
         RealMatrix noteFeatures = svd.getV();
@@ -238,17 +286,27 @@ public class NoteService {
 
         List<Long> svdRecommendedNoteIds = svdRecommendations.entrySet().stream()
                 .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
-                .map(Map.Entry::getKey)
+                .map(Map.Entry::getKey).limit(5)
                 .collect(Collectors.toList());
 
-        
+       
         Set<Long> combinedNoteIds = new LinkedHashSet<>();
-        combinedNoteIds.addAll(contentBasedRecommendations.stream().map(Note::getId).collect(Collectors.toList()));
+        //combinedNoteIds.addAll(contentBasedRecommendations.stream().map(Note::getId).collect(Collectors.toList()));
         combinedNoteIds.addAll(svdRecommendedNoteIds);
 
         List<Note> combinedRecommendations = noteRepository.findAllById(combinedNoteIds);
         return combinedRecommendations.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
+
+    private int findUserIndex(Long userId) {
+        return userIndexMap.getOrDefault(userId, -1);
+    }
+
+    private Long findNoteId(int index) {
+        return indexNoteMap.get(index);
+    }
+    
+
      public Note updateNote(Long noteId, NoteDTO noteDto) {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
@@ -273,7 +331,7 @@ public class NoteService {
             note.setPdfUrl(noteDto.getPdfUrl());
         }
         if (noteDto.getIsPublic() != null) {
-            note.setIsPublic(noteDto.getIsPublic());
+            note.setIsPublic(noteDto.getIsPublic());    
         }
         if (noteDto.getFilename() != null) {
             note.setFilename(noteDto.getFilename());
@@ -298,6 +356,8 @@ public class NoteService {
                 return like.isPresent();
             }
     
+    
+        
     @Cacheable("notes")
     public NoteDTO getNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));

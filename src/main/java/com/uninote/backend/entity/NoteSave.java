@@ -25,6 +25,16 @@ public class NoteSave {
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
+    @ManyToOne
+    @MapsId("noteId")
+    @JoinColumn(name = "note_id", nullable = false)
+    private Note note;
+
+    @ManyToOne
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public NoteSave() {
         this.createdAt = LocalDateTime.now();
     }
@@ -78,5 +88,21 @@ public class NoteSave {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Note getNote() {
+        return note;
+    }
+
+    public void setNote(Note note) {
+        this.note = note;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

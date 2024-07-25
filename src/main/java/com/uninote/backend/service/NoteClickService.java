@@ -5,6 +5,7 @@ import com.uninote.backend.repository.NoteClickRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -13,17 +14,12 @@ public class NoteClickService {
     private NoteClickRepository noteClickRepository;
 
     public NoteClick trackClick(Long noteId, Long userId) {
-        Optional<NoteClick> existingClick = noteClickRepository.findByNoteIdAndUserId(noteId, userId);
         NoteClick noteClick;
-        if (existingClick.isPresent()) {
-            noteClick = existingClick.get();
-            noteClick.setClickCount(noteClick.getClickCount() + 1);
-        } else {
             noteClick = new NoteClick();
             noteClick.setNoteId(noteId);
             noteClick.setUserId(userId);
-            noteClick.setClickCount(1L); 
-        }
+            noteClick.setCreatedAt(LocalDateTime.now()); 
+        
         return noteClickRepository.save(noteClick);
     }
 }

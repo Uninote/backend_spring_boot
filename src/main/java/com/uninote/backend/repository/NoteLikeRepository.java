@@ -4,6 +4,8 @@ import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteLikeId;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +19,5 @@ public interface NoteLikeRepository extends JpaRepository<NoteLike, NoteLikeId> 
     Optional<NoteLike> findByNoteIdAndUserId(Long noteId, Long userId);
     List<NoteLike> findByNoteId(Long noteId);
     List<NoteLike> findByUserId(Long userId);
+    List<NoteLike> findByCreatedAtAfter(LocalDateTime localDateTime);
 }

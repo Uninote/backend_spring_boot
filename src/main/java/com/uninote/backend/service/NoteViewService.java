@@ -14,6 +14,7 @@ import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 
@@ -44,20 +45,15 @@ public class NoteViewService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         User noteCreator = note.getUser();
-        Optional<NoteView> existingView = noteViewRepository.findByNoteIdAndUserId(noteId, userId);
         NoteView noteView;
 
-        if (existingView.isPresent()) {
-            noteView = existingView.get();
-            noteView.setViewCount(noteView.getViewCount() + 1);
-        } else {
             noteView = new NoteView();
             noteView.setNoteId(noteId);
             noteView.setUserId(userId);
-            noteView.setViewCount(1L); 
-        }
+            noteView.setCreatedAt(LocalDateTime.now());; 
+        
 
-        userService.updateUniScore(noteCreator, 3L);
+       
         return noteViewRepository.save(noteView);
     }
 }

@@ -21,17 +21,6 @@ public class BadgeController {
     @Autowired
     private UserRepository userRepository;
 
-    private final SimpMessagingTemplate template;
-
-    public BadgeController(SimpMessagingTemplate template) {
-        this.template = template;
-    }
-
-    public void sendBadgeNotification(String userId, Long badge) {
-        String destination = "/topic/badges/" + userId;
-        this.template.convertAndSend(destination, badge);
-    }
-
     @PostMapping
     public BadgeDTO createBadge(@RequestBody BadgeDTO badgeDTO) {
         return badgeService.saveBadge(badgeDTO);
@@ -56,13 +45,11 @@ public class BadgeController {
 
     @PostMapping("/assign")
     public UserBadgeDTO assignBadgeToUser(@RequestBody UserBadgeDTO userBadgeDTO) {
-        UserBadgeDTO assignedBadge = badgeService.assignBadgeToUser(userBadgeDTO);
+        badgeService.assignBadgeToUser(userBadgeDTO);
         User user = userRepository.findById(userBadgeDTO.getUserId())
                                   .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        sendBadgeNotification(user.getFirebaseUid(), userBadgeDTO.getBadgeId());
-
-        return assignedBadge;
+        return userBadgeDTO;
     }
 
     @GetMapping("/user/{userId}")

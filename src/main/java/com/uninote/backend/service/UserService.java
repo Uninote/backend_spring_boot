@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.controller.LoginWebSocketController;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
@@ -54,7 +55,11 @@ public class UserService {
     @Autowired
     private UniscoreIncreaseLogRepository uniscoreIncreaseLogRepository;
 
+    @Autowired
+    private LoginWebSocketController loginWebSocketController;
+
     public User loginUserAndUpdateStreak(Long userId) {
+        Boolean eligibleForUniscore = false;
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
@@ -65,17 +70,21 @@ public class UserService {
             user.setStreak(1);
             user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
+            eligibleForUniscore = true;
         } else if (lastLoginDate.isEqual(today.minusDays(1))) {
             user.setStreak(user.getStreak() + 1);
             user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
             updateUniScore(user, 25L);
-            
+            eligibleForUniscore = true;
         } else if (lastLoginDate.isEqual(today)) {
             user.setLastLogin(LocalDateTime.now());
         }
 
-        user.setLastLogin(LocalDateTime.now());
+        if (eligibleForUniscore) {
+            loginWebSocketController.sendLoginNotification(user.getFirebaseUid(), "Congratulations! You have received 50 uniscore for logging in today.");
+        }
+        
         userRepository.save(user);
 
         UserLogin userLogin = new UserLogin();  

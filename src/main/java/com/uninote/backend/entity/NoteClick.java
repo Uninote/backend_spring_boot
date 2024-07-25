@@ -1,5 +1,7 @@
 package com.uninote.backend.entity;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.*;
 
 @Entity
@@ -18,8 +20,19 @@ public class NoteClick {
     private Long userId;
 
 
-    @Column(name = "click_count", nullable = false)
-    private Long clickCount;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+
+    @ManyToOne
+    @MapsId("noteId")
+    @JoinColumn(name = "note_id", nullable = false)
+    private Note note;
+
+    @ManyToOne
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     
     public Long getId() {
@@ -46,11 +59,26 @@ public class NoteClick {
         this.userId = userId;
     }
 
-    public Long getClickCount() {
-        return clickCount;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setClickCount(Long clickCount) {
-        this.clickCount = clickCount;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    public Note getNote() {
+        return note;
+    }
+
+    public void setNote(Note note) {
+        this.note = note;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

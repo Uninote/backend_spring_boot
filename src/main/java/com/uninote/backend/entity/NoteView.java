@@ -1,5 +1,7 @@
 package com.uninote.backend.entity;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.*;
 
 @Entity
@@ -16,14 +18,25 @@ public class NoteView {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @Column(name = "view_count", nullable = false)
-    private Long viewCount;
 
-    // Getters and setters
+    @ManyToOne
+    @MapsId("noteId")
+    @JoinColumn(name = "note_id", nullable = false)
+    private Note note;
+
+    @ManyToOne
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     public Long getId() {
         return id;
     }
+
+
 
     public void setId(Long id) {
         this.id = id;
@@ -45,11 +58,27 @@ public class NoteView {
         this.userId = userId;
     }
 
-    public Long getViewCount() {
-        return viewCount;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setViewCount(Long viewCount) {
-        this.viewCount = viewCount;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Note getNote() {
+        return note;
+    }
+
+    public void setNote(Note note) {
+        this.note = note;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

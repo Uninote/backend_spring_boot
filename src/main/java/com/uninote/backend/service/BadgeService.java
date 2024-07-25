@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.controller.BadgeWebSocketController;
 import com.uninote.backend.converter.DTOToEntityConverter;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.BadgeDTO;
@@ -17,6 +18,8 @@ import com.uninote.backend.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,6 +32,9 @@ import javax.transaction.Transactional;
 public class BadgeService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BadgeWebSocketController badgeWebSocketController;
 
     @Autowired
     private BadgeRepository badgeRepository;
@@ -44,6 +50,10 @@ public class BadgeService {
 
     @Autowired
     private InviteRepository inviteRepository;
+
+
+    private static final Logger logger = LoggerFactory.getLogger(BadgeService.class);
+
 
     public BadgeDTO saveBadge(BadgeDTO badgeDTO) {
         Badge badge = DTOToEntityConverter.convertDTOToBadge(badgeDTO,badgeTypeRepository);
@@ -69,18 +79,23 @@ public class BadgeService {
     }
 
     @Transactional
-    public UserBadgeDTO assignBadgeToUser(UserBadgeDTO userBadgeDTO) {
-        UserBadge userBadge = new UserBadge();  
-        User user = userRepository.findById(userBadgeDTO.getUserId()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Badge badge = badgeRepository.findById(userBadgeDTO.getUserId()).orElseThrow(() -> new IllegalArgumentException("Badge not found"));
+    public void assignBadgeToUser(UserBadgeDTO userBadgeDTO) {
+        User user = userRepository.findById(userBadgeDTO.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Badge badge = badgeRepository.findById(userBadgeDTO.getBadgeId())
+                .orElseThrow(() -> new IllegalArgumentException("Badge not found"));
+
+        if (!meetsRequirement(user, badge)) {
+            throw new IllegalArgumentException("User does not meet the requirements for this badge.");
+        }
+
+        UserBadge userBadge = new UserBadge();
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
-
+        badgeWebSocketController.sendBadgeNotification(user.getFirebaseUid(), userBadge.getBadge().getId());
+        logger.debug("Badge assigned: {}", userBadgeDTO);
         userBadgeRepository.save(userBadge);
-
-        
-        return userBadgeDTO;
     }
 
 
@@ -99,6 +114,7 @@ public class BadgeService {
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
+        badgeWebSocketController.sendBadgeNotification(user.getFirebaseUid(), userBadge.getBadge().getId());
 
         userBadgeRepository.save(userBadge);
     }
