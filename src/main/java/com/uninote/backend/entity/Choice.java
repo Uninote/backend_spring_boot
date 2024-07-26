@@ -1,5 +1,7 @@
 package com.uninote.backend.entity;
 
+import java.util.List;
+
 import javax.persistence.*;
 
 @Entity
@@ -20,6 +22,9 @@ public class Choice {
 
     @Column(name = "choice_label", nullable = false)
     private int choiceLabel;
+
+    @OneToMany(mappedBy = "multipleChoiceQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Choice> choices;
 
     
     public Long getId() {
@@ -52,5 +57,13 @@ public class Choice {
 
     public void setChoiceLabel(int choiceLabel) {
         this.choiceLabel = choiceLabel;
+    }
+
+    public List<Choice> getChoices() {
+        return choices;
+    }
+
+    public void setChoices(List<Choice> choices) {
+        this.choices = choices;
     }
 }

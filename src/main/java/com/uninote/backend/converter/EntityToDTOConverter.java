@@ -1,8 +1,10 @@
 package com.uninote.backend.converter;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.uninote.backend.dto.BadgeDTO;
+import com.uninote.backend.dto.ChoiceDTO;
 import com.uninote.backend.dto.CommentDTO;
 import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
@@ -10,6 +12,7 @@ import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.InviteDTO;
+import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TestDTO;
@@ -18,6 +21,7 @@ import com.uninote.backend.dto.TestResultDetailDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Badge;
+import com.uninote.backend.entity.Choice;
 import com.uninote.backend.entity.Comment;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
@@ -25,6 +29,7 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.Invite;
+import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.Test;
@@ -203,5 +208,27 @@ public class EntityToDTOConverter {
             note.getIsPublic()
         );
         return dto;
+    }
+
+    public static MultipleChoiceQuestionDTO convertToMultipleChoiceQuestionDTO(MultipleChoiceQuestion multipleChoiceQuestion) {
+        MultipleChoiceQuestionDTO multipleChoiceQuestionDTO = new MultipleChoiceQuestionDTO();
+        multipleChoiceQuestionDTO.setId(multipleChoiceQuestion.getId());
+        multipleChoiceQuestionDTO.setQuestionId(multipleChoiceQuestion.getQuestion().getId());
+        multipleChoiceQuestionDTO.setCorrectChoiceId(multipleChoiceQuestion.getCorrectChoice().getId());
+
+        List<ChoiceDTO> choiceDTOs = multipleChoiceQuestion.getChoices().stream()
+                .map(EntityToDTOConverter::convertToChoiceDTO)
+                .collect(Collectors.toList());
+        multipleChoiceQuestionDTO.setChoices(choiceDTOs);
+
+        return multipleChoiceQuestionDTO;
+    }
+
+    public static ChoiceDTO convertToChoiceDTO(Choice choice) {
+        ChoiceDTO choiceDTO = new ChoiceDTO();
+        choiceDTO.setId(choice.getId());
+        choiceDTO.setChoiceText(choice.getChoiceText());
+        choiceDTO.setChoiceLabel(choice.getChoiceLabel());
+        return choiceDTO;
     }
 }

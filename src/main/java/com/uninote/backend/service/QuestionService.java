@@ -1,16 +1,22 @@
 package com.uninote.backend.service;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.ChoiceDTO;
 import com.uninote.backend.dto.FlashcardDTO;
+import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
+import com.uninote.backend.entity.Choice;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Flashcard;
+import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.QuestionType;
 import com.uninote.backend.entity.TrueFalseQuestion;
+import com.uninote.backend.repository.ChoiceRepository;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.FlashcardRepository;
+import com.uninote.backend.repository.MultipleChoiceQuestionRepository;
 import com.uninote.backend.repository.QuestionRepository;
 import com.uninote.backend.repository.QuestionTypeRepository;
 import com.uninote.backend.repository.TrueFalseQuestionRepository;
@@ -43,7 +49,13 @@ public class QuestionService {
     private CourseRepository courseRepository;
 
     @Autowired
+    private MultipleChoiceQuestionRepository multipleChoiceQuestionRepository;
+
+    @Autowired
     private TrueFalseQuestionRepository tfqRepository;
+
+    @Autowired
+    private ChoiceRepository choiceRepository;
 
     public List<QuestionDTO> getQuestionsByCourseId(Long courseId) {
         Course course = courseRepository.findById(courseId)
@@ -91,6 +103,33 @@ public class QuestionService {
     }
 
     @Transactional
+    public MultipleChoiceQuestion createMultipleChoiceQuestion(MultipleChoiceQuestionDTO multipleChoiceQuestionDTO) {
+        MultipleChoiceQuestion multipleChoiceQuestion = new MultipleChoiceQuestion();
+        Question question = questionRepository.findById(multipleChoiceQuestionDTO.getQuestionId())
+                .orElseThrow(() -> new IllegalArgumentException("Question not found"));
+        multipleChoiceQuestion.setQuestion(question);
+
+        
+        MultipleChoiceQuestion savedMCQ = multipleChoiceQuestionRepository.save(multipleChoiceQuestion);
+
+        
+        for (ChoiceDTO choiceDTO : multipleChoiceQuestionDTO.getChoices()) {
+            Choice choice = new Choice();
+            choice.setChoiceText(choiceDTO.getChoiceText());
+            choice.setChoiceLabel(choiceDTO.getChoiceLabel());
+            choice.setMultipleChoiceQuestion(savedMCQ);
+            choiceRepository.save(choice);
+        }
+
+        
+        Choice correctChoice = choiceRepository.findById(multipleChoiceQuestionDTO.getCorrectChoiceId())
+                .orElseThrow(() -> new IllegalArgumentException("Correct choice not found"));
+        savedMCQ.setCorrectChoice(correctChoice);
+
+        return multipleChoiceQuestionRepository.save(savedMCQ);
+    }
+
+    @Transactional
     public List<FlashcardDTO> getFlashcardsByCourseId(Long courseId) {
         Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
         List<Flashcard> flashcards = flashcardRepository.findByQuestionCourse(course);
@@ -103,6 +142,7 @@ public class QuestionService {
         List<TrueFalseQuestion> trueFalseQuestions = tfqRepository.findByQuestionCourse(course);
         return trueFalseQuestions.stream().map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
     }
+
 
     public List<QuestionDTO> getRandomQuestionsByCourse(Long courseId, int count) {
         Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
@@ -123,5 +163,18 @@ public class QuestionService {
         List<TrueFalseQuestion> trueFalseQuestions = trueFalseQuestionRepository.findByCourse(course);
         Collections.shuffle(trueFalseQuestions); 
         return trueFalseQuestions.stream().limit(count).map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
+    }
+
+    public List<MultipleChoiceQuestionDTO> getMultipleChoiceQuestionsByCourseId(Long courseId) {
+        List<MultipleChoiceQuestion> multipleChoiceQuestions = multipleChoiceQuestionRepository.findByCourseId(courseId);
+        return multipleChoiceQuestions.stream()
+                .map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<MultipleChoiceQuestionDTO> getRandomMultipleChoiceQuestionsByCourse(Long courseId, int count) {
+        List<MultipleChoiceQuestion> multipleChoiceQuestions = multipleChoiceQuestionRepository.findByCourseId(courseId);
+        return multipleChoiceQuestions.stream().map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO).collect(Collectors.toList());
     }
 }
