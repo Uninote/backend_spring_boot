@@ -20,6 +20,9 @@ import com.uninote.backend.repository.MultipleChoiceQuestionRepository;
 import com.uninote.backend.repository.QuestionRepository;
 import com.uninote.backend.repository.QuestionTypeRepository;
 import com.uninote.backend.repository.TrueFalseQuestionRepository;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +59,8 @@ public class QuestionService {
 
     @Autowired
     private ChoiceRepository choiceRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(QuestionService.class);
 
     public List<QuestionDTO> getQuestionsByCourseId(Long courseId) {
         Course course = courseRepository.findById(courseId)
@@ -104,30 +109,43 @@ public class QuestionService {
 
     @Transactional
     public MultipleChoiceQuestion createMultipleChoiceQuestion(MultipleChoiceQuestionDTO multipleChoiceQuestionDTO) {
-        MultipleChoiceQuestion multipleChoiceQuestion = new MultipleChoiceQuestion();
         Question question = questionRepository.findById(multipleChoiceQuestionDTO.getQuestionId())
                 .orElseThrow(() -> new IllegalArgumentException("Question not found"));
+
+        MultipleChoiceQuestion multipleChoiceQuestion = new MultipleChoiceQuestion();
         multipleChoiceQuestion.setQuestion(question);
 
-        
-        MultipleChoiceQuestion savedMCQ = multipleChoiceQuestionRepository.save(multipleChoiceQuestion);
+        return multipleChoiceQuestionRepository.save(multipleChoiceQuestion);
+    }
 
-        
-        for (ChoiceDTO choiceDTO : multipleChoiceQuestionDTO.getChoices()) {
+    @Transactional
+    public MultipleChoiceQuestion addChoicesToMultipleChoiceQuestion(Long multipleChoiceQuestionId, List<ChoiceDTO> choicesDTO) {
+        MultipleChoiceQuestion multipleChoiceQuestion = multipleChoiceQuestionRepository.findById(multipleChoiceQuestionId)
+                .orElseThrow(() -> new IllegalArgumentException("Multiple Choice Question not found"));
+
+        for (ChoiceDTO choiceDTO : choicesDTO) {
             Choice choice = new Choice();
             choice.setChoiceText(choiceDTO.getChoiceText());
             choice.setChoiceLabel(choiceDTO.getChoiceLabel());
-            choice.setMultipleChoiceQuestion(savedMCQ);
+            choice.setMultipleChoiceQuestion(multipleChoiceQuestion);
             choiceRepository.save(choice);
         }
 
-        
-        Choice correctChoice = choiceRepository.findById(multipleChoiceQuestionDTO.getCorrectChoiceId())
-                .orElseThrow(() -> new IllegalArgumentException("Correct choice not found"));
-        savedMCQ.setCorrectChoice(correctChoice);
-
-        return multipleChoiceQuestionRepository.save(savedMCQ);
+        return multipleChoiceQuestion;
     }
+
+    @Transactional
+    public MultipleChoiceQuestion setCorrectChoiceForMultipleChoiceQuestion(Long multipleChoiceQuestionId, int correctChoiceLabel) {
+        MultipleChoiceQuestion multipleChoiceQuestion = multipleChoiceQuestionRepository.findById(multipleChoiceQuestionId)
+                .orElseThrow(() -> new IllegalArgumentException("Multiple Choice Question not found"));
+
+        Choice correctChoice = choiceRepository.findByMultipleChoiceQuestionAndChoiceLabel(multipleChoiceQuestion, correctChoiceLabel)
+                .orElseThrow(() -> new IllegalArgumentException("Correct choice not found"));
+
+        multipleChoiceQuestion.setCorrectChoice(correctChoice);
+        return multipleChoiceQuestionRepository.save(multipleChoiceQuestion);
+    }
+
 
     @Transactional
     public List<FlashcardDTO> getFlashcardsByCourseId(Long courseId) {

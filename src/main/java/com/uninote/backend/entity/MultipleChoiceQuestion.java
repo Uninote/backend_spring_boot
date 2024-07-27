@@ -1,7 +1,6 @@
 package com.uninote.backend.entity;
 
 import java.util.List;
-
 import javax.persistence.*;
 
 @Entity
@@ -25,7 +24,8 @@ public class MultipleChoiceQuestion {
     @OneToMany(mappedBy = "multipleChoiceQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Choice> choices;
 
-   
+    // Getters and Setters
+
     public Long getId() {
         return id;
     }
