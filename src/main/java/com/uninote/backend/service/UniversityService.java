@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UniversityDTO;
 import com.uninote.backend.dto.UniversityNameDTO;
 import com.uninote.backend.entity.Department;
@@ -12,6 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +25,31 @@ public class UniversityService {
 
     @Autowired
     private UniversityRepository universityRepository;
+
+
+    public List<Map<String, String>> getUniversityDetails(String language) {
+        List<University> universities = universityRepository.findAll();
+        List<UniversityDTO> universityDTOs = universities.stream()
+                                                         .map(EntityToDTOConverter::convertUniversityToDTO)
+                                                         .collect(Collectors.toList());
+        List<Map<String, String>> result = new ArrayList<>();
+
+        for (UniversityDTO university : universityDTOs) {
+            for (UniversityNameDTO nameDTO : university.getUniversityNames()) {
+                if (nameDTO.getLanguageId().equals(language)) {
+                    Map<String, String> uniMap = new HashMap<>();
+                    uniMap.put("id", String.valueOf(university.getId()));
+                    uniMap.put("fullName", nameDTO.getFullName());
+                    uniMap.put("name", nameDTO.getName());
+                    result.add(uniMap);
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
 
     public UniversityDTO getUniversityById(Long id) {
         University university = universityRepository.findById(id)
@@ -32,17 +62,10 @@ public class UniversityService {
     return new UniversityDTO(
         university.getId(),
         university.getLocation(),
-        university.getUniversityNames().stream().map(this::convertNameToDTO).collect(Collectors.toSet()),
+        university.getUniversityNames().stream().map(EntityToDTOConverter::convertUniversityNameToDTO).collect(Collectors.toSet()),
         university.getDepartments().stream().map(Department::getId).collect(Collectors.toSet())
     );
 }
 
-    private UniversityNameDTO convertNameToDTO(UniversityName universityName) {
-        return new UniversityNameDTO(
-            universityName.getUniversity().getId().toString(),
-            universityName.getLanguage().getId().toString(),
-            universityName.getName(),
-            universityName.getFullName()
-        );
-    }
+    
 }

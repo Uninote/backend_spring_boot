@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/departments")
@@ -42,4 +43,17 @@ public class DepartmentController {
         departmentService.deleteDepartment(id);
         return ResponseEntity.noContent().build();
     }
-}
+
+    @GetMapping("/details-uni-lang")
+    public ResponseEntity<List<Map<String, String>>> getDepartmentsByUniversityIdAndLanguage(
+            @RequestParam String universityId,
+            @RequestParam String languageCode) {
+        try {
+            Long universityIdLong = Long.parseLong(universityId);
+            List<Map<String, String>> departmentDetails = departmentService.getDepartmentsByUniversityIdAndLanguage(universityIdLong, languageCode);
+            return ResponseEntity.ok(departmentDetails);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+    }

@@ -1,12 +1,12 @@
 package com.uninote.backend.dto;
 
 public class UniversityNameDTO {
-    private String universityId;
+    private Long universityId;
     private String languageId;
     private String name;
     private String fullName;
 
-    public UniversityNameDTO(String universityId, String languageId, String name, String fullName) {
+    public UniversityNameDTO(Long universityId, String languageId, String name, String fullName) {
         this.universityId = universityId;
         this.languageId = languageId;
         this.name = name;
@@ -15,11 +15,11 @@ public class UniversityNameDTO {
 
     
 
-    public String getUniversityId() {
+    public Long getUniversityId() {
         return universityId;
     }
 
-    public void setUniversityId(String universityId) {
+    public void setUniversityId(Long universityId) {
         this.universityId = universityId;
     }
 

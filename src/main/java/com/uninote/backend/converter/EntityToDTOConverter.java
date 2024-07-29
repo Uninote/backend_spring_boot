@@ -1,6 +1,7 @@
 package com.uninote.backend.converter;
 
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.uninote.backend.dto.BadgeDTO;
@@ -19,6 +20,8 @@ import com.uninote.backend.dto.TestDTO;
 import com.uninote.backend.dto.TestResultDTO;
 import com.uninote.backend.dto.TestResultDetailDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
+import com.uninote.backend.dto.UniversityDTO;
+import com.uninote.backend.dto.UniversityNameDTO;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Badge;
 import com.uninote.backend.entity.Choice;
@@ -36,6 +39,8 @@ import com.uninote.backend.entity.Test;
 import com.uninote.backend.entity.TestResult;
 import com.uninote.backend.entity.TestResultDetail;
 import com.uninote.backend.entity.TrueFalseQuestion;
+import com.uninote.backend.entity.University;
+import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
 
@@ -53,13 +58,34 @@ public class EntityToDTOConverter {
                       .map(EntityToDTOConverter::convertDepartmentNameToDTO)
                       .collect(Collectors.toSet())        );
     }
-    private static DepartmentNameDTO convertDepartmentNameToDTO(DepartmentName departmentName) {
+
+    public static UniversityDTO convertUniversityToDTO(University university) {
+        return new UniversityDTO(
+            university.getId(),
+            university.getLocation(),
+            university.getUniversityNames().stream()
+                      .map(EntityToDTOConverter::convertUniversityNameToDTO)
+                      .collect(Collectors.toSet()),
+            university.getDepartments().stream().map(Department::getId).collect(Collectors.toSet())
+        );
+    }
+
+    public static UniversityNameDTO convertUniversityNameToDTO(UniversityName universityName) {
+        return new UniversityNameDTO(
+            universityName.getUniversity().getId(),
+            universityName.getLanguage().getCode(),
+            universityName.getName(),
+            universityName.getFullName()
+        );
+    }
+    public static DepartmentNameDTO convertDepartmentNameToDTO(DepartmentName departmentName) {
         return new DepartmentNameDTO(
             departmentName.getDepartment().getId(),
+            departmentName.getLanguage().getCode(),
             departmentName.getName(),
-            departmentName.getLanguage().getCode()
+            departmentName.getFullName()
         );
-    }  
+    }
     public static CourseDTO convertCourseToDTO(Course course) {
         return new CourseDTO(
             course.getId(),

@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UniversityNameDTO;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.UniversityNameId;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @Service
 public class UniversityNameService {
 
@@ -18,20 +20,20 @@ public class UniversityNameService {
 
     public List<UniversityNameDTO> getAllUniversityNames() {
         return universityNameRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(EntityToDTOConverter::convertUniversityNameToDTO)
                 .collect(Collectors.toList());
     }
 
     public UniversityNameDTO getUniversityNameById(UniversityNameId id) {
         UniversityName universityName = universityNameRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("UniversityName not found with id: " + id));
-        return convertToDTO(universityName);
+        return EntityToDTOConverter.convertUniversityNameToDTO(universityName);
     }
 
     public UniversityNameDTO createUniversityName(UniversityNameDTO universityNameDTO) {
         UniversityName universityName = new UniversityName(
                 new UniversityNameId(
-                        Long.parseLong(universityNameDTO.getUniversityId()),
+                        universityNameDTO.getUniversityId(),
                         Long.parseLong(universityNameDTO.getLanguageId())
                 ),
                 null, 
@@ -40,7 +42,7 @@ public class UniversityNameService {
                 universityNameDTO.getFullName()
         );
         universityName = universityNameRepository.save(universityName);
-        return convertToDTO(universityName);
+        return EntityToDTOConverter.convertUniversityNameToDTO(universityName);
     }
 
     public UniversityNameDTO updateUniversityName(UniversityNameId id, UniversityNameDTO universityNameDTO) {
@@ -49,19 +51,12 @@ public class UniversityNameService {
         universityName.setName(universityNameDTO.getName());
         universityName.setFullName(universityNameDTO.getFullName());
         universityName = universityNameRepository.save(universityName);
-        return convertToDTO(universityName);
+        return EntityToDTOConverter.convertUniversityNameToDTO(universityName);
     }
 
     public void deleteUniversityName(UniversityNameId id) {
         universityNameRepository.deleteById(id);
     }
 
-    private UniversityNameDTO convertToDTO(UniversityName universityName) {
-        return new UniversityNameDTO(
-                universityName.getUniversity().getId().toString(),
-                universityName.getLanguage().getId().toString(),
-                universityName.getName(),
-                universityName.getFullName()
-        );
-    }
+    
 }
