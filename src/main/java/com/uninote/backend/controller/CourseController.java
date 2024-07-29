@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/courses")
@@ -41,6 +42,17 @@ public class CourseController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/{departmentId}/{semesterId}")
+    public ResponseEntity<List<Map<String, String>>> getCoursesByDepartmentAndSemester(
+            @PathVariable Long departmentId,
+            @PathVariable int semesterId,
+            @RequestParam String language) {
+        List<Map<String, String>> courses = courseService.getCourseDetailsByDepartmentAndSemester(departmentId, semesterId, language);
+        if (courses.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(courses);
     }
 
     

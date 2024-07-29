@@ -2,6 +2,8 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.entity.Course;
+import com.uninote.backend.entity.CourseName;
+import com.uninote.backend.entity.Department;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.converter.EntityToDTOConverter;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,5 +53,17 @@ public class CourseService {
         courseRepository.deleteById(id);
     }
 
+    public List<Map<String, String>> getCourseDetailsByDepartmentAndSemester(Long departmentId, int semester, String language) {
+        Department department = departmentRepository.findById(departmentId).orElseThrow(() -> new IllegalArgumentException(" Department not found"));
+        List<Course> courses = courseRepository.findByDepartmentAndSemester(department, semester);
+        return courses.stream().map(course -> {
+            CourseName courseName = course.getCourseNames().stream()
+                .filter(name -> name.getLanguage().getCode().equals(language))
+                .findFirst()
+                .orElse(null);
+            String name = courseName != null ? courseName.getName() : "Name not found";
+            return Map.of("id", course.getId().toString(), "name", name);
+        }).collect(Collectors.toList());
+    }
 
 }
