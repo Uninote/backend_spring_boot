@@ -4,8 +4,13 @@ import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
+import com.uninote.backend.entity.DepartmentName;
+import com.uninote.backend.entity.DepartmentNameId;
+import com.uninote.backend.entity.Language;
 import com.uninote.backend.repository.CourseRepository;
+import com.uninote.backend.repository.DepartmentNameRepository;
 import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.LanguageRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.converter.EntityToDTOConverter;
@@ -15,14 +20,23 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.transaction.Transactional;
 
 @Service
 public class DepartmentService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private DepartmentNameRepository departmentNameRepository;
+
+    @Autowired
+    private LanguageRepository languageRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -78,12 +92,23 @@ public class DepartmentService {
         Set<Course> coursesSet = coursesList.stream().collect(Collectors.toSet());
         department.setCourses(coursesSet);
 
-        Department savedDepartment = departmentRepository.save(department);
+        Department savedDepartment = departmentRepository.saveAndFlush(department);
         return EntityToDTOConverter.convertDepartmentToDTO(savedDepartment);
     }
 
     public void deleteDepartment(Long id) {
         departmentRepository.deleteById(id);
+    }
+
+
+    @Transactional
+    public Long getDepartmentIdByName(String name) {
+        Optional<DepartmentName> department = departmentNameRepository.findByName(name);
+        if (department.isPresent()) {
+            return department.get().getDepartment().getId();
+        } else {
+            throw new IllegalArgumentException("Department not found");
+        }
     }
 
     

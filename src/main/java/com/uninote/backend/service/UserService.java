@@ -5,6 +5,7 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
+import com.uninote.backend.entity.Role;
 import com.uninote.backend.entity.UniscoreIncreaseLog;
 import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
@@ -12,6 +13,7 @@ import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.RankRepository;
+import com.uninote.backend.repository.RoleRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
@@ -45,6 +47,9 @@ public class UserService {
 
     @Autowired
     private UserLoginRepository userLoginRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private BadgeService badgeService;
@@ -100,6 +105,15 @@ public class UserService {
         return userOptional.orElse(null);
     }
 
+    @Transactional
+    public void deleteUser(Long userId) {
+        if (userRepository.existsById(userId)) {
+            userRepository.deleteById(userId);
+        } else {
+            throw new IllegalArgumentException("User not found with ID: " + userId);
+        }
+    }
+
     public User saveUser(User user) {
         return userRepository.save(user);
     }
@@ -135,6 +149,7 @@ public class UserService {
         Rank defaultRank = rankRepository.findById(1L)
                 .orElseThrow(() -> new IllegalStateException("Default rank not found"));
 
+        Role role = roleRepository.findById(userDto.getRoleId()).orElseThrow(() -> new IllegalArgumentException("Role not found"));
         
         User user = new User();
         user.setFirebaseUid(userDto.getFirebaseUid());
@@ -147,6 +162,7 @@ public class UserService {
         user.setRank(defaultRank);
         user.setUpdatedAt(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
+        user.setRole(role);
 
         
         return userRepository.save(user);

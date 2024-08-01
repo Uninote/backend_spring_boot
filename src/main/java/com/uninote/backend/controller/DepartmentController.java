@@ -1,6 +1,8 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.DepartmentDTO;
+import com.uninote.backend.dto.DepartmentNameDTO;
+import com.uninote.backend.service.DepartmentNameService;
 import com.uninote.backend.service.DepartmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,17 +15,23 @@ import java.util.Map;
 @RequestMapping("/departments")
 public class DepartmentController {
 
-    private final DepartmentService departmentService;
+    @Autowired
+    private DepartmentService departmentService;
 
     @Autowired
-    public DepartmentController(DepartmentService departmentService) {
-        this.departmentService = departmentService;
-    }
+    private DepartmentNameService departmentNameService;
+    
 
     @GetMapping("/{id}")
     public ResponseEntity<DepartmentDTO> getDepartment(@PathVariable Long id) {
         DepartmentDTO departmentDTO = departmentService.getDepartment(id);
         return ResponseEntity.ok(departmentDTO);
+    }
+
+    @GetMapping("/name/{name}")
+    public ResponseEntity<Long> getDepartmentIdByName(@PathVariable String name) {
+        Long departmentId = departmentService.getDepartmentIdByName(name);
+        return ResponseEntity.ok(departmentId);
     }
 
     @GetMapping
@@ -38,6 +46,13 @@ public class DepartmentController {
         return ResponseEntity.ok(createdDepartment);
     }
 
+    @PostMapping("/{departmentId}/names")
+    public ResponseEntity<DepartmentNameDTO> addDepartmentName(@PathVariable Long departmentId, @RequestBody DepartmentNameDTO departmentNameDTO) {
+        departmentNameDTO.setId(departmentId);
+        DepartmentNameDTO createdDepartmentName = departmentNameService.addDepartmentName(departmentNameDTO);
+        return ResponseEntity.ok(createdDepartmentName);
+
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);

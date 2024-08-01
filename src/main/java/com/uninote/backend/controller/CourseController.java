@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.CourseDTO;
+import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +54,13 @@ public class CourseController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(courses);
+    }
+
+    @PostMapping("/{id}/names")
+    public ResponseEntity<CourseNameDTO> addCourseName(@PathVariable Long id, @RequestBody CourseNameDTO courseNameDTO) {
+        courseNameDTO.setId(id);
+        CourseNameDTO createdName = courseService.addCourseName(courseNameDTO);
+        return ResponseEntity.ok(createdName);
     }
 
     

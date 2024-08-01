@@ -137,7 +137,7 @@ public class NoteService {
         int userCount = userIds.size();
         int noteCount = noteIds.size();
 
-        RealMatrix matrix = MatrixUtils.createRealMatrix(userCount, noteCount);
+        RealMatrix matrix = MatrixUtils.createRealMatrix(userCount+5, noteCount+5);
 
         for (int i = 0; i < userIds.size(); i++) {
             Long userId = userIds.get(i);
