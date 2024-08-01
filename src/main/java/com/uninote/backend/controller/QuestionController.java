@@ -46,12 +46,14 @@ public class QuestionController {
 
     @PostMapping("/true_false")
     public ResponseEntity<TrueFalseQuestion> createTrueFalseQuestion(@RequestBody TrueFalseQuestionDTO trueFalseQuestionDTO) {
+        trueFalseQuestionDTO.setQuestionTypeId(2L);
         TrueFalseQuestion createdTrueFalseQuestion = questionService.createTrueFalseQuestion(trueFalseQuestionDTO);
         return ResponseEntity.ok(createdTrueFalseQuestion);
     }
 
     @PostMapping("/multiple_choice")
     public ResponseEntity<MultipleChoiceQuestion> createMultipleChoiceQuestion(@RequestBody MultipleChoiceQuestionDTO multipleChoiceQuestionDTO) {
+        multipleChoiceQuestionDTO.setQuestionTypeId(3L);;
         MultipleChoiceQuestion createdMultipleChoiceQuestion = questionService.createMultipleChoiceQuestion(multipleChoiceQuestionDTO);
         return ResponseEntity.ok(createdMultipleChoiceQuestion);
     }

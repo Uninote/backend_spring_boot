@@ -2,7 +2,7 @@ package com.uninote.backend.dto;
 
 import java.util.List;
 
-public class MultipleChoiceQuestionDTO {
+public class MultipleChoiceQuestionDTO extends QuestionDTO{
 
     private Long id;
     private Long questionId;
