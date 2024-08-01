@@ -71,22 +71,31 @@ public class QuestionService {
 
     @Transactional
     public Question createQuestion(QuestionDTO questionDTO) {
+        logger.info("Creating q with data: {}", questionDTO);
+
         Course course = courseRepository.findById(questionDTO.getCourseId())
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + questionDTO.getCourseId()));
+        Question question = new Question();
 
+        if(questionDTO.getQuestionTypeId()!=null){
         QuestionType questionType = questionTypeRepository.findById(questionDTO.getQuestionTypeId())
                 .orElseThrow(() -> new IllegalArgumentException("Question type not found with ID: " + questionDTO.getQuestionTypeId()));
-
-        Question question = new Question();
-        question.setCourse(course);
         question.setQuestionType(questionType);
+
+        }
+        logger.info("here");
+        question.setCourse(course);
         question.setQuestionText(questionDTO.getQuestionText());
         question.setIsDifficult(questionDTO.getIsDifficult());
-        return questionRepository.save(question);
+        logger.debug("created question{}",question.getId());
+        Question saved = questionRepository.saveAndFlush(question);
+        return saved;
     }
 
     @Transactional
     public Flashcard createFlashcard(FlashcardDTO flashcardDTO) {
+        logger.info("Creating flashcard with data: {}", flashcardDTO);
+
         Question question = createQuestion(flashcardDTO);
 
         Flashcard flashcard = new Flashcard();

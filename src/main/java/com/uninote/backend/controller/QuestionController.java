@@ -39,6 +39,7 @@ public class QuestionController {
 
     @PostMapping("/flashcard")
     public ResponseEntity<Flashcard> createFlashcard(@RequestBody FlashcardDTO flashcardDTO) {
+        flashcardDTO.setQuestionTypeId(1L);
         Flashcard createdFlashcard = questionService.createFlashcard(flashcardDTO);
         return ResponseEntity.ok(createdFlashcard);
     }

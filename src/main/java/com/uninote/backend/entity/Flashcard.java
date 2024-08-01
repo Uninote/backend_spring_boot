@@ -20,7 +20,7 @@ public class Flashcard {
     @Column(name = "answer", nullable = false)
     private String answer;
 
-    // Getters and Setters
+    public Flashcard(){}
 
     public Long getId() {
         return id;

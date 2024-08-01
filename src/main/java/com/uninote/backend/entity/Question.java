@@ -19,7 +19,7 @@ public class Question {
     private Course course;
 
     @ManyToOne
-    @JoinColumn(name = "question_type_id", nullable = false)
+    @JoinColumn(name = "question_type_id")
     private QuestionType questionType;
 
     @Lob
@@ -31,6 +31,8 @@ public class Question {
 
     @OneToMany(mappedBy = "question")
     private List<TestResultDetail> testResultDetails;
+
+    public Question(){}
 
    public Boolean getIsDifficult(){
     return isDifficult;

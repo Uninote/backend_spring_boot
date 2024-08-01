@@ -4,7 +4,7 @@ public class FlashcardDTO extends QuestionDTO {
     private String answer;
 
     
-
+    
     public String getAnswer() {
         return answer;
     }
