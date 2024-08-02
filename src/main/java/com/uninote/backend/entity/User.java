@@ -2,6 +2,8 @@ package com.uninote.backend.entity;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
     @UniqueConstraint(columnNames = "firebase_uid")
 })
 public class User {
+
+    private static final String DEFAULT_PROFILE_URL = "https://firebasestorage.googleapis.com/v0/b/uninote-app.appspot.com/o/images%2Fdefault-images%2Fdefault-woman-pfp.png?alt=media&token=d148c633-ef3f-4161-bf97-413c74415c3d";
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
@@ -69,6 +73,17 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "banner_url")
+    private String bannerUrl;
+
+
+    @ManyToMany
+    @JoinTable(
+        name = "user_approvals",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "approved_user_id")
+    )
+    private Set<User> approvedUsers = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
@@ -82,6 +97,10 @@ public class User {
             rank = new Rank();
             rank.setId(1L); 
         }
+        if (profileImageUrl==null) {
+            profileImageUrl = DEFAULT_PROFILE_URL;
+        }
+
         updatedAt = LocalDateTime.now();
         lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
@@ -239,5 +258,21 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
+
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
+    }
+
+    public Set<User> getApprovedUsers() {
+        return approvedUsers;
+    }
+
+    public void setApprovedUsers(Set<User> approvedUsers) {
+        this.approvedUsers = approvedUsers;
     }
 }
