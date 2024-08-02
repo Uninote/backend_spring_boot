@@ -85,6 +85,9 @@ public class User {
     )
     private Set<User> approvedUsers = new HashSet<>();
 
+    @ManyToMany(mappedBy = "approvedUsers")
+    private Set<User> approvedByUsers = new HashSet<>();
+
     @PrePersist
     protected void onCreate() {
         if (streak == 0) {
@@ -274,5 +277,13 @@ public class User {
 
     public void setApprovedUsers(Set<User> approvedUsers) {
         this.approvedUsers = approvedUsers;
+    }
+
+    public Set<User> getApprovedByUsers() {
+        return approvedByUsers;
+    }
+
+    public void setApprovedByUsers(Set<User> approvedByUsers) {
+        this.approvedByUsers = approvedByUsers;
     }
 }

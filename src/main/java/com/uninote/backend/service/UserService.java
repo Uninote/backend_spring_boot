@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -248,5 +249,30 @@ public class UserService {
         } else {
             return null;
         }
+    }
+
+    @Transactional
+    public User approveUser(Long userId, Long approvedUserId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User approvedUser = userRepository.findById(approvedUserId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.getApprovedUsers().add(approvedUser);
+        userRepository.save(user);
+        approvedUser.getApprovedByUsers().add(user);
+        userRepository.save(approvedUser);
+        return user;
+    }
+
+    @Transactional
+    public Set<User> getApprovedUsers(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return user.getApprovedUsers();
+    }
+
+    @Transactional
+    public Set<User> getUsersWhoApproved(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return user.getApprovedByUsers();
     }
 }

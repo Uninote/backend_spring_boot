@@ -10,7 +10,7 @@ import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.service.UserService;
 
 import java.util.List;
-
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -113,6 +113,24 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PostMapping("/{userId}/approve/{approvedUserId}")
+    public ResponseEntity<User> approveUser(@PathVariable Long userId, @PathVariable Long approvedUserId) {
+        User user = userService.approveUser(userId, approvedUserId);
+        return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/{userId}/approved_users")
+    public ResponseEntity<Set<User>> getApprovedUsers(@PathVariable Long userId) {
+        Set<User> approvedUsers = userService.getApprovedUsers(userId);
+        return ResponseEntity.ok(approvedUsers);
+    }
+
+    @GetMapping("/{userId}/approved_by_users")
+    public ResponseEntity<Set<User>> getUsersWhoApproved(@PathVariable Long userId) {
+        Set<User> approvedByUsers = userService.getUsersWhoApproved(userId);
+        return ResponseEntity.ok(approvedByUsers);
     }
 
     
