@@ -6,7 +6,7 @@ public class MultipleChoiceQuestionDTO extends QuestionDTO{
 
     private Long id;
     private Long questionId;
-    private Long correctChoiceId;
+    private int correctChoiceLabel;
     private List<ChoiceDTO> choices;
 
    
@@ -26,12 +26,12 @@ public class MultipleChoiceQuestionDTO extends QuestionDTO{
         this.questionId = questionId;
     }
 
-    public Long getCorrectChoiceId() {
-        return correctChoiceId;
+    public int getCorrectChoiceLabel() {
+        return correctChoiceLabel;
     }
 
-    public void setCorrectChoiceId(Long correctChoiceId) {
-        this.correctChoiceId = correctChoiceId;
+    public void setCorrectChoiceLabel(int correctChoice) {
+        this.correctChoiceLabel = correctChoice;
     }
 
     public List<ChoiceDTO> getChoices() {

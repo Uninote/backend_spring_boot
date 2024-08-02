@@ -5,7 +5,7 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "multiple_choice_questions")
-public class MultipleChoiceQuestion {
+public class MultipleChoiceQuestion  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "multiple_choice_questions_seq")
@@ -21,7 +21,7 @@ public class MultipleChoiceQuestion {
     @JoinColumn(name = "correct_choice_id", referencedColumnName = "id")
     private Choice correctChoice;
 
-    @OneToMany(mappedBy = "multipleChoiceQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "multipleChoiceQuestion")
     private List<Choice> choices;
 
     // Getters and Setters

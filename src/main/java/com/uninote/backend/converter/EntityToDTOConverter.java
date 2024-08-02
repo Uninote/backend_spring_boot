@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+
+
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.ChoiceDTO;
 import com.uninote.backend.dto.CommentDTO;
@@ -43,8 +45,13 @@ import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
+import com.uninote.backend.service.QuestionService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 public class EntityToDTOConverter {
+
+     private static final Logger logger = LoggerFactory.getLogger(EntityToDTOConverter.class);
     public static DepartmentDTO convertDepartmentToDTO(Department department){
         return new DepartmentDTO(
             department.getId(),
@@ -240,8 +247,9 @@ public class EntityToDTOConverter {
         MultipleChoiceQuestionDTO multipleChoiceQuestionDTO = new MultipleChoiceQuestionDTO();
         multipleChoiceQuestionDTO.setId(multipleChoiceQuestion.getId());
         multipleChoiceQuestionDTO.setQuestionId(multipleChoiceQuestion.getQuestion().getId());
-        multipleChoiceQuestionDTO.setCorrectChoiceId(multipleChoiceQuestion.getCorrectChoice().getId());
-
+        multipleChoiceQuestionDTO.setCorrectChoiceLabel(multipleChoiceQuestion.getCorrectChoice().getChoiceLabel());
+        multipleChoiceQuestionDTO.setQuestionText(multipleChoiceQuestion.getQuestion().getQuestionText());
+        logger.debug("{}",multipleChoiceQuestionDTO.getQuestionText());
         List<ChoiceDTO> choiceDTOs = multipleChoiceQuestion.getChoices().stream()
                 .map(EntityToDTOConverter::convertToChoiceDTO)
                 .collect(Collectors.toList());

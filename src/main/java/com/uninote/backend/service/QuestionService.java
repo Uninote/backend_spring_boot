@@ -21,6 +21,11 @@ import com.uninote.backend.repository.QuestionRepository;
 import com.uninote.backend.repository.QuestionTypeRepository;
 import com.uninote.backend.repository.TrueFalseQuestionRepository;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import javax.persistence.PersistenceContext;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +40,12 @@ import javax.transaction.Transactional;
 
 @Service
 public class QuestionService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    
+
 
     @Autowired
     private QuestionRepository questionRepository;
@@ -72,7 +83,7 @@ public class QuestionService {
     @Transactional
     public Question createQuestion(QuestionDTO questionDTO) {
         logger.info("Creating q with data: {}", questionDTO);
-
+        
         Course course = courseRepository.findById(questionDTO.getCourseId())
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + questionDTO.getCourseId()));
         Question question = new Question();
@@ -116,30 +127,52 @@ public class QuestionService {
         return tfqRepository.save(trueFalseQuestion);
     }
 
-    @Transactional
+    
     public MultipleChoiceQuestion createMultipleChoiceQuestion(MultipleChoiceQuestionDTO multipleChoiceQuestionDTO) {
-        Question question = questionRepository.findById(multipleChoiceQuestionDTO.getQuestionId())
-                .orElseThrow(() -> new IllegalArgumentException("Question not found"));
-
+   
+        Question question = createQuestion(multipleChoiceQuestionDTO);
         MultipleChoiceQuestion multipleChoiceQuestion = new MultipleChoiceQuestion();
         multipleChoiceQuestion.setQuestion(question);
 
-        return multipleChoiceQuestionRepository.save(multipleChoiceQuestion);
-    }
+        
+        MultipleChoiceQuestion saved = multipleChoiceQuestionRepository.saveAndFlush(multipleChoiceQuestion);
+        logger.info("MultipleChoiceQuestion saved with ID: {}", saved.getId());
+        return saved;
+    
+    }   
+
+    
 
     @Transactional
-    public MultipleChoiceQuestion addChoicesToMultipleChoiceQuestion(Long multipleChoiceQuestionId, List<ChoiceDTO> choicesDTO) {
-        MultipleChoiceQuestion multipleChoiceQuestion = multipleChoiceQuestionRepository.findById(multipleChoiceQuestionId)
-                .orElseThrow(() -> new IllegalArgumentException("Multiple Choice Question not found"));
-
-        for (ChoiceDTO choiceDTO : choicesDTO) {
+    public MultipleChoiceQuestion addChoicesMultipleChoice(MultipleChoiceQuestion multipleChoiceQuestion, List<ChoiceDTO> choiceDTOs) {
+        logger.debug("mcq{}",multipleChoiceQuestion.getId());
+        List<Choice> choices = choiceDTOs.stream()
+        .map(choiceDTO -> {
             Choice choice = new Choice();
             choice.setChoiceText(choiceDTO.getChoiceText());
             choice.setChoiceLabel(choiceDTO.getChoiceLabel());
             choice.setMultipleChoiceQuestion(multipleChoiceQuestion);
-            choiceRepository.save(choice);
-        }
+            logger.debug("{}",multipleChoiceQuestion==choice.getMultipleChoiceQuestion());
+            return choice;
+        })
+        .collect(Collectors.toList());
+        
+        List<Object[]> batchData = choices.stream()
+            .map(choice -> new Object[]{choice.getChoiceLabel(), choice.getChoiceText(), choice.getMultipleChoiceQuestion().getId()})
+            .collect(Collectors.toList());
 
+            choices.forEach(choice -> {
+                choiceRepository.batchInsertChoices(
+                    choice.getChoiceLabel(),
+                    choice.getChoiceText(),
+                    choice.getMultipleChoiceQuestion().getId()
+                );
+            });
+        
+
+
+        multipleChoiceQuestion.setChoices(choices);
+        
         return multipleChoiceQuestion;
     }
 
@@ -147,7 +180,8 @@ public class QuestionService {
     public MultipleChoiceQuestion setCorrectChoiceForMultipleChoiceQuestion(Long multipleChoiceQuestionId, int correctChoiceLabel) {
         MultipleChoiceQuestion multipleChoiceQuestion = multipleChoiceQuestionRepository.findById(multipleChoiceQuestionId)
                 .orElseThrow(() -> new IllegalArgumentException("Multiple Choice Question not found"));
-
+        logger.debug("label{}",correctChoiceLabel);
+        logger.debug("id{}",multipleChoiceQuestion.getId() );
         Choice correctChoice = choiceRepository.findByMultipleChoiceQuestionAndChoiceLabel(multipleChoiceQuestion, correctChoiceLabel)
                 .orElseThrow(() -> new IllegalArgumentException("Correct choice not found"));
 
@@ -202,6 +236,6 @@ public class QuestionService {
 
     public List<MultipleChoiceQuestionDTO> getRandomMultipleChoiceQuestionsByCourse(Long courseId, int count) {
         List<MultipleChoiceQuestion> multipleChoiceQuestions = multipleChoiceQuestionRepository.findByCourseId(courseId);
-        return multipleChoiceQuestions.stream().map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO).collect(Collectors.toList());
+        return multipleChoiceQuestions.stream().limit(count).map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO).collect(Collectors.toList());
     }
 }
