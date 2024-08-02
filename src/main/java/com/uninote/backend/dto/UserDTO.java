@@ -13,6 +13,7 @@ public class UserDTO {
     private String profileImageUrl;
     private Long uniscore;
     private Long roleId;
+    private String bio;
     
     public UserDTO() {}
 
@@ -28,7 +29,7 @@ public class UserDTO {
         this.profileImageUrl = profileImageUrl;
     }
 
-    public UserDTO( Long id,String firebaseUid,Long uniscore, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl, Long roleId) {
+    public UserDTO( Long id,String firebaseUid,Long uniscore, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl, Long roleId, String bio) {
         this.id = id;
         this.firebaseUid = firebaseUid;
         this.name = name;
@@ -39,6 +40,7 @@ public class UserDTO {
         this.uniscore=uniscore;
         this.profileImageUrl = profileImageUrl;
         this.roleId = roleId;
+        this.bio =bio;
     }
 
     public Long getId(){
@@ -119,5 +121,13 @@ public class UserDTO {
 
     public Long getRoleId(){
         return roleId;
+    }
+
+    public String getBio(){
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 }

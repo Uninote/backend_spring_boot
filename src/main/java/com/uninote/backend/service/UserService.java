@@ -196,6 +196,9 @@ public class UserService {
         if (userDto.getProfileImageUrl() != null) {
             user.setProfileImageUrl(userDto.getProfileImageUrl());
         }
+        if(userDto.getBio() !=null) {
+            user.setBio(userDto.getBio());
+        }
 
         user.setUpdatedAt(LocalDateTime.now());
 

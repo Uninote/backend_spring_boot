@@ -20,6 +20,11 @@ public class User {
     @Column(name = "firebase_uid", nullable = false, unique = true)
     private String firebaseUid;
 
+    @Lob
+    @Column(name = "bio", columnDefinition = "CLOB")
+    private String bio;
+
+
     @Column(name = "streak", nullable = false)
     private int streak = 0;
 
@@ -145,6 +150,14 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getBio() {
+        return bio;
     }
 
     public LocalDateTime getCreatedAt() {
