@@ -27,4 +27,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findTop100ByUniscoreByUniversity(@Param("university") University university);
 
     Optional<User> findByFirebaseUid(String firebaseUid);
+
+    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
+    long countUserNotes(Long userId);
+
+    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId AND n.isPublic = true")
+    long countUserPublicNotes(Long userId);
+
+    @Query("SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = :userId")
+    long countUserLikes(Long userId);
 }

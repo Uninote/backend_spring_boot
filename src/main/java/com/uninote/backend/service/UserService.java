@@ -3,6 +3,7 @@ package com.uninote.backend.service;
 import com.uninote.backend.controller.LoginWebSocketController;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.dto.UserStatsDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
 import com.uninote.backend.entity.Role;
@@ -274,5 +275,13 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return user.getApprovedByUsers();
+    }
+
+     public UserStatsDTO getUserStats(Long userId) {
+        long totalNotes = userRepository.countUserNotes(userId);
+        long totalPublicNotes = userRepository.countUserPublicNotes(userId);
+        long totalLikes = userRepository.countUserLikes(userId);
+
+        return new UserStatsDTO(totalNotes, totalPublicNotes, totalLikes);
     }
 }

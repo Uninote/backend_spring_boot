@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.dto.UserStatsDTO;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
@@ -144,5 +145,17 @@ public class UserController {
         return ResponseEntity.ok(approvedByUsers);
     }
 
+    @GetMapping("/{userId}/stats")
+    public ResponseEntity<UserStatsDTO> getUserStats(@PathVariable Long userId) {
+        try {
+            UserStatsDTO stats = userService.getUserStats(userId);
+            return ResponseEntity.ok(stats);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
+
     
+}
 }
