@@ -14,6 +14,7 @@ public class UserDTO {
     private Long uniscore;
     private Long roleId;
     private String bio;
+    private String rank;
     
     public UserDTO() {}
 
@@ -130,4 +131,12 @@ public class UserDTO {
     public void setBio(String bio) {
         this.bio = bio;
     }
+
+    public void setRank(String rank) {
+        this.rank = rank;
+    }
+    public String getRank() {
+        return rank;
+    }
+
 }

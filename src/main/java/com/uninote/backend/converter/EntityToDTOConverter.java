@@ -88,8 +88,8 @@ public class EntityToDTOConverter {
     public static DepartmentNameDTO convertDepartmentNameToDTO(DepartmentName departmentName) {
         return new DepartmentNameDTO(
             departmentName.getDepartment().getId(),
-            departmentName.getLanguage().getCode(),
             departmentName.getName(),
+            departmentName.getLanguage().getCode(),
             departmentName.getFullName()
         );
     }
@@ -125,6 +125,7 @@ public class EntityToDTOConverter {
         userDTO.setProfileImageUrl(user.getProfileImageUrl());
         userDTO.setRoleId(user.getRole().getId());
         userDTO.setBio(user.getBio());
+        userDTO.setRank(user.getRank().getRankName());
         return userDTO;
     }
 

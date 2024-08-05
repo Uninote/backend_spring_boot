@@ -5,6 +5,7 @@ import com.uninote.backend.converter.DTOToEntityConverter;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
+import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.Badge;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -126,6 +128,26 @@ public class BadgeService {
             return userBadges.stream().map(EntityToDTOConverter::convertUserBadgeToBadgeDTO).collect(Collectors.toList());
         }
 
+        //add extra field 0 or 1 depending on if user has badge
+        @Transactional
+        public List<UserHasBadgeDTO> getAllBagdesByUser(Long userId) {
+            User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User Not found"));
+            List<Badge> allBadges = badgeRepository.findAll();
+            List<Badge> userBadges = userBadgeRepository.findBadgesByUserId(userId);
+            Set<Long> userBadgeIds = userBadges.stream()
+            .map(Badge::getId)
+            .collect(Collectors.toSet());
+             return allBadges.stream()
+            .map(badge -> new UserHasBadgeDTO(
+                badge.getId(),
+                badge.getName(),
+                badge.getDescription(),
+                badge.getImageUrl(),
+                userBadgeIds.contains(badge.getId()), 
+                userId))
+            .collect(Collectors.toList());
+
+        }
         private boolean meetsRequirement(User user, Badge badge) {
             switch (badge.getType().getId().intValue()) {
                 case 1:     

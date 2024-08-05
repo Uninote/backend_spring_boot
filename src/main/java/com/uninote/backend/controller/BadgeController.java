@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
+import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.BadgeService;
@@ -53,7 +54,7 @@ public class BadgeController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<BadgeDTO> getUserBadges(@PathVariable Long userId) {
-        return badgeService.getUserBadges(userId);
+    public List<UserHasBadgeDTO> getUserBadges(@PathVariable Long userId) {
+        return badgeService.getAllBagdesByUser(userId);
     }
-}
+}   

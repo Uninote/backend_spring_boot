@@ -11,6 +11,8 @@ import com.uninote.backend.service.UserService;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -122,9 +124,18 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/approved_users")
-    public ResponseEntity<Set<User>> getApprovedUsers(@PathVariable Long userId) {
+    public ResponseEntity<Set<UserDTO>> getApprovedUsers(@PathVariable Long userId) {
         Set<User> approvedUsers = userService.getApprovedUsers(userId);
-        return ResponseEntity.ok(approvedUsers);
+        Set<UserDTO> approvedUserDTOs = approvedUsers.stream().map(user -> {
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setProfileImageUrl(user.getProfileImageUrl());
+            userDTO.setDepartmentId(user.getDepartment().getId());
+            userDTO.setUniversityId(user.getUniversity().getId());
+            userDTO.setUsername(user.getUsername());
+            return userDTO;
+        }).collect(Collectors.toSet());
+        return ResponseEntity.ok(approvedUserDTOs);
     }
 
     @GetMapping("/{userId}/approved_by_users")
