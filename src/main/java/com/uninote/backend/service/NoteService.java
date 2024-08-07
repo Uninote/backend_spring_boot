@@ -89,12 +89,12 @@ public class NoteService {
 
 
 
-    @PostConstruct
+    /*@PostConstruct
     public void init() {
         recomputeRatingsMatrix();
-    }
+    }*/
 
-    @Scheduled(fixedRate = 3600000) 
+    /*@Scheduled(fixedRate = 3600000) 
     public void recomputeRatingsMatrix() {
         if (ratingsMatrix == null) {
             ratingsMatrix = createRatingsMatrix();
@@ -103,9 +103,9 @@ public class NoteService {
         } else {
             updateRatingsMatrix();
         }
-    }
+    }*/
 
-    public double calculateCompositeScore(Long noteId) {
+    /*public double calculateCompositeScore(Long noteId) {
         long clickCount = clickRepository.findByNoteId(noteId).size();
         long viewCount = viewRepository.findByNoteId(noteId).size();
         long likeCount = likeRepository.findByNoteId(noteId).size();
@@ -304,7 +304,7 @@ public class NoteService {
 
     private Long findNoteId(int index) {
         return indexNoteMap.get(index);
-    }
+    }*/
     
 
      public Note updateNote(Long noteId, NoteDTO noteDto) {

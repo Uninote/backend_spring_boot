@@ -263,10 +263,10 @@ public class NoteController {
         return ResponseEntity.ok(updatedNote);
     }
 
-    @GetMapping("/recommendations/{userId}")
+   /*  @GetMapping("/recommendations/{userId}")
     public ResponseEntity<List<NoteDTO>> getRecommendations(@PathVariable Long userId) {
         List<NoteDTO> recommendations = noteService.recommendNotes(userId);
         return ResponseEntity.ok(recommendations);
-    }
+    }*/
     
 }
