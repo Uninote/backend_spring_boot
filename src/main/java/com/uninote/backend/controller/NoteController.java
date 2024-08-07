@@ -1,5 +1,6 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
@@ -121,9 +122,10 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<Note> saveNote(@RequestBody NoteDTO notedto) {
+    public ResponseEntity<NoteDTO> saveNote(@RequestBody NoteDTO notedto) {
         Note savedNote = noteService.saveNote(notedto);
-        return ResponseEntity.ok(savedNote);
+        NoteDTO noteDto= EntityToDTOConverter.convertNoteToDTO(savedNote);
+        return ResponseEntity.ok(noteDto);
     }
 
     @DeleteMapping("/{id}")

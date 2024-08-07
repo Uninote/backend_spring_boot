@@ -40,7 +40,7 @@ public class Note {
     @Column(name = "isPublic", nullable = false)
     private boolean isPublic;
 
-    @Column(nullable = false)  
+    @Column()  
     private String filename;
     
     @PrePersist
