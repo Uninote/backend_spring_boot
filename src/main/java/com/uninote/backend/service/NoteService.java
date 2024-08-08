@@ -355,15 +355,15 @@ public class NoteService {
                 .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
         
                 Optional<NoteLike> like = likeRepository.findByNoteIdAndUserId(noteId, userId);
-                return like.isPresent();
+                return like.isPresent() && like.get().isActive();
             }
         public boolean hasUserSaved(Long noteId, Long userId) {
             Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
             User user  = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID " + userId));
-            NoteSave save = saveRepository.findByNoteIdAndUserId(noteId, userId);
-            return save.getIsActive();
+            Optional<NoteSave> save = saveRepository.findByNoteIdAndUserId(noteId, userId);
+            return save.isPresent() && save.get().getIsActive();
         }
     
         

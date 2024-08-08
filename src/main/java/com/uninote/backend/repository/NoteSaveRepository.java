@@ -7,11 +7,12 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NoteSaveRepository extends JpaRepository<NoteSave, Long> {
     List<NoteSave> findByUserId(Long userId);
     List<NoteSave> findByNoteId(Long noteId);
-    NoteSave findByNoteIdAndUserId(Long noteId, Long userId);
+    Optional<NoteSave> findByNoteIdAndUserId(Long noteId, Long userId);
     List<NoteSave> findByCreatedAtAfter(LocalDateTime localDateTime);
 }
