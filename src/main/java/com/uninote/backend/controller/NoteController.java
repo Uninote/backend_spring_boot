@@ -50,6 +50,11 @@ public class NoteController {
         boolean hasLiked = noteService.hasUserLiked(noteId, userId);
         return ResponseEntity.ok(hasLiked);
     }
+    @GetMapping("/{noteId}/saves/user/{userId}")
+    public ResponseEntity<Boolean> hasUserSaved(@PathVariable Long noteId, @PathVariable Long userId) {
+        boolean hasSaved = noteService.hasUserSaved(noteId, userId);
+        return ResponseEntity.ok(hasSaved);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id) {

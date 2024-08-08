@@ -75,6 +75,8 @@ public class NoteService {
     @Autowired
     private UserService userService;
 
+    
+
 
     private RealMatrix ratingsMatrix;
     private static final double CLICK_WEIGHT = 0.05;
@@ -355,7 +357,13 @@ public class NoteService {
                 Optional<NoteLike> like = likeRepository.findByNoteIdAndUserId(noteId, userId);
                 return like.isPresent();
             }
-    
+        public boolean hasUserSaved(Long noteId, Long userId) {
+            Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+                
+            NoteSave save = saveRepository.findByNoteIdAndUserId(noteId, userId);
+            return save.getIsActive();
+        }
     
         
     @Cacheable("notes")
