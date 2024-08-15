@@ -39,6 +39,9 @@ public class UserService {
     private UserRepository userRepository;
     
     @Autowired
+    private RankService rankService;
+
+    @Autowired
     private final DepartmentRepository departmentRepository = null;
     
     @Autowired
@@ -235,6 +238,8 @@ public class UserService {
         UniscoreIncreaseType uniScoreIncreaseType = uniScoreIncreaseTypeRepository.findById(activityType).orElseThrow(() -> new IllegalArgumentException("Invalid increase Type"));
         if (uniScoreIncreaseType != null) {
             user.setUniscore(user.getUniscore() + uniScoreIncreaseType.getIncreaseAmount());
+            Rank newRank = rankService.determineRank(user.getUniscore());
+            user.setRank(newRank);
             UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(user, uniScoreIncreaseType);
             uniscoreIncreaseLogRepository.save(increaseLog);
             userRepository.save(user);

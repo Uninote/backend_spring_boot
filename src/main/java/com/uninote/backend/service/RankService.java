@@ -11,7 +11,7 @@ public class RankService {
     @Autowired
     private RankRepository rankRepository;
 
-    public Rank determineRank(int uniscore) {
+    public Rank determineRank(Long uniscore) {
         return rankRepository.findTopByMinScoreLessThanEqualOrderByMinScoreDesc(uniscore)
                 .orElseThrow(() -> new IllegalArgumentException("No appropriate rank found for the given uniscore."));
     }
