@@ -6,6 +6,7 @@ public class NoteCollectionDTO {
     private String title;
     private String description;
     private Boolean isPublic;
+    private Long totalLikes;
 
     public Long getAdminId() {
         return adminId;
@@ -48,4 +49,11 @@ public class NoteCollectionDTO {
         return collectionId;
     }
 
+    public Long getLikes(){
+        return totalLikes;
+    }
+
+    public void setLikes(Long likes) {
+        this.totalLikes = likes;
+    }
 }

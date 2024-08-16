@@ -47,11 +47,17 @@ import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
+import com.uninote.backend.service.CollectionLikeService;
 import com.uninote.backend.service.QuestionService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 public class EntityToDTOConverter {
+
+    @Autowired
+    private  CollectionLikeService collectionLikeService ;
+
 
      private static final Logger logger = LoggerFactory.getLogger(EntityToDTOConverter.class);
     public static DepartmentDTO convertDepartmentToDTO(Department department){
@@ -271,14 +277,25 @@ public class EntityToDTOConverter {
         return choiceDTO;
     }
 
-    public static NoteCollectionDTO convertCollectionToDTO(NoteCollection noteCollection) {
+    public  static NoteCollectionDTO convertCollectionToDTO(NoteCollection noteCollection) {
         NoteCollectionDTO dto = new NoteCollectionDTO();
+
+        if (noteCollection == null) {
+            throw new IllegalArgumentException("NoteCollection cannot be null");
+        }
+
         dto.setCollectionId(noteCollection.getCollectionId());
-        dto.setAdminId(noteCollection.getAdmin().getId());  
+
+        if (noteCollection.getAdmin() != null) {
+            dto.setAdminId(noteCollection.getAdmin().getId());
+        }
+
         dto.setTitle(noteCollection.getName());
         dto.setDescription(noteCollection.getDescription());
         dto.setIsPublic(noteCollection.getIsPublic());
-        
+
+       
+
         return dto;
     }
 }

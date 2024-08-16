@@ -64,4 +64,8 @@ public class CollectionLikeService {
             collectionLike.setActive(false);
         }
     }
+
+    public Long getTotalActiveLikesForCollection(Long collectionId) {
+        return collectionLikeRepository.countActiveLikesByCollectionId(collectionId);
+    }
 }

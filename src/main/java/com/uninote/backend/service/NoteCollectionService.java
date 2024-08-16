@@ -31,9 +31,17 @@ import java.util.stream.Collectors;
 
 @Service
 public class NoteCollectionService {
-
+    
+    
     @Autowired
     private NoteCollectionRepository noteCollectionRepository;
+
+
+    @Autowired
+    private CollectionLikeService collectionLikeService;
+    
+
+
 
     @Autowired
     private NoteCollectionItemRepository noteCollectionItemRepository;
@@ -100,9 +108,16 @@ public class NoteCollectionService {
 
     public List<NoteCollectionDTO> getPublicNoteCollections() {
         return noteCollectionRepository.findByIsPublicTrue().stream()
-            .map(EntityToDTOConverter::convertCollectionToDTO)  
+            .map(collection -> {
+                NoteCollectionDTO dto = EntityToDTOConverter.convertCollectionToDTO(collection);
+                Long likes = collectionLikeService.getTotalActiveLikesForCollection(collection.getCollectionId());
+                dto.setLikes(likes);
+                return dto;
+            })
             .collect(Collectors.toList());
     }
+    
+    
 
     public boolean hasUserLiked(Long collectionId, Long userId) {
         NoteCollection noteCollection = noteCollectionRepository.findById(collectionId)
