@@ -15,7 +15,7 @@ public class UserDTO {
     private Long roleId;
     private String bio;
     private String rank;
-    
+    private int streak;
     public UserDTO() {}
 
     
@@ -42,6 +42,21 @@ public class UserDTO {
         this.profileImageUrl = profileImageUrl;
         this.roleId = roleId;
         this.bio =bio;
+    }
+
+    public UserDTO( Long id,String firebaseUid,Long uniscore, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl, Long roleId, String bio, int streak) {
+        this.id = id;
+        this.firebaseUid = firebaseUid;
+        this.name = name;
+        this.departmentId = departmentId;
+        this.universityId = universityId;
+        this.email = email;
+        this.username = username;
+        this.uniscore=uniscore;
+        this.profileImageUrl = profileImageUrl;
+        this.roleId = roleId;
+        this.bio =bio;
+        this.streak = streak;
     }
 
     public Long getId(){
@@ -139,4 +154,11 @@ public class UserDTO {
         return rank;
     }
 
+    public int getStreak() {
+        return streak;
+    }
+
+    public void setStreak(int streak) {
+        this.streak = streak;
+    }
 }

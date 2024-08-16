@@ -126,6 +126,7 @@ public class EntityToDTOConverter {
         userDTO.setRoleId(user.getRole().getId());
         userDTO.setBio(user.getBio());
         userDTO.setRank(user.getRank().getRankName());
+        userDTO.setStreak(user.getStreak());
         return userDTO;
     }
 
