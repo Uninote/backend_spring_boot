@@ -15,13 +15,14 @@ public class UserHasBadgeDTO {
     public UserHasBadgeDTO() {}    
 
     
-    public UserHasBadgeDTO(Long id, String name, String description, String imageUrl, Boolean hasBadge, Long uid) {
+    public UserHasBadgeDTO(Long id, String name, String description, String imageUrl, Boolean hasBadge, Long uid, String typeName) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.imageUrl = imageUrl;
         this.userHasBadge = hasBadge;
         this.userId = uid;
+        this.typeName = typeName;
     }
 
     

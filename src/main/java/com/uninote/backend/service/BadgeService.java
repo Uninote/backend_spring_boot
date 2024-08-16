@@ -144,7 +144,8 @@ public class BadgeService {
                 badge.getDescription(),
                 badge.getImageUrl(),
                 userBadgeIds.contains(badge.getId()), 
-                userId))
+                userId,
+                badge.getType().getName()))
             .collect(Collectors.toList());
 
         }
