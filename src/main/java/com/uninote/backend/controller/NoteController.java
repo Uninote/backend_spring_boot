@@ -273,5 +273,12 @@ public class NoteController {
         List<NoteDTO> recommendations = noteService.recommendNotes(userId);
         return ResponseEntity.ok(recommendations);
     }*/
+
+    @GetMapping("/public/saved/{userId}")
+    public ResponseEntity<List<NoteDTO>> getPublicSavedNotes(@PathVariable Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        List<NoteDTO> notes = noteService.getPublicSavedNotesByUser(userId);
+        return ResponseEntity.ok(notes);
+    }
     
 }

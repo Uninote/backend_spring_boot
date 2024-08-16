@@ -46,6 +46,9 @@ public class NoteService {
     @Autowired
     private NoteRepository noteRepository;
     
+    @Autowired
+    private NoteSaveRepository noteSaveRepository;
+
      @Autowired
     private CourseRepository courseRepository;
 
@@ -497,5 +500,8 @@ public class NoteService {
         return savedNote;
     }
 
-    
+    public List<NoteDTO> getPublicSavedNotesByUser(Long userId) {
+        return noteSaveRepository.findPublicSavedNotesByUserId(userId).stream()
+        .map(noteSave -> convertToDTO(noteSave.getNote()))
+        .collect(Collectors.toList());    }
 }

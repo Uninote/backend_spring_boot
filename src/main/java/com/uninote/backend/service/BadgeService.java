@@ -171,7 +171,7 @@ public class BadgeService {
         for (Badge badge : badges) {
             if (meetsRequirement(user, badge)) {
                 if (!userBadgeRepository.existsById(new UserBadgeId(user.getId(), badge.getId()))) {
-                    assignBadgeToUser(user  .getId(), badge.getId());
+                    assignBadgeToUser(user.getId(), badge.getId());
                 }
             }
         }
