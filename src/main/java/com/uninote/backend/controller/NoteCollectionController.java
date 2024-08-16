@@ -21,7 +21,7 @@ public class NoteCollectionController {
     private NoteCollectionService noteCollectionService;
 
         @PostMapping("/create")
-    public ResponseEntity<NoteCollection> createCollection(@RequestParam Long userId, @RequestParam String name, @RequestParam String description, @RequestParam Boolean isPublic) {
+    public ResponseEntity<NoteCollection> createCollection(@RequestBody Long userId, @RequestBody String name, @RequestBody String description, @RequestBody Boolean isPublic) {
         NoteCollection collection = noteCollectionService.createCollection(userId, name, description, isPublic);
         return ResponseEntity.ok(collection);
     }
