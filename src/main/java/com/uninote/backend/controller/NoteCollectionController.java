@@ -1,5 +1,6 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.NoteCollectionItem;
 import com.uninote.backend.service.NoteCollectionService;
@@ -45,5 +46,11 @@ public class NoteCollectionController {
             @PathVariable Long noteId) {
         NoteCollection collection = noteCollectionService.removeNoteFromCollection(collectionId, noteId);
         return ResponseEntity.ok(collection);
+    }
+
+     @GetMapping("/public")
+    public ResponseEntity<List<NoteCollectionDTO>> getPublicNoteCollections() {
+        List<NoteCollectionDTO> publicNoteCollections = noteCollectionService.getPublicNoteCollections();
+        return ResponseEntity.ok(publicNoteCollections);
     }
     }

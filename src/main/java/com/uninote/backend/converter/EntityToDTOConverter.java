@@ -16,6 +16,7 @@ import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.InviteDTO;
 import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
+import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TestDTO;
@@ -36,6 +37,7 @@ import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.Invite;
 import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.Test;
 import com.uninote.backend.entity.TestResult;
@@ -267,5 +269,16 @@ public class EntityToDTOConverter {
         choiceDTO.setChoiceText(choice.getChoiceText());
         choiceDTO.setChoiceLabel(choice.getChoiceLabel());
         return choiceDTO;
+    }
+
+    public static NoteCollectionDTO convertCollectionToDTO(NoteCollection noteCollection) {
+        NoteCollectionDTO dto = new NoteCollectionDTO();
+        dto.setCollectionId(noteCollection.getCollectionId());
+        dto.setAdminId(noteCollection.getAdmin().getId());  
+        dto.setTitle(noteCollection.getName());
+        dto.setDescription(noteCollection.getDescription());
+        dto.setIsPublic(noteCollection.getIsPublic());
+        
+        return dto;
     }
 }

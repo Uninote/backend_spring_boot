@@ -7,6 +7,8 @@ import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.NoteCollectionItem;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.entity.CollectionLike;
 import com.uninote.backend.repository.CollectionLikeRepository;
 import com.uninote.backend.repository.CollectionSaveRepository;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class NoteCollectionService {
@@ -90,5 +93,13 @@ public class NoteCollectionService {
     public List<NoteCollectionItem> getNotesInCollection(Long collectionId) {
         return noteCollectionItemRepository.findByCollectionId(collectionId);
     }
+
+    public List<NoteCollectionDTO> getPublicNoteCollections() {
+        return noteCollectionRepository.findByIsPublicTrue().stream()
+            .map(EntityToDTOConverter::convertCollectionToDTO)  
+            .collect(Collectors.toList());
+    }
+
+    
 }
 

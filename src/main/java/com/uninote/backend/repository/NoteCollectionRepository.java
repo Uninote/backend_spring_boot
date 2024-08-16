@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface NoteCollectionRepository extends JpaRepository<NoteCollection, Long> {
     List<NoteCollection> findByAdmin(User admin);
+    List<NoteCollection> findByIsPublicTrue();
+
 }
