@@ -24,6 +24,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -103,20 +104,20 @@ public class NoteCollectionService {
             .collect(Collectors.toList());
     }
 
-    public boolean hasUserLiked(Long noteId, Long userId) {
-        Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+    public boolean hasUserLiked(Long collectionId, Long userId) {
+        NoteCollection noteCollection = noteCollectionRepository.findById(collectionId)
+                .orElseThrow(() -> new IllegalArgumentException("Collection not found with ID: " + collectionId));
         
-        CollectionLike like = collectionLikeRepository.findByIdCollectionIdAndIdUserId(noteId, userId);
+        CollectionLike like = collectionLikeRepository.findByIdCollectionIdAndIdUserId(collectionId, userId);
                 return like!=null && like.isActive();
     }
     
-    public boolean hasUserSaved(Long noteId, Long userId) {
-            Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+    public boolean hasUserSaved(Long collectionId, Long userId) {
+            NoteCollection noteCollection = noteCollectionRepository.findById(collectionId)
+                .orElseThrow(() -> new IllegalArgumentException("Collection not found with ID: " + collectionId));
             User user  = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID " + userId));
-            CollectionSave save = collectionSaveRepository.findByIdCollectionIdAndIdUserId(noteId, userId);
+            CollectionSave save = collectionSaveRepository.findByIdCollectionIdAndIdUserId(collectionId, userId);
             return save!=null && save.isActive();
     }
 }
