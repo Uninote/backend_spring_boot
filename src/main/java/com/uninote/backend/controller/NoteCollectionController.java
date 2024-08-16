@@ -8,12 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
 @RequestMapping("/collections")
 public class NoteCollectionController {
 
+    @Autowired
+    private NoteCollectionService collectionService; 
     @Autowired
     private NoteCollectionService noteCollectionService;
 
@@ -52,5 +55,16 @@ public class NoteCollectionController {
     public ResponseEntity<List<NoteCollectionDTO>> getPublicNoteCollections() {
         List<NoteCollectionDTO> publicNoteCollections = noteCollectionService.getPublicNoteCollections();
         return ResponseEntity.ok(publicNoteCollections);
+    }
+
+    @GetMapping("/{collectionId}/likes/user/{userId}")
+    public ResponseEntity<Boolean> hasUserLiked(@PathVariable Long collectionId, @PathVariable Long userId) {
+        boolean hasLiked = collectionService.hasUserLiked(collectionId, userId);
+        return ResponseEntity.ok(hasLiked);
+    }
+    @GetMapping("/{collectionId}/saves/user/{userId}")
+    public ResponseEntity<Boolean> hasUserSaved(@PathVariable Long collectionId, @PathVariable Long userId) {
+        boolean hasSaved = collectionService.hasUserSaved(collectionId, userId);
+        return ResponseEntity.ok(hasSaved);
     }
     }

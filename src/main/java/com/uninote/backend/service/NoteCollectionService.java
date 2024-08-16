@@ -6,6 +6,8 @@ import com.uninote.backend.entity.CollectionSaveId;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.NoteCollectionItem;
+import com.uninote.backend.entity.NoteLike;
+import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteCollectionDTO;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class NoteCollectionService {
+
     @Autowired
     private NoteCollectionRepository noteCollectionRepository;
 
@@ -100,6 +103,21 @@ public class NoteCollectionService {
             .collect(Collectors.toList());
     }
 
+    public boolean hasUserLiked(Long noteId, Long userId) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+        
+        CollectionLike like = collectionLikeRepository.findByIdCollectionIdAndIdUserId(noteId, userId);
+                return like!=null && like.isActive();
+    }
     
+    public boolean hasUserSaved(Long noteId, Long userId) {
+            Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
+            User user  = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID " + userId));
+            CollectionSave save = collectionSaveRepository.findByIdCollectionIdAndIdUserId(noteId, userId);
+            return save!=null && save.isActive();
+    }
 }
 
