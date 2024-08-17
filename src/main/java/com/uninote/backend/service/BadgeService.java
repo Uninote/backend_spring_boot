@@ -156,9 +156,10 @@ public class BadgeService {
                 case 2:         
                     return inviteRepository.countByUserIdAndInviteeIsNotNull(user.getId()) >= badge.getRequirement();
                 case 3: 
-                    return user.getStreak() >=badge.getRequirement();
-                case 4:
+                    
                     return user.getUniscore() >=badge.getRequirement();
+                case 4:
+                    return user.getStreak() >=badge.getRequirement();
                 default:
                     return false;
             }
