@@ -26,6 +26,9 @@ public class InviteService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private BadgeService badgeService;
+
     public InviteDTO saveInvite(InviteDTO inviteDTO) {
         User user = userRepository.findById(inviteDTO.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
@@ -50,6 +53,7 @@ public class InviteService {
         invite.setDateOfSignUp(LocalDateTime.now());
         userService.updateUniScore(invite.getUser(), 21L);
         invite = inviteRepository.save(invite);
+        badgeService.checkBadgesForUser(invite.getUser().getId());
         return EntityToDTOConverter.convertInviteToDTO(invite);
     }
 

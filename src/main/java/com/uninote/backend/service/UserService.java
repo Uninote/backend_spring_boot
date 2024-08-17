@@ -243,6 +243,7 @@ public class UserService {
             UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(user, uniScoreIncreaseType);
             uniscoreIncreaseLogRepository.save(increaseLog);
             userRepository.save(user);
+            badgeService.checkBadgesForUser(user.getId());
         } else {
             throw new IllegalArgumentException("Unknown activity type: " + activityType);
         }

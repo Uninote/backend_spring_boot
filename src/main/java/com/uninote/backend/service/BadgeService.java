@@ -152,9 +152,9 @@ public class BadgeService {
         private boolean meetsRequirement(User user, Badge badge) {
             switch (badge.getType().getId().intValue()) {
                 case 1:     
-                return noteRepository.countByUserId(user.getId()) >= badge.getRequirement();
+                    return noteRepository.countByUserId(user.getId()) >= badge.getRequirement();
                 case 2:         
-                return inviteRepository.countByUserId(user.getId()) >= badge.getRequirement();
+                    return inviteRepository.countByUserIdAndInviteeIsNotNull(user.getId()) >= badge.getRequirement();
                 case 3: 
                     return user.getStreak() >=badge.getRequirement();
                 case 4:
