@@ -7,6 +7,7 @@ public class NoteCollectionDTO {
     private String description;
     private Boolean isPublic;
     private Long totalLikes;
+    private Long noteNum;
 
     public Long getAdminId() {
         return adminId;
@@ -55,5 +56,13 @@ public class NoteCollectionDTO {
 
     public void setLikes(Long likes) {
         this.totalLikes = likes;
+    }
+
+    public void setNoteNum(Long num) {
+        this.noteNum = num;
+    }
+
+    public Long getNoteNum() {
+        return noteNum;
     }
 }

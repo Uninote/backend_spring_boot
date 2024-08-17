@@ -112,6 +112,8 @@ public class NoteCollectionService {
                 NoteCollectionDTO dto = EntityToDTOConverter.convertCollectionToDTO(collection);
                 Long likes = collectionLikeService.getTotalActiveLikesForCollection(collection.getCollectionId());
                 dto.setLikes(likes);
+                Long notes = noteCollectionItemRepository.countNotesInCollection(collection.getCollectionId());
+                dto.setNoteNum(notes);
                 return dto;
             })
             .collect(Collectors.toList());
