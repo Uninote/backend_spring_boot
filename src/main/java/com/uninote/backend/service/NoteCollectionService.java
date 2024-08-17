@@ -11,6 +11,7 @@ import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteCollectionDTO;
+import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.CollectionLike;
 import com.uninote.backend.repository.CollectionLikeRepository;
 import com.uninote.backend.repository.CollectionSaveRepository;
@@ -102,8 +103,11 @@ public class NoteCollectionService {
         return noteCollectionRepository.findByAdmin(user);
     }
 
-    public List<NoteCollectionItem> getNotesInCollection(Long collectionId) {
-        return noteCollectionItemRepository.findByCollectionId(collectionId);
+    public List<NoteDTO> getNotesInCollection(Long collectionId) {
+        List<NoteCollectionItem> items=  noteCollectionItemRepository.findByCollectionId(collectionId);
+        List<Long> noteIds = items.stream().map(NoteCollectionItem::getNoteId).collect(Collectors.toList());
+        List<Note> notes = noteRepository.findAllById(noteIds);
+        return notes.stream().map(EntityToDTOConverter::convertNoteToDTO).collect(Collectors.toList());
     }
 
     public List<NoteCollectionDTO> getPublicNoteCollections() {
