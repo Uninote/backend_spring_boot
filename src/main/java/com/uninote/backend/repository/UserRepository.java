@@ -17,13 +17,13 @@ import com.uninote.backend.entity.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findById(String id);
     
-    @Query("SELECT u FROM User u ORDER BY u.uniscore DESC")
+    @Query("SELECT u FROM User u WHERE u.role.id IN (1, 2) ORDER BY u.uniscore DESC")
     List<User> findTop100ByUniscore();
 
-    @Query("SELECT u FROM User u  WHERE u.department = :department ORDER BY u.uniscore DESC" )
+    @Query("SELECT u FROM User u  WHERE u.role.id IN (1, 2) AND u.department = :department ORDER BY u.uniscore DESC" )
     List<User> findTop100ByUniscoreByDepartment(@Param("department") Department department);
 
-    @Query("SELECT u FROM User u  WHERE u.university = :university ORDER BY u.uniscore DESC" )
+    @Query("SELECT u FROM User u  WHERE u.role.id IN (1, 2) AND u.university = :university ORDER BY u.uniscore DESC" )
     List<User> findTop100ByUniscoreByUniversity(@Param("university") University university);
 
     Optional<User> findByFirebaseUid(String firebaseUid);

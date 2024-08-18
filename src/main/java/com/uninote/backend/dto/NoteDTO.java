@@ -9,7 +9,7 @@ public class NoteDTO {
     private String pdfUrl;
     private String filename;
     private Boolean isPublic;
-        
+            
 
     
     public NoteDTO(Long noteId,Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic) {
