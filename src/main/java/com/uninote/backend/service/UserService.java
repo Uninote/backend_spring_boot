@@ -24,8 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -289,5 +288,16 @@ public class UserService {
         long totalLikes = userRepository.countUserLikes(userId);
 
         return new UserStatsDTO(totalNotes, totalPublicNotes, totalLikes);
+    }
+
+
+    @Transactional(readOnly = true)
+    public boolean doesUsernameExist(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean doesEmailExist(String email) {
+        return userRepository.existsByEmail(email);
     }
 }

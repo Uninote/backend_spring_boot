@@ -157,5 +157,17 @@ public class UserController {
         }
 
     
-}
+    }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<Boolean> validateUsername(@RequestParam String username) {
+        boolean usernameExists = userService.doesUsernameExist(username);
+        return ResponseEntity.ok(usernameExists);
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> validateEmail(@RequestParam String email) {
+        boolean emailExists = userService.doesEmailExist(email);
+        return ResponseEntity.ok(emailExists);
+    }
 }

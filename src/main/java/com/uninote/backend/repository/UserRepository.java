@@ -36,4 +36,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = :userId")
     long countUserLikes(Long userId);
+
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
 }
