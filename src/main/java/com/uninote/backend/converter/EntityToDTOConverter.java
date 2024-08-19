@@ -1,6 +1,7 @@
 package com.uninote.backend.converter;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -251,6 +252,26 @@ public class EntityToDTOConverter {
             note.getFilename(),
             note.getIsPublic()
         );
+        String englishCourseName = note.getCourse().getCourseNames().stream()
+            .filter(courseName -> "EN".equals(courseName.getLanguage().getCode()))
+            .map(CourseName::getName)
+            .findFirst()
+            .orElse("Unknown Course Name");  
+
+        dto.setCourseName(englishCourseName);   
+        String englishDepartmentName = note.getCourse().getDepartment().getDepartmentNames().stream()
+            .filter(departmentName -> "EN".equals(departmentName.getLanguage().getCode()))
+            .map(DepartmentName::getName)
+            .findFirst()
+            .orElse("Unknown Department Name"); 
+        dto.setDepartmentName(englishDepartmentName);     
+
+        String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
+            .filter(universityName -> "EN".equals(universityName.getLanguage().getCode()))
+            .map(UniversityName::getName)
+            .findFirst()
+            .orElse("Unknown University Name");  
+        dto.setUniversityName(englishUniversityName);
         return dto;
     }
 

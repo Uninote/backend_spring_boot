@@ -3,13 +3,16 @@ package com.uninote.backend.service;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
+import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
+import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.University;
+import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.NoteClickRepository;
@@ -461,16 +464,37 @@ public class NoteService {
     }
 
     private NoteDTO convertToDTO(Note note) {
-        return new NoteDTO(
-                note.getId(),
-                note.getCourse().getId(),
-                note.getUser().getId(),
-                note.getTitle(),
-                note.getDescription(),
-                note.getPdfUrl(),
-                note.getFilename(),
-                note.getIsPublic()
+        NoteDTO dto = new NoteDTO(
+            note.getId(),
+            note.getCourse().getId(),
+            note.getUser().getId(),
+            note.getTitle(),
+            note.getDescription(),
+            note.getPdfUrl(),
+            note.getFilename(),
+            note.getIsPublic()
         );
+        String englishCourseName = note.getCourse().getCourseNames().stream()
+            .filter(courseName -> "EN".equals(courseName.getLanguage().getCode()))
+            .map(CourseName::getName)
+            .findFirst()
+            .orElse("Unknown Course Name");  
+
+        dto.setCourseName(englishCourseName);   
+        String englishDepartmentName = note.getCourse().getDepartment().getDepartmentNames().stream()
+            .filter(departmentName -> "EN".equals(departmentName.getLanguage().getCode()))
+            .map(DepartmentName::getName)
+            .findFirst()
+            .orElse("Unknown Department Name"); 
+        dto.setDepartmentName(englishDepartmentName);     
+
+        String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
+            .filter(universityName -> "EN".equals(universityName.getLanguage().getCode()))
+            .map(UniversityName::getName)
+            .findFirst()
+            .orElse("Unknown University Name");  
+        dto.setUniversityName(englishUniversityName);
+        return dto;
     }
 
     

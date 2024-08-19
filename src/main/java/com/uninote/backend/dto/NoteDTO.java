@@ -9,6 +9,11 @@ public class NoteDTO {
     private String pdfUrl;
     private String filename;
     private Boolean isPublic;
+    private String courseName;
+    private String universityName;
+    private String departmentName;
+
+
             
 
     
@@ -87,5 +92,29 @@ public class NoteDTO {
 
     public Long getNoteId(){
         return noteId;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public String getUniversityName() {
+        return universityName;
+    }
+
+    public void setUniversityName(String universityName) {
+        this.universityName = universityName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 }
