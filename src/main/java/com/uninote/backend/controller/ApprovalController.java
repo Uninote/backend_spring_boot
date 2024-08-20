@@ -33,13 +33,14 @@ public class ApprovalController {
 
     
     @GetMapping("/{userId}/{approvedId}")
-    public ResponseEntity<ApprovalDTO> getApprovalById(@PathVariable Long userId, @PathVariable Long approvedId) {
-        ApprovalId id = new ApprovalId(userId, approvedId);
-        Optional<ApprovalDTO> approval = approvalService.getApprovalById(id);
+public ResponseEntity<Boolean> checkApprovalExists(@PathVariable Long userId, @PathVariable Long approvedId) {
+    ApprovalId id = new ApprovalId(userId, approvedId);
+    Optional<ApprovalDTO> approval = approvalService.getApprovalById(id);
 
-        return approval.map(ResponseEntity::ok)
-                       .orElseGet(() -> ResponseEntity.notFound().build());
-    }
+    
+    return ResponseEntity.ok(approval.isPresent());
+}
+
 
     
     @DeleteMapping("/{userId}/{approvedId}")
