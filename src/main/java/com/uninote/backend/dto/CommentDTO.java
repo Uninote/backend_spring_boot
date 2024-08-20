@@ -9,7 +9,7 @@ public class CommentDTO {
     private Long userId;
     private String content;
     private LocalDateTime createdAt;
-
+    private Long totalLikes;
     public CommentDTO() {
     }
 
@@ -59,5 +59,13 @@ public class CommentDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Long getTotalLikes() {
+        return totalLikes;
+    }
+
+    public void setTotalLikes(Long totalLikes) {
+        this.totalLikes = totalLikes;
     }
 }

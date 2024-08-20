@@ -27,6 +27,9 @@ public class CommentService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CommentLikeService commentLikeService;
+    
     @Transactional
     public Comment addComment(Long noteId, Long userId, String content) {
         Note note = noteRepository.findById(noteId)
@@ -43,7 +46,20 @@ public class CommentService {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
         List<Comment> comments = commentRepository.findByNote(note);
-        return comments.stream().map(EntityToDTOConverter::convertCommentToDTO).collect(Collectors.toList());
+        return comments.stream()
+                .map(comment -> {
+                    
+                    CommentDTO dto = EntityToDTOConverter.convertCommentToDTO(comment);
+                    
+                    
+                    long totalLikes = commentLikeService.getTotalCommentLikes(comment.getCommentId());
+                    
+                    
+                    dto.setTotalLikes(totalLikes);
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
     @Transactional
     public void deleteComment(Long commentId) {

@@ -195,13 +195,14 @@ public class EntityToDTOConverter {
     }
 
     public static CommentDTO convertCommentToDTO(Comment comment) {
-        return new CommentDTO(
+        return  new CommentDTO(
             comment.getCommentId(),
             comment.getNote().getId(),
             comment.getUser().getId(),
             comment.getContent(),
             comment.getCreatedAt()
         );
+        
     }
 
     public static InviteDTO convertInviteToDTO(Invite invite) {
