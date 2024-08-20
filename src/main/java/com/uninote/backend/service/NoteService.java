@@ -474,7 +474,7 @@ public class NoteService {
             note.getFilename(),
             note.getIsPublic()
         );
-        Long likes = getTotalLikes(note.getId());
+        //Long likes = getTotalLikes(note.getId());
         //dto.setTotalLikes(likes);
         String englishCourseName = note.getCourse().getCourseNames().stream()
             .filter(courseName -> "EN".equals(courseName.getLanguage().getCode()))
