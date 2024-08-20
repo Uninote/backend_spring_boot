@@ -12,7 +12,7 @@ public class NoteDTO {
     private String courseName;
     private String universityName;
     private String departmentName;
-
+    private Long totalLikes;
 
             
 
@@ -116,5 +116,13 @@ public class NoteDTO {
 
     public void setDepartmentName(String departmentName) {
         this.departmentName = departmentName;
+    }
+
+    public void setTotalLikes(Long totalLikes) {
+        this.totalLikes = totalLikes;
+    }
+
+    public Long getTotalLikes() {
+        return totalLikes;
     }
 }
