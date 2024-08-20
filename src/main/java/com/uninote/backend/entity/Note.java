@@ -40,6 +40,9 @@ public class Note {
     @Column(name = "isPublic", nullable = false)
     private boolean isPublic;
 
+    @Column(name = "like_count")
+    private Long likes;
+
     @Column()  
     private String filename;
     
@@ -132,5 +135,13 @@ public class Note {
 
     public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    public Long getLikes(){
+        return likes;
+    }
+
+    public void setLikes(Long likes) {
+        this.likes = likes;
     }
 }

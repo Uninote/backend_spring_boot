@@ -47,13 +47,15 @@ public class NoteLikeService {
             noteLike = new NoteLike(noteLikeId, note, user);
             noteLike.setActive(true);
             noteLikeRepository.save(noteLike); 
-
+            note.setLikes(note.getLikes() + 1);
+            noteRepository.save(note);
             userService.updateUniScore(noteCreator, 1L);
             
         } else if (!noteLike.isActive()) {
             
             noteLike.setActive(true);
-
+            note.setLikes(note.getLikes() + 1);
+            noteRepository.save(note);
             
             
         }
@@ -71,7 +73,8 @@ public class NoteLikeService {
         if (noteLike != null && noteLike.isActive()) {
            
             noteLike.setActive(false);
-
+            note.setLikes(note.getLikes() -1);
+            noteRepository.save(note);
 
             
         }
