@@ -55,8 +55,9 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.user = :user AND n.course.department = :department")
     List<Note> findPublicNotesByUserAndDepartment(@Param("user") User user, @Param("department") Department department);
 
-    @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.course.department = :department")
+    @Query("SELECT n FROM Note n JOIN FETCH n.course c JOIN FETCH c.department d WHERE n.isPublic = true AND d = :department")
     List<Note> findPublicNotesByDepartment(@Param("department") Department department);
+
 
     @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.course.department.university = :university")
     List<Note> findPublicNotesByUniversity(@Param("university") University university);
