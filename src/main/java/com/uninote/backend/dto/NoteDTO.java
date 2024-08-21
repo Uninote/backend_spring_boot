@@ -37,7 +37,7 @@ public class NoteDTO {
     }
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
-                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl) {
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt) {
         this.noteId = noteId;
         this.courseId = courseId;
         this.userId = userId;
@@ -52,6 +52,8 @@ public class NoteDTO {
         this.totalLikes = totalLikes;
         this.username = username;
         this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+
     }
 
     
@@ -179,4 +181,13 @@ public class NoteDTO {
     public String getProfileImageUrl() {
         return profileImageUrl;
     }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
 }
