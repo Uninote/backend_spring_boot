@@ -13,6 +13,8 @@ public class NoteDTO {
     private String universityName;
     private String departmentName;
     private Long totalLikes;
+    private String username;
+    private String profileImageUrl;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes) {
@@ -28,6 +30,24 @@ public class NoteDTO {
         this.universityName = universityName;
         this.departmentName = departmentName;
         this.totalLikes = totalLikes;
+    }
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
     }
 
     
@@ -138,5 +158,21 @@ public class NoteDTO {
 
     public Long getTotalLikes() {
         return totalLikes;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setProfileImageUrl(String profileUrl) {
+        this.profileImageUrl = profileUrl;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
     }
 }
