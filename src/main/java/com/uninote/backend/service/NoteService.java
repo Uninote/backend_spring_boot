@@ -448,19 +448,19 @@ public class NoteService {
 
 
     public List<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester) {
-        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester).stream().map(this::convertToDTO).collect(Collectors.toList());
+        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester);//.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
     public List<NoteDTO> getPublicNotesByDepartment(Department department) {
-        return noteRepository.findPublicNotesByDepartment(department).stream().map(this::convertToDTO).collect(Collectors.toList());
+        return noteRepository.findPublicNotesByDepartment(department);//stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
 
     public List<NoteDTO> getPublicNotesByCourse(Course course) {
-        return noteRepository.findPublicNotesByCourse(course).stream().map(this::convertToDTO).collect(Collectors.toList());
+        return noteRepository.findPublicNotesByCourse(course);//.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     public List<NoteDTO> getPublicNotesByUniversity(University university) {
-        return noteRepository.findPublicNotesByUniversity(university).stream().map(this::convertToDTO).collect(Collectors.toList());
+        return noteRepository.findPublicNotesByUniversity(university);//.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     private NoteDTO convertToDTO(Note note) {
