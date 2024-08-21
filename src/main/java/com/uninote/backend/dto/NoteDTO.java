@@ -47,7 +47,7 @@ public class NoteDTO {
         this.filename = filename;
         this.isPublic = isPublic;
         this.courseName = courseName;
-        this.universityName = universityName;
+        this.universityName = universityName;   
         this.departmentName = departmentName;   
         this.totalLikes = totalLikes;
         this.username = username;
