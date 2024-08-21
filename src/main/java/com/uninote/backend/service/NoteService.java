@@ -429,7 +429,7 @@ public class NoteService {
         noteRepository.deleteById(id);
     }
     public List<NoteDTO> getPublicNotes() {
-        return noteRepository.findPublicNotes().stream().map(this::convertToDTO).collect(Collectors.toList());
+        return noteRepository.findPublicNotes();//.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
     public List<NoteDTO> getPublicNotesByUserAndUniversity(User user, University university) {
         return noteRepository.findPublicNotesByUserAndUniversity(user, university).stream().map(this::convertToDTO).collect(Collectors.toList());

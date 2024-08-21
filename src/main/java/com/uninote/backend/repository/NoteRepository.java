@@ -3,6 +3,7 @@ package com.uninote.backend.repository;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
@@ -49,8 +50,19 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
 
 
-    @Query("SELECT n FROM Note n WHERE n.isPublic = true")
-    List<Note> findPublicNotes();
+    //@Query("SELECT n FROM Note n WHERE n.isPublic = true")
+    //List<Note> findPublicNotes();
+
+    @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, n.isPublic, " +
+       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
+       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
+       "(SELECT un.name FROM UniversityName un WHERE un.university = u AND un.language.code = 'EN'), n.likes) " +
+       "FROM Note n " +
+       "JOIN n.course c " +
+       "JOIN c.department d " +
+       "JOIN d.university u " +
+       "WHERE n.isPublic = true")
+    List<NoteDTO> findPublicNotes();
 
     @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.user = :user AND n.course.department = :department")
     List<Note> findPublicNotesByUserAndDepartment(@Param("user") User user, @Param("department") Department department);
