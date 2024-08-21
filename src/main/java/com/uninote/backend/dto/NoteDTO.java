@@ -1,5 +1,7 @@
 package com.uninote.backend.dto;
 
+import java.time.LocalDateTime;
+
 public class NoteDTO {
     private Long noteId;
     private Long courseId;
@@ -15,9 +17,10 @@ public class NoteDTO {
     private Long totalLikes;
     private String username;
     private String profileImageUrl;
+    private LocalDateTime createdAt;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
-                   String courseName, String universityName, String departmentName, Long totalLikes) {
+                   String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
         this.noteId = noteId;
         this.courseId = courseId;
         this.userId = userId;
@@ -30,6 +33,7 @@ public class NoteDTO {
         this.universityName = universityName;
         this.departmentName = departmentName;
         this.totalLikes = totalLikes;
+        this.createdAt = createdAt;
     }
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
