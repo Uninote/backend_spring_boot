@@ -75,6 +75,9 @@ public class DepartmentService {
         return EntityToDTOConverter.convertDepartmentToDTO(department);
     }
 
+    public List<DepartmentNameDTO> getDepartmentNames(Long departmentId) {
+        return departmentRepository.findNamesById(departmentId);
+    }
     public List<DepartmentDTO> getAllDepartments() {
         return departmentRepository.findAll().stream()
                 .map(EntityToDTOConverter::convertDepartmentToDTO)

@@ -71,4 +71,10 @@ public class DepartmentController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
+    @GetMapping("/{departmentId}/names")
+    public ResponseEntity<List<DepartmentNameDTO>> getDepartmentNames(@PathVariable Long departmentId) {
+        List<DepartmentNameDTO> departmentNames = departmentService.getDepartmentNames(departmentId);
+        return ResponseEntity.ok(departmentNames);
+    }
     }
