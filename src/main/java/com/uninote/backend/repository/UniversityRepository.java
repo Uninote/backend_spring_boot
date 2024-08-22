@@ -15,8 +15,8 @@ public interface UniversityRepository extends JpaRepository<University, Long> {
     Optional<University> findById(Long id);
     List<University> findByLocation(String location);
 
-    @Query("SELECT u.id AS id, n.fullName AS fullName, n.name AS name " +
-            "FROM University u JOIN u.universityNames n " +
-            "WHERE n.language.code = :language")
+    @Query("SELECT n.university.id AS id, n.fullName AS fullName, n.name AS name " +
+            "FROM UniversityName n JOIN n.language l " +
+            "WHERE l.code = :language")
     List<UniversityDetailsProjection> findUniversityDetailsByLanguage(String language);
 }
