@@ -27,7 +27,7 @@ public class UniversityService {
     private UniversityRepository universityRepository;
 
 
-    public List<Map<String, String>> getUniversityDetails(String language) {
+    /*public List<Map<String, String>> getUniversityDetails(String language) {
         List<University> universities = universityRepository.findAll();
         List<UniversityDTO> universityDTOs = universities.stream()
                                                          .map(EntityToDTOConverter::convertUniversityToDTO)
@@ -48,7 +48,19 @@ public class UniversityService {
         }
 
         return result;
+    }*/
+    public List<Map<String, String>> getUniversityDetails(String language) {
+        return universityRepository.findUniversityDetailsByLanguage(language).stream()
+                .map(projection -> {
+                    Map<String, String> uniMap = new HashMap<>();
+                    uniMap.put("id", String.valueOf(projection.getId()));
+                    uniMap.put("fullName", projection.getFullName());
+                    uniMap.put("name", projection.getName());
+                    return uniMap;
+                })
+                .collect(Collectors.toList());
     }
+    
 
 
     public UniversityDTO getUniversityById(Long id) {
