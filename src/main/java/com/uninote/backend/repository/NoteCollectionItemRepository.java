@@ -26,7 +26,7 @@ public interface NoteCollectionItemRepository extends JpaRepository<NoteCollecti
        "JOIN Course c ON n.course.id = c.id " +
        "JOIN Department d ON c.department.id = d.id " +
        "JOIN User u ON n.user.id = u.id " +
-       "WHERE nci.collectionId = :collectionId")
+       "WHERE nci.collectionId = :collectionId AND n.isPublic = True")
     List<NoteProjection> findNoteProjectionsByCollectionId(@Param("collectionId") Long collectionId);
 
 
