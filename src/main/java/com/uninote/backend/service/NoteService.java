@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import org.springframework.data.domain.Pageable;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
@@ -14,6 +15,7 @@ import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.NoteClickRepository;
 import com.uninote.backend.repository.NoteLikeRepository;
@@ -41,6 +43,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
@@ -523,5 +526,10 @@ public class NoteService {
 
     public List<NoteDTO> getPublicSavedNotesByUser(Long userId) {
         return noteRepository.findPublicSavedNotesByUserId(userId);   
+    }
+
+    public List<NoteProjection> getTopPublicNotesByUser(Long userId, int limit) {
+
+        return noteRepository.findTopPublicNotesByUser(userId,limit);
     }
 }

@@ -3,10 +3,13 @@ package com.uninote.backend.repository;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -157,5 +160,30 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
        "WHERE ns.user.id = :userId AND ns.isActive = TRUE AND n.isPublic = TRUE")
    List<NoteDTO> findPublicSavedNotesByUserId(@Param("userId") Long userId);
 
-    
+   @Query(value = "SELECT n.note_id AS id, c.course_id AS courseId, u.user_id AS userId, n.title AS title, " +
+               "DBMS_LOB.SUBSTR(n.description, 4000, 1) AS description, n.pdf_url AS pdfUrl, n.filename AS filename, " +
+               "(SELECT cn.course_name FROM course_names cn " +
+               "JOIN languages l ON cn.language_id = l.language_id " +
+               "WHERE cn.course_id = c.course_id AND l.language_code = 'EN') AS courseName, " +
+               "(SELECT un.university_name FROM university_names un " +
+               "JOIN languages l ON un.language_id = l.language_id " +
+               "WHERE un.university_id = d.university_id AND l.language_code = 'EN') AS universityName, " +
+               "(SELECT dn.department_name FROM department_names dn " +
+               "JOIN languages l ON dn.language_id = l.language_id " +
+               "WHERE dn.department_id = d.department_id AND l.language_code = 'EN') AS departmentName, " +
+               "n.like_count AS likes, u.username AS username, u.profile_image_url AS profileImageUrl, n.created_at AS createdAt " +
+               "FROM notes n " +
+               "JOIN courses c ON n.course_id = c.course_id " +
+               "JOIN departments d ON c.department_id = d.department_id " +
+               "JOIN users u ON n.user_id = u.user_id " +
+               "WHERE n.is_public = 1 AND u.user_id = :userId " +
+               "ORDER BY n.like_count DESC, n.created_at DESC " +
+               "FETCH FIRST :limit ROWS ONLY", nativeQuery = true)
+List<NoteProjection> findTopPublicNotesByUser(@Param("userId") Long userId, @Param("limit") int limit);
+
+
+
+
+
 }
+

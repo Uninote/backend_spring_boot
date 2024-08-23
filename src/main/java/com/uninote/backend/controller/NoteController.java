@@ -7,6 +7,7 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
@@ -279,6 +280,18 @@ public class NoteController {
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<NoteDTO> notes = noteService.getPublicSavedNotesByUser(userId);
         return ResponseEntity.ok(notes);
+    }
+
+
+    @GetMapping("/top/{userId}")
+    public ResponseEntity<List<NoteProjection>> getTop3PublicNotesByUser(@PathVariable Long userId, @RequestParam int limit) {
+        List<NoteProjection> topNotes = noteService.getTopPublicNotesByUser(userId, limit);
+        
+        if (topNotes.isEmpty()) {
+            return ResponseEntity.noContent().build();  
+        }
+        
+        return ResponseEntity.ok(topNotes);
     }
     
 }
