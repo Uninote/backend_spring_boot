@@ -5,6 +5,7 @@ import com.uninote.backend.dto.CommentDTO;
 import com.uninote.backend.entity.Comment;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.CommentProjection;
 import com.uninote.backend.repository.CommentRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserRepository;
@@ -42,25 +43,10 @@ public class CommentService {
         return commentRepository.save(comment);
     }
 
-    public List<CommentDTO> getCommentsByNoteId(Long noteId) {
-        Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found"));
-        List<Comment> comments = commentRepository.findByNote(note);
-        return comments.stream()
-                .map(comment -> {
-                    
-                    CommentDTO dto = EntityToDTOConverter.convertCommentToDTO(comment);
-                    
-                    
-                    long totalLikes = commentLikeService.getTotalCommentLikes(comment.getCommentId());
-                    
-                    
-                    dto.setTotalLikes(totalLikes);
-                    
-                    return dto;
-                })
-                .collect(Collectors.toList());
+    public List<CommentProjection> getCommentsByNoteId(Long noteId) {
+        return commentRepository.findCommentProjectionsByNoteId(noteId);
     }
+    
     @Transactional
     public void deleteComment(Long commentId) {
         commentRepository.deleteById(commentId);

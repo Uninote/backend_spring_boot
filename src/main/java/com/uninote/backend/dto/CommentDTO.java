@@ -21,6 +21,15 @@ public class CommentDTO {
         this.createdAt = createdAt;
     }
 
+    public CommentDTO(Long commentId, Long noteId, Long userId, String content, LocalDateTime createdAt, Long totalLikes) {
+        this.commentId = commentId;
+        this.noteId = noteId;
+        this.userId = userId;
+        this.content = content;
+        this.createdAt = createdAt;
+        this.totalLikes = totalLikes;
+    }
+
     public Long getCommentId() {
         return commentId;
     }
