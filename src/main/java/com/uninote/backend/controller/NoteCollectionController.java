@@ -4,6 +4,7 @@ import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.NoteCollectionItem;
+import com.uninote.backend.interfaceProjection.CollectionProjection;
 import com.uninote.backend.service.NoteCollectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -53,8 +54,8 @@ public class NoteCollectionController {
     }
 
      @GetMapping("/public")
-    public ResponseEntity<List<NoteCollectionDTO>> getPublicNoteCollections() {
-        List<NoteCollectionDTO> publicNoteCollections = noteCollectionService.getPublicNoteCollections();
+    public ResponseEntity<List<CollectionProjection>> getPublicNoteCollections() {
+        List<CollectionProjection> publicNoteCollections = noteCollectionService.getPublicCollections();
         return ResponseEntity.ok(publicNoteCollections);
     }
 
