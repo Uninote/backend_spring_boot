@@ -84,17 +84,13 @@ public class UserController {
      
     @GetMapping("/leaderboard/university/{universityId}")
     public ResponseEntity<List<UserInfoProjection>> getLeaderboardByUniversity(@PathVariable Long universityId) {
-        University university = universityRepository.findById(universityId)
-                .orElseThrow(() -> new IllegalArgumentException("University not found"));
-        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByUniversity(university);
+        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByUniversity(universityId);
         return ResponseEntity.ok(leaderboard);
     }
 
     @GetMapping("/leaderboard/department/{departmentId}")
     public ResponseEntity<List<UserInfoProjection>> getLeaderboardByDepartment(@PathVariable Long departmentId) {
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Department not found"));
-        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByDepartment(department);
+        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByDepartment(departmentId);
         return ResponseEntity.ok(leaderboard);
     }
 

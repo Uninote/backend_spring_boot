@@ -222,12 +222,12 @@ public class UserService {
         
     }
 
-    public List<UserInfoProjection> getTop100UsersByUniscoreByDepartment(Department department){
-        return userRepository.findTop100ByUniscoreByDepartment(department);
+    public List<UserInfoProjection> getTop100UsersByUniscoreByDepartment(Long departmentId){
+        return userRepository.findTop100ByUniscoreByDepartment(departmentId);
         
     }
-    public List<UserInfoProjection> getTop100UsersByUniscoreByUniversity(University university){
-        return userRepository.findTop100ByUniscoreByUniversity(university);
+    public List<UserInfoProjection> getTop100UsersByUniscoreByUniversity(Long universityId){
+        return userRepository.findTop100ByUniscoreByUniversity(universityId);
        
     }
 
