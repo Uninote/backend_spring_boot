@@ -357,20 +357,14 @@ public class NoteService {
     }
 
     public boolean hasUserLiked(Long noteId, Long userId) {
-        Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
         
-                Optional<NoteLike> like = likeRepository.findByNoteIdAndUserId(noteId, userId);
-                return like.isPresent() && like.get().isActive();
-            }
-        public boolean hasUserSaved(Long noteId, Long userId) {
-            Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
-            User user  = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID " + userId));
-            Optional<NoteSave> save = saveRepository.findByNoteIdAndUserId(noteId, userId);
-            return save.isPresent() && save.get().getIsActive();
-        }
+        return likeRepository.existsByNoteIdAndUserIdAndIsActive(noteId, userId);
+    }
+
+    public boolean hasUserSaved(Long noteId, Long userId) {
+       
+        return saveRepository.existsByNoteIdAndUserIdAndIsActive(noteId, userId);
+    }
     
         
     @Cacheable("notes")

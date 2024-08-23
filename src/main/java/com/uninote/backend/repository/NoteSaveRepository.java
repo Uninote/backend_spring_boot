@@ -17,7 +17,9 @@ public interface NoteSaveRepository extends JpaRepository<NoteSave, Long> {
     List<NoteSave> findByNoteId(Long noteId);
     Optional<NoteSave> findByNoteIdAndUserId(Long noteId, Long userId);
     List<NoteSave> findByCreatedAtAfter(LocalDateTime localDateTime);
-
+    @Query("SELECT CASE WHEN COUNT(ns) > 0 THEN TRUE ELSE FALSE END " +
+           "FROM NoteSave ns WHERE ns.note.id = :noteId AND ns.user.id = :userId AND ns.isActive = TRUE")
+    boolean existsByNoteIdAndUserIdAndIsActive(@Param("noteId") Long noteId, @Param("userId") Long userId);
     @Query("SELECT ns FROM NoteSave ns JOIN ns.note n WHERE ns.user.id = :userId AND n.isPublic = true")
     List<NoteSave> findPublicSavedNotesByUserId(@Param("userId") Long userId);
 }
