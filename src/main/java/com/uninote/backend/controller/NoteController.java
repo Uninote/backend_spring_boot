@@ -71,8 +71,8 @@ public class NoteController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<NoteDTO>> getNotesByUser(@PathVariable Long userId) {
         try {
-            User user = userService.getUserById(userId);
-            List<NoteDTO> notes = noteService.getNotesByUser(user);
+            
+            List<NoteDTO> notes = noteService.getNotesByUser(userId);
             return ResponseEntity.ok(notes);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);

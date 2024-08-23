@@ -373,8 +373,8 @@ public class NoteService {
         return convertToDTO(note);
     }
 
-    public List<NoteDTO> getNotesByUser(User user) {
-        return noteRepository.findByUser(user).stream().map(this::convertToDTO).collect(Collectors.toList());
+    public List<NoteDTO> getNotesByUser(Long userId) {
+        return noteRepository.findByUserId(userId);
     }
 
     public List<NoteDTO> getNotesByCourse(Course course) {
