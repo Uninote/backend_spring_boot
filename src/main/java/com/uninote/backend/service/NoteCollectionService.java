@@ -118,20 +118,12 @@ public class NoteCollectionService {
     
 
     public boolean hasUserLiked(Long collectionId, Long userId) {
-        NoteCollection noteCollection = noteCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new IllegalArgumentException("Collection not found with ID: " + collectionId));
         
-        CollectionLike like = collectionLikeRepository.findByIdCollectionIdAndIdUserId(collectionId, userId);
-                return like!=null && like.isActive();
+        return collectionLikeRepository.existsByCollectionIdAndUserIdAndIsActive(collectionId, userId);
     }
     
     public boolean hasUserSaved(Long collectionId, Long userId) {
-            NoteCollection noteCollection = noteCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new IllegalArgumentException("Collection not found with ID: " + collectionId));
-            User user  = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID " + userId));
-            CollectionSave save = collectionSaveRepository.findByIdCollectionIdAndIdUserId(collectionId, userId);
-            return save!=null && save.isActive();
+            return collectionSaveRepository.existsByCollectionIdAndUserIdAndIsActive(collectionId, userId);
     }
 }
 
