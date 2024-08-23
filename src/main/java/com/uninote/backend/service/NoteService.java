@@ -496,6 +496,7 @@ public class NoteService {
             .findFirst()
             .orElse("Unknown University Name");  
         dto.setUniversityName(englishUniversityName);
+        dto.setCreatedAt(note.getCreatedAt());
         return dto;
     }
 
