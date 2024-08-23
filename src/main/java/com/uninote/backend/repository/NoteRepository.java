@@ -143,5 +143,19 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
     long countByUserId(@Param("userId") Long userId);
 
+
+    @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, n.isPublic, " +
+       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
+       "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
+       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+       "FROM NoteSave ns " +
+       "JOIN ns.note n " +
+       "JOIN n.course c " +
+       "JOIN c.department d " +
+       "JOIN n.user u " +
+       "WHERE ns.user.id = :userId AND ns.isActive = TRUE AND n.isPublic = TRUE")
+   List<NoteDTO> findPublicSavedNotesByUserId(@Param("userId") Long userId);
+
     
 }

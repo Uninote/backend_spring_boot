@@ -522,7 +522,6 @@ public class NoteService {
     }
 
     public List<NoteDTO> getPublicSavedNotesByUser(Long userId) {
-        return noteSaveRepository.findPublicSavedNotesByUserId(userId).stream()
-        .map(noteSave -> convertToDTO(noteSave.getNote()))
-        .collect(Collectors.toList());    }
+        return noteRepository.findPublicSavedNotesByUserId(userId);   
+    }
 }
