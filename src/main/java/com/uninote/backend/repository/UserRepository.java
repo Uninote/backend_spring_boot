@@ -27,7 +27,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u  WHERE u.role.id IN (1, 2) AND u.university = :university ORDER BY u.uniscore DESC" )
     List<User> findTop100ByUniscoreByUniversity(@Param("university") University university);
 
-    Optional<User> findByFirebaseUid(String firebaseUid);
+    //Optional<User> findByFirebaseUid(String firebaseUid);
+
+    @Query("SELECT u.id FROM User u WHERE u.firebaseUid = :firebaseUid")
+    Optional<Long> findUserIdByFirebaseUid(@Param("firebaseUid") String firebaseUid);
 
     @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
     long countUserNotes(Long userId);

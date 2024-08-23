@@ -104,9 +104,9 @@ public class UserController {
     }
 
     @GetMapping("/firebase/{firebaseUid}")
-    public ResponseEntity<UserDTO> findByFirebaseUid(@PathVariable String firebaseUid) {
-        UserDTO userDTO = userService.findByFirebaseUid(firebaseUid);
-        return userDTO != null ? ResponseEntity.ok(userDTO) : ResponseEntity.notFound().build();
+    public ResponseEntity<Long> findByFirebaseUid(@PathVariable String firebaseUid) {
+        Long userId = userService.findByFirebaseUid(firebaseUid);
+        return userId!= null ? ResponseEntity.ok(userId) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{userId}")

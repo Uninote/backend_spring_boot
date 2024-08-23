@@ -249,10 +249,10 @@ public class UserService {
         }
     }
 
-    public UserDTO findByFirebaseUid(String firebaseUid) {
-        Optional<User> userOptional = userRepository.findByFirebaseUid(firebaseUid);
-        if (userOptional.isPresent()) {
-            return EntityToDTOConverter.convertUserToDTO(userOptional.get());
+    public Long findByFirebaseUid(String firebaseUid) {
+        Optional<Long> userId = userRepository.findUserIdByFirebaseUid(firebaseUid);
+        if (userId.isPresent()) {
+            return userId.get();
         } else {
             return null;
         }
