@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-
+import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.UserProfileProjection;
 
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -39,4 +40,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+
+    @Query("SELECT u.id AS id, u.firebaseUid AS firebaseUid, u.name AS name, " +
+       "dn.name AS departmentName, dn.fullName AS departmentFullName, " +
+       "un.name AS universityName, un.fullName AS universityFullName, " +
+       "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+       "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
+       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id) AS totalNotes, " +
+       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true) AS totalPublicNotes, " +
+       "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes " +
+       "FROM User u " +
+       "JOIN DepartmentName dn ON dn.department = u.department " +
+       "JOIN UniversityName un ON un.university = u.university " +
+       "JOIN Rank r ON r.id = u.rank.id " +
+       "WHERE dn.language.id = :languageId " +
+       "AND un.language.id = :languageId " +
+       "AND u.id = :userId")
+UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+
 }

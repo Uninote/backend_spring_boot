@@ -6,6 +6,7 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.service.UserService;
@@ -169,5 +170,13 @@ public class UserController {
     public ResponseEntity<Boolean> validateEmail(@RequestParam String email) {
         boolean emailExists = userService.doesEmailExist(email);
         return ResponseEntity.ok(emailExists);
+    }
+
+     @GetMapping("/{userId}/profile")
+    public ResponseEntity<UserProfileProjection> getUserProfile(
+            @PathVariable Long userId, 
+            @RequestParam Long languageId) {
+        UserProfileProjection userProfile = userService.getUserProfileById(userId, languageId);
+        return ResponseEntity.ok(userProfile);
     }
 }

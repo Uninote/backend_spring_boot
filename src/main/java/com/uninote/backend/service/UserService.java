@@ -12,6 +12,7 @@ import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
+import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.RankRepository;
 import com.uninote.backend.repository.RoleRepository;
@@ -299,5 +300,9 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean doesEmailExist(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public UserProfileProjection getUserProfileById(Long userId, Long languageId) {
+        return userRepository.findUserProfileById(userId, languageId);
     }
 }
