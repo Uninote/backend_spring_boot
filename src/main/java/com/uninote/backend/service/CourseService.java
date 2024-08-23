@@ -8,6 +8,7 @@ import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.CourseNameId;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Language;
+import com.uninote.backend.interfaceProjection.CourseProjection;
 import com.uninote.backend.repository.CourseNameRepository;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.DepartmentRepository;
@@ -87,17 +88,10 @@ public class CourseService {
         courseRepository.deleteById(id);
     }
 
-    public List<Map<String, String>> getCourseDetailsByDepartmentAndSemester(Long departmentId, int semester, String language) {
-        Department department = departmentRepository.findById(departmentId).orElseThrow(() -> new IllegalArgumentException(" Department not found"));
-        List<Course> courses = courseRepository.findByDepartmentAndSemester(department, semester);
-        return courses.stream().map(course -> {
-            CourseName courseName = course.getCourseNames().stream()
-                .filter(name -> name.getLanguage().getCode().equals(language))
-                .findFirst()
-                .orElse(null);
-            String name = courseName != null ? courseName.getName() : "Name not found";
-            return Map.of("id", course.getId().toString(), "name", name);
-        }).collect(Collectors.toList());
+    public List<CourseProjection> getCourseDetailsByDepartmentAndSemester(Long departmentId, int semester, String language) {
+        List<CourseProjection> courseProjections = courseRepository
+            .findCoursesByDepartmentAndSemesterAndLanguage(departmentId, semester, language);
+        return courseProjections;
     }
 
 }

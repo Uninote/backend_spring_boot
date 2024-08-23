@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
+import com.uninote.backend.interfaceProjection.CourseProjection;
 import com.uninote.backend.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -45,11 +46,11 @@ public class CourseController {
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/{departmentId}/{semesterId}")
-    public ResponseEntity<List<Map<String, String>>> getCoursesByDepartmentAndSemester(
+    public ResponseEntity<List<CourseProjection>> getCoursesByDepartmentAndSemester(
             @PathVariable Long departmentId,
             @PathVariable int semesterId,
             @RequestParam String language) {
-        List<Map<String, String>> courses = courseService.getCourseDetailsByDepartmentAndSemester(departmentId, semesterId, language);
+        List<CourseProjection> courses = courseService.getCourseDetailsByDepartmentAndSemester(departmentId, semesterId, language);
         if (courses.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
