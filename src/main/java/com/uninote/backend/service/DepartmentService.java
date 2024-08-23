@@ -53,20 +53,11 @@ public class DepartmentService {
         this.departmentRepository = departmentRepository;
     }
 
-    public List<Map<String, String>> getDepartmentsByUniversityIdAndLanguage(Long universityId, String languageCode) {
+    public List<DepartmentProjection> getDepartmentsByUniversityIdAndLanguage(Long universityId, String languageCode) {
         List<DepartmentProjection> departmentProjections = departmentRepository
             .findDepartmentProjectionsByUniversityIdAndLanguageCode(universityId, languageCode);
 
-        return departmentProjections.stream()
-            .map(projection -> {
-                Map<String, String> deptMap = new HashMap<>();
-                deptMap.put("id", String.valueOf(projection.getId()));
-                deptMap.put("fullName", projection.getFullName());
-                deptMap.put("name", projection.getName());
-                deptMap.put("languageCode", projection.getLanguageCode());
-                return deptMap;
-            })
-            .collect(Collectors.toList());
+        return departmentProjections;
     }
 
     public DepartmentDTO getDepartment(Long id) {

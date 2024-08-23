@@ -5,4 +5,5 @@ public interface DepartmentProjection {
     String getFullName();
     String getName();
     String getLanguageCode();
+    Integer getSemesters();
 }

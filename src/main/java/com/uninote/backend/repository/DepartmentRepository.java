@@ -26,7 +26,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     List<Department> findByUniversityId(Long universityId);
 
-    @Query("SELECT d.id AS id, dn.fullName AS fullName, dn.name AS name, l.code AS languageCode " +
+    @Query("SELECT d.id AS id, dn.fullName AS fullName, dn.name AS name, l.code AS languageCode, d.semesters AS semesters " +
            "FROM Department d " +
            "JOIN d.departmentNames dn " +
            "JOIN dn.language l " +
