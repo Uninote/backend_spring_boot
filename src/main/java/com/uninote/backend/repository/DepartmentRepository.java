@@ -11,6 +11,7 @@ import java.util.Optional;
 import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.entity.Department;
+import com.uninote.backend.interfaceProjection.DepartmentProjection;
 
 
 @Repository
@@ -24,6 +25,16 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     List<DepartmentNameDTO> findNamesById(@Param("departmentId") Long departmentId);
 
     List<Department> findByUniversityId(Long universityId);
+
+    @Query("SELECT d.id AS id, dn.fullName AS fullName, dn.name AS name, l.code AS languageCode " +
+           "FROM Department d " +
+           "JOIN d.departmentNames dn " +
+           "JOIN dn.language l " +
+           "WHERE d.university.id = :universityId " +
+           "AND l.code = :languageCode")
+    List<DepartmentProjection> findDepartmentProjectionsByUniversityIdAndLanguageCode(
+        @Param("universityId") Long universityId, 
+        @Param("languageCode") String languageCode);
 }   
 
 
