@@ -19,14 +19,19 @@ import com.uninote.backend.interfaceProjection.UserProfileProjection;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findById(String id);
     
-    @Query("SELECT u FROM User u WHERE u.role.id IN (1, 2) ORDER BY u.uniscore DESC")
-    List<User> findTop100ByUniscore();
+    @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl " +
+       "FROM User u WHERE u.role.id IN (1, 2) ORDER BY u.uniscore DESC")
+    List<UserInfoProjection> findTop100ByUniscore();
 
-    @Query("SELECT u FROM User u  WHERE u.role.id IN (1, 2) AND u.department = :department ORDER BY u.uniscore DESC" )
-    List<User> findTop100ByUniscoreByDepartment(@Param("department") Department department);
+    @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl " +
+    "FROM User u WHERE u.role.id IN (1, 2) AND u.department = :department ORDER BY u.uniscore DESC")
+    List<UserInfoProjection> findTop100ByUniscoreByDepartment(@Param("department") Department department);
 
-    @Query("SELECT u FROM User u  WHERE u.role.id IN (1, 2) AND u.university = :university ORDER BY u.uniscore DESC" )
-    List<User> findTop100ByUniscoreByUniversity(@Param("university") University university);
+
+    @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl " +
+       "FROM User u WHERE u.role.id IN (1, 2) AND u.university = :university ORDER BY u.uniscore DESC")
+    List<UserInfoProjection> findTop100ByUniscoreByUniversity(@Param("university") University university);
+
 
     //Optional<User> findByFirebaseUid(String firebaseUid);
 

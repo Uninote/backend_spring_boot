@@ -59,8 +59,8 @@ public class UserController {
         }
     }
     @GetMapping("/leaderboard")
-    public ResponseEntity<List<UserDTO>> getLeaderboard(){
-        List <UserDTO> leaderborad = userService.getTop100UsersByUniscore();
+    public ResponseEntity<List<UserInfoProjection>> getLeaderboard(){
+        List <UserInfoProjection> leaderborad = userService.getTop100UsersByUniscore();
         return ResponseEntity.ok(leaderborad);
     }
 
@@ -83,18 +83,18 @@ public class UserController {
 
      
     @GetMapping("/leaderboard/university/{universityId}")
-    public ResponseEntity<List<UserDTO>> getLeaderboardByUniversity(@PathVariable Long universityId) {
+    public ResponseEntity<List<UserInfoProjection>> getLeaderboardByUniversity(@PathVariable Long universityId) {
         University university = universityRepository.findById(universityId)
                 .orElseThrow(() -> new IllegalArgumentException("University not found"));
-        List<UserDTO> leaderboard = userService.getTop100UsersByUniscoreByUniversity(university);
+        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByUniversity(university);
         return ResponseEntity.ok(leaderboard);
     }
 
     @GetMapping("/leaderboard/department/{departmentId}")
-    public ResponseEntity<List<UserDTO>> getLeaderboardByDepartment(@PathVariable Long departmentId) {
+    public ResponseEntity<List<UserInfoProjection>> getLeaderboardByDepartment(@PathVariable Long departmentId) {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Department not found"));
-        List<UserDTO> leaderboard = userService.getTop100UsersByUniscoreByDepartment(department);
+        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByDepartment(department);
         return ResponseEntity.ok(leaderboard);
     }
 

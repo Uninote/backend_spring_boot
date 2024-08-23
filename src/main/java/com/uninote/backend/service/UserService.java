@@ -217,18 +217,18 @@ public class UserService {
     }
     
 
-    public List<UserDTO> getTop100UsersByUniscore(){
-        List<User> topUsers = userRepository.findTop100ByUniscore();
-        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    public List<UserInfoProjection> getTop100UsersByUniscore(){
+        return userRepository.findTop100ByUniscore();
+        
     }
 
-    public List<UserDTO> getTop100UsersByUniscoreByDepartment(Department department){
-        List<User> topUsers = userRepository.findTop100ByUniscoreByDepartment(department);
-        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    public List<UserInfoProjection> getTop100UsersByUniscoreByDepartment(Department department){
+        return userRepository.findTop100ByUniscoreByDepartment(department);
+        
     }
-    public List<UserDTO> getTop100UsersByUniscoreByUniversity(University university){
-        List<User> topUsers = userRepository.findTop100ByUniscoreByUniversity(university);
-        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    public List<UserInfoProjection> getTop100UsersByUniscoreByUniversity(University university){
+        return userRepository.findTop100ByUniscoreByUniversity(university);
+       
     }
 
     
