@@ -6,6 +6,7 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.UniversityRepository;
@@ -178,5 +179,14 @@ public class UserController {
             @RequestParam Long languageId) {
         UserProfileProjection userProfile = userService.getUserProfileById(userId, languageId);
         return ResponseEntity.ok(userProfile);
+    }
+
+    @GetMapping("/{userId}/info")
+    public ResponseEntity<UserInfoProjection> getUserInfo(@PathVariable Long userId) {
+        UserInfoProjection userInfo = userService.getUserInfo(userId);
+        if (userInfo == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(userInfo);
     }
 }

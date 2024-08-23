@@ -12,6 +12,7 @@ import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
 
 
@@ -59,6 +60,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
        "WHERE dn.language.id = :languageId " +
        "AND un.language.id = :languageId " +
        "AND u.id = :userId")
-UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+    UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+
+     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
+           "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl " +
+           "FROM User u WHERE u.id = :userId")
+    UserInfoProjection findUserInfoById(@Param("userId") Long userId);
 
 }

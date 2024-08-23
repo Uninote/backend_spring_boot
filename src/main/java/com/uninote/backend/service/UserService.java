@@ -12,6 +12,7 @@ import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
+import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.RankRepository;
@@ -305,4 +306,11 @@ public class UserService {
     public UserProfileProjection getUserProfileById(Long userId, Long languageId) {
         return userRepository.findUserProfileById(userId, languageId);
     }
+
+
+     public UserInfoProjection getUserInfo(Long userId) {
+        return userRepository.findUserInfoById(userId);
+    }
+
+
 }
