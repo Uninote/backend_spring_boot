@@ -10,6 +10,7 @@ import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.interfaceProjection.CollectionProjection;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.dto.NoteDTO;
@@ -104,11 +105,10 @@ public class NoteCollectionService {
         return noteCollectionRepository.findByAdmin(user);
     }
 
-    public List<NoteDTO> getNotesInCollection(Long collectionId) {
-        List<NoteCollectionItem> items=  noteCollectionItemRepository.findByCollectionId(collectionId);
-        List<Long> noteIds = items.stream().map(NoteCollectionItem::getNoteId).collect(Collectors.toList());
-        List<Note> notes = noteRepository.findAllById(noteIds);
-        return notes.stream().map(EntityToDTOConverter::convertNoteToDTO).collect(Collectors.toList());
+    public List<NoteProjection> getNotesInCollection(Long collectionId) {
+        List<NoteProjection> items=  noteCollectionItemRepository.findNoteProjectionsByCollectionId(collectionId);
+        
+        return items;
     }
 
     public List<CollectionProjection> getPublicCollections() {

@@ -5,6 +5,7 @@ import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.NoteCollectionItem;
 import com.uninote.backend.interfaceProjection.CollectionProjection;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.service.NoteCollectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -41,8 +42,8 @@ public class NoteCollectionController {
     }
 
     @GetMapping("/{collectionId}/notes")
-    public ResponseEntity<List<NoteDTO>> getNotesInCollection(@PathVariable Long collectionId) {
-        List<NoteDTO> items = noteCollectionService.getNotesInCollection(collectionId);
+    public ResponseEntity<List<NoteProjection>> getNotesInCollection(@PathVariable Long collectionId) {
+        List<NoteProjection> items = noteCollectionService.getNotesInCollection(collectionId);
         return ResponseEntity.ok(items);
     }
     @DeleteMapping("/{collectionId}/removeNote/{noteId}")
