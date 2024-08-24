@@ -85,9 +85,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
        "AND u.id = :userId")
     UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
 
-     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
-           "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl " +
-           "FROM User u WHERE u.id = :userId")
-    UserInfoProjection findUserInfoById(@Param("userId") Long userId);
+    @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
+      "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+      "dn.name AS departmentName, " +
+      "un.name AS universityName " +
+      "FROM User u " +
+      "JOIN DepartmentName dn ON dn.department = u.department AND dn.language.id = :languageId " +
+      "JOIN UniversityName un ON un.university = u.university AND un.language.id = :languageId " +
+      "WHERE u.id = :userId")
+UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("languageId") Long languageId);
 
 }

@@ -8,4 +8,6 @@ public interface UserInfoProjection {
     String getProfileImageUrl();
     String getRankName();
     Long getUserId();
+    String getDepartmentName();
+    String getUniversityName();
 }

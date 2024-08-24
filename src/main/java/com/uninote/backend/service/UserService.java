@@ -309,7 +309,7 @@ public class UserService {
 
 
      public UserInfoProjection getUserInfo(Long userId) {
-        return userRepository.findUserInfoById(userId);
+        return userRepository.findUserInfoById(userId,1L);
     }
 
 
