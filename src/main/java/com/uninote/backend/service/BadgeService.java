@@ -10,6 +10,7 @@ import com.uninote.backend.entity.Badge;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
 import com.uninote.backend.entity.UserBadgeId;
+import com.uninote.backend.interfaceProjection.BadgeProjection;
 import com.uninote.backend.repository.BadgeRepository;
 import com.uninote.backend.repository.BadgeTypeRepository;
 import com.uninote.backend.repository.InviteRepository;
@@ -129,7 +130,10 @@ public class BadgeService {
         }
 
         //add extra field 0 or 1 depending on if user has badge
-        @Transactional
+        public List<BadgeProjection> getAllBagdesByUser(Long userId) {
+            return userBadgeRepository.findAllBadgesByUserId(userId);
+         }
+       /*  @Transactional
         public List<UserHasBadgeDTO> getAllBagdesByUser(Long userId) {
             User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User Not found"));
             List<Badge> allBadges = badgeRepository.findAll();
@@ -148,7 +152,7 @@ public class BadgeService {
                 badge.getType().getName()))
             .collect(Collectors.toList());
 
-        }
+        } */
         private boolean meetsRequirement(User user, Badge badge) {
             switch (badge.getType().getId().intValue()) {
                 case 1:     

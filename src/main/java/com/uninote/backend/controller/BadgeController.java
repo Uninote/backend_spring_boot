@@ -4,6 +4,7 @@ import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
 import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.BadgeProjection;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.BadgeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +55,7 @@ public class BadgeController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<UserHasBadgeDTO> getUserBadges(@PathVariable Long userId) {
+    public List<BadgeProjection> getUserBadges(@PathVariable Long userId) {
         return badgeService.getAllBagdesByUser(userId);
     }
 }   
