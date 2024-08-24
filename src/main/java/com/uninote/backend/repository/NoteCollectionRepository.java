@@ -20,4 +20,12 @@ public interface NoteCollectionRepository extends JpaRepository<NoteCollection, 
             "FROM NoteCollection c " +
             "WHERE c.isPublic = true")
     List<CollectionProjection> findPublicCollections();
+
+    @Query("SELECT c.collectionId AS collectionId, c.name AS name, c.description AS description, " +
+            "c.isPublic AS isPublic, c.admin.username AS adminUsername, " +
+            "(SELECT COUNT(cl) FROM CollectionLike cl WHERE cl.collection.collectionId = c.collectionId AND isActive =True) AS totalLikes, " +
+            "(SELECT COUNT(nci) FROM NoteCollectionItem nci WHERE nci.collectionId = c.collectionId) AS noteNum " +
+            "FROM NoteCollection c " +
+            "WHERE c.admin.id = :userId")
+    List<CollectionProjection> findCollectionsByUser(Long userId);
 }

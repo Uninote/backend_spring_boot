@@ -36,9 +36,9 @@ public class NoteCollectionController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<NoteCollection>> getCollectionsByUser(@PathVariable Long userId) {
-        List<NoteCollection> collections = noteCollectionService.getCollectionsByUser(userId);
-        return ResponseEntity.ok(collections);
+    public ResponseEntity<List<CollectionProjection>> getUsercNoteCollections(@PathVariable Long userId) {
+        List<CollectionProjection> publicNoteCollections = noteCollectionService.getUserCollections(userId);
+        return ResponseEntity.ok(publicNoteCollections);
     }
 
     @GetMapping("/{collectionId}/notes")
@@ -59,6 +59,8 @@ public class NoteCollectionController {
         List<CollectionProjection> publicNoteCollections = noteCollectionService.getPublicCollections();
         return ResponseEntity.ok(publicNoteCollections);
     }
+
+    
 
     @GetMapping("/{collectionId}/likes/user/{userId}")
     public ResponseEntity<Boolean> hasUserLiked(@PathVariable Long collectionId, @PathVariable Long userId) {

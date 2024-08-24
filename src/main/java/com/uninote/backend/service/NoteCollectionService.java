@@ -114,6 +114,10 @@ public class NoteCollectionService {
     public List<CollectionProjection> getPublicCollections() {
         return noteCollectionRepository.findPublicCollections();
     }
+
+    public List<CollectionProjection> getUserCollections(Long userId) {
+        return noteCollectionRepository.findCollectionsByUser(userId);
+    }
     
     
 
