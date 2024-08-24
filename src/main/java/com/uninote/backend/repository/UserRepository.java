@@ -93,6 +93,38 @@ public interface UserRepository extends JpaRepository<User, Long> {
       "JOIN DepartmentName dn ON dn.department = u.department AND dn.language.id = :languageId " +
       "JOIN UniversityName un ON un.university = u.university AND un.language.id = :languageId " +
       "WHERE u.id = :userId")
-UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+   UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+
+   @Query(value = "SELECT rank FROM (" +
+               "  SELECT u.user_id, RANK() OVER (PARTITION BY u.department_id ORDER BY u.uniscore DESC) AS rank " +
+               "  FROM users u " +
+               "  WHERE u.role_id IN (1, 2)" +
+               ") ranked_users WHERE ranked_users.user_id = :userId", 
+       nativeQuery = true)
+   Integer findUserRankInDepartment(@Param("userId") Long userId);
+
+
+   @Query(value = "SELECT rank FROM (" +
+               "  SELECT u.user_id, RANK() OVER (PARTITION BY u.university_id ORDER BY u.uniscore DESC) AS rank " +
+               "  FROM users u " +
+               "  WHERE u.role_id IN (1, 2)" +
+               ") ranked_users WHERE ranked_users.user_id = :userId", 
+       nativeQuery = true)
+   Integer findUserRankInUniversity(@Param("userId") Long userId);
+
+
+
+   @Query(value = "SELECT rank FROM (" +
+               "  SELECT u.user_id, RANK() OVER (ORDER BY u.uniscore DESC) AS rank " +
+               "  FROM users u " +
+               "  WHERE u.role_id IN (1, 2)" +
+               ") ranked_users WHERE ranked_users.user_id = :userId", 
+       nativeQuery = true)
+Integer findUserGlobalRank(@Param("userId") Long userId);
+
+
+
+
+
 
 }

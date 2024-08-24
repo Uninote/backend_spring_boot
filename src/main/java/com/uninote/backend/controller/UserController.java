@@ -13,6 +13,7 @@ import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -184,5 +185,25 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(userInfo);
+    }
+
+    @GetMapping("/{userId}/rank/department")
+    public Integer getUserRankInDepartment(@PathVariable Long userId) {
+        return userService.getUserRankInDepartment(userId);
+    }
+
+    @GetMapping("/{userId}/rank/university")
+    public Integer getUserRankInUniversity(@PathVariable Long userId) {
+        return userService.getUserRankInUniversity(userId);
+    }
+
+    @GetMapping("/{userId}/rank/global")
+    public Integer getUserGlobalRank(@PathVariable Long userId) {
+        return userService.getUserGlobalRank(userId);
+    }
+
+    @GetMapping("/{userId}/ranks")
+    public Map<String, Integer> getUserRanks(@PathVariable Long userId) {
+        return userService.getUserRanks(userId);
     }
 }

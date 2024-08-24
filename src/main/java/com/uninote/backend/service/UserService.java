@@ -29,7 +29,9 @@ import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -310,6 +312,38 @@ public class UserService {
 
      public UserInfoProjection getUserInfo(Long userId) {
         return userRepository.findUserInfoById(userId,1L);
+    }
+
+    
+    public Integer getUserRankInDepartment(Long userId) {
+        return userRepository.findUserRankInDepartment(userId);
+    }
+
+    
+    public Integer getUserRankInUniversity(Long userId) {
+        return userRepository.findUserRankInUniversity(userId);
+    }
+
+    
+    public Integer getUserGlobalRank(Long userId) {
+        return userRepository.findUserGlobalRank(userId);
+    }
+
+    public Map<String, Integer> getUserRanks(Long userId) {
+        Map<String, Integer> userRanks = new HashMap<>();
+
+        
+        Integer rankInDepartment = userRepository.findUserRankInDepartment(userId);
+        userRanks.put("department", rankInDepartment);
+
+        Integer rankInUniversity = userRepository.findUserRankInUniversity(userId);
+        userRanks.put("university", rankInUniversity);
+
+        
+        Integer globalRank = userRepository.findUserGlobalRank(userId);
+        userRanks.put("global", globalRank);
+
+        return userRanks;
     }
 
 
