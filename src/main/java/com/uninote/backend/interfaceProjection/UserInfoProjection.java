@@ -6,4 +6,6 @@ public interface UserInfoProjection {
     Long getUniscore();
     String getUsername();
     String getProfileImageUrl();
+    String getRankName();
+    Long getUserId();
 }

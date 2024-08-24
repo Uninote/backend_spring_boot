@@ -19,21 +19,32 @@ import com.uninote.backend.interfaceProjection.UserProfileProjection;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findById(String id);
     
-    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, u.username AS username, u.profile_image_url AS profileImageUrl " +
-               "FROM users u WHERE u.role_id IN (1, 2) ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
+    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
+               "FROM users u " +
+               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "WHERE u.role_id IN (1, 2) " +
+               "ORDER BY u.uniscore DESC " +
+               "FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
-    List<UserInfoProjection> findTop100ByUniscore();
+   List<UserInfoProjection> findTop100ByUniscore();
 
-    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, u.username AS username, u.profile_image_url AS profileImageUrl " +
-               "FROM users u WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId " +
+   @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
+               "FROM users u " +
+               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> findTop100ByUniscoreByDepartment(@Param("departmentId") Long departmentId);
 
 
 
-    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, u.username AS username, u.profile_image_url AS profileImageUrl " +
-               "FROM users u WHERE u.role_id IN (1, 2) AND u.university_id = :universityId " +
+    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
+               "FROM users u " +
+               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> findTop100ByUniscoreByUniversity(@Param("universityId") Long universityId);
