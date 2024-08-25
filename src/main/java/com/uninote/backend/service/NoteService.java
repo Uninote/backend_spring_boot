@@ -1,6 +1,8 @@
 package com.uninote.backend.service;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -425,9 +428,28 @@ public class NoteService {
     public void deleteNoteById(Long id) {
         noteRepository.deleteById(id);
     }
-    public List<NoteDTO> getPublicNotes() {
-        return noteRepository.findPublicNotes();//.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotes(int page, int size, String sortBy, String sortDir) {
+        
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");            
+        validSortFields.put("createdAt", "createdAt");    
+        validSortFields.put("title", "title");            
+    
+        
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
+                    ? Sort.by(sortField).ascending() 
+                    : Sort.by(sortField).descending();
+    
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        
+        return noteRepository.findPublicNotes(pageable);
     }
+    
     public List<NoteDTO> getPublicNotesByUserAndUniversity(User user, University university) {
         return noteRepository.findPublicNotesByUserAndUniversity(user, university).stream().map(this::convertToDTO).collect(Collectors.toList());
     }
@@ -444,21 +466,77 @@ public class NoteService {
     }
 
 
-    public List<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester) {
-        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester);//.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester, pageable);
     }
-    public List<NoteDTO> getPublicNotesByDepartment(Department department) {
-        return noteRepository.findPublicNotesByDepartment(department);//stream().map(this::convertToDTO).collect(Collectors.toList());
+    
+    public Page<NoteDTO> getPublicNotesByDepartment(Department department, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartment(department, pageable);
     }
+    
 
 
-    public List<NoteDTO> getPublicNotesByCourse(Course course) {
-        return noteRepository.findPublicNotesByCourse(course);//.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotesByCourse(Course course, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByCourse(course, pageable);
     }
+    
 
-    public List<NoteDTO> getPublicNotesByUniversity(University university) {
-        return noteRepository.findPublicNotesByUniversity(university);//.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotesByUniversity(University university, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByUniversity(university, pageable);
     }
+    
 
     private NoteDTO convertToDTO(Note note) {
         NoteDTO dto = new NoteDTO(

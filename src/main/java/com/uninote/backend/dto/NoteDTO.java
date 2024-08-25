@@ -53,7 +53,7 @@ public class NoteDTO {
         this.username = username;
         this.profileImageUrl = profileImageUrl;
         this.createdAt = createdAt;
-
+                    
     }
 
     
