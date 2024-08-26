@@ -71,7 +71,7 @@ public class UserService {
     @Autowired
     private LoginWebSocketController loginWebSocketController;
 
-    public User loginUserAndUpdateStreak(Long userId) {
+    public Void loginUserAndUpdateStreak(Long userId) {
         Boolean eligibleForUniscore = false;
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -105,7 +105,7 @@ public class UserService {
         userLogin.setLoginTimestamp(LocalDateTime.now());
         userLoginRepository.save(userLogin);
         badgeService.checkBadgesForUser(userId);
-        return user;
+        return null;
     }
 
     public User findById(Long userId) {

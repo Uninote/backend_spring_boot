@@ -96,9 +96,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}/login")
-    public ResponseEntity<User> loginUserAndUpdateStreak(@PathVariable Long id) {
-        User updatedUser = userService.loginUserAndUpdateStreak(id);
-        return ResponseEntity.ok(updatedUser);
+    public ResponseEntity<Void> loginUserAndUpdateStreak(@PathVariable Long id) {
+        userService.loginUserAndUpdateStreak(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/firebase/{firebaseUid}")
