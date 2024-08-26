@@ -33,13 +33,15 @@ public class ApprovalController {
 
     
     @GetMapping("/{userId}/{approvedId}")
-public ResponseEntity<Boolean> checkApprovalExists(@PathVariable Long userId, @PathVariable Long approvedId) {
-    ApprovalId id = new ApprovalId(userId, approvedId);
-    Optional<ApprovalDTO> approval = approvalService.getApprovalById(id);
+    public boolean checkApprovalExists(@PathVariable Long userId, @PathVariable Long approvedId) {
+        return approvalService.checkApprovalExists(approvedId, userId);
+    }
 
-    
-    return ResponseEntity.ok(approval.isPresent());
-}
+
+    @GetMapping("/count/{approvedId}")
+    public long countUserApprovals(@PathVariable Long approvedId) {
+        return approvalService.countUserApprovals(approvedId);
+    }
 
 
     

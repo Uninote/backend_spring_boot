@@ -14,4 +14,8 @@ public interface ApprovalRepository extends JpaRepository<Approval, ApprovalId> 
     
     @Query("SELECT a FROM Approval a WHERE a.userId = :userId")
     List<Approval> findAllByUserId(@Param("userId") Long userId);
+
+    boolean existsByApprovedIdAndUserId(Long approvedId, Long userId);
+    
+    long countByApprovedId(Long approvedId);
 }

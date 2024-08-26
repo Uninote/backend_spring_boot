@@ -38,6 +38,14 @@ public class ApprovalService {
         return approval.map(this::convertToDTO);
     }
 
+
+    public boolean checkApprovalExists(Long approvedId, Long userId) {
+        return approvalRepository.existsByApprovedIdAndUserId(approvedId, userId);
+    }
+
+    public long countUserApprovals(Long approvedId) {
+        return approvalRepository.countByApprovedId(approvedId);
+    }
     
     public void deleteApprovalById(ApprovalId id) {
         approvalRepository.deleteById(id);
