@@ -7,10 +7,12 @@ import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
 import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.Badge;
+import com.uninote.backend.entity.BadgeNotification;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
 import com.uninote.backend.entity.UserBadgeId;
 import com.uninote.backend.interfaceProjection.BadgeProjection;
+import com.uninote.backend.repository.BadgeNotificationRepository;
 import com.uninote.backend.repository.BadgeRepository;
 import com.uninote.backend.repository.BadgeTypeRepository;
 import com.uninote.backend.repository.InviteRepository;
@@ -54,6 +56,9 @@ public class BadgeService {
     @Autowired
     private InviteRepository inviteRepository;
 
+    @Autowired
+    private BadgeNotificationRepository badgeNotificationRepository;
+
 
     private static final Logger logger = LoggerFactory.getLogger(BadgeService.class);
 
@@ -96,10 +101,16 @@ public class BadgeService {
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
-        badgeWebSocketController.sendBadgeNotification(user.getFirebaseUid(), userBadge.getBadge().getId());
+        
         logger.debug("Badge assigned: {}", userBadgeDTO);
-        userBadgeRepository.save(userBadge);
-    }
+        BadgeNotification badgeNotification = new BadgeNotification(
+                badge.getId(),
+                user.getId(),
+                LocalDateTime.now()
+        );
+        badgeNotificationRepository.save(badgeNotification);
+
+        badgeWebSocketController.sendBadgeNotification(user.getId(),badgeNotification.getId(), badge.getId());    }
 
 
     @Transactional
@@ -117,9 +128,24 @@ public class BadgeService {
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
-        badgeWebSocketController.sendBadgeNotification(user.getFirebaseUid(), userBadge.getBadge().getId());
+        
+        BadgeNotification badgeNotification = new BadgeNotification(
+                badge.getId(),
+                user.getId(),
+                LocalDateTime.now()
+        );
+        badgeNotificationRepository.save(badgeNotification);
 
-        userBadgeRepository.save(userBadge);
+        badgeWebSocketController.sendBadgeNotification(user.getId(),  badgeNotification.getId(),badge.getId());
+    }
+
+    public void deliverPendingNotifications(Long userId) {
+        List<BadgeNotification> undeliveredNotifications = badgeNotificationRepository.findByUserIdAndDeliveredFalse(userId);
+
+        for (BadgeNotification notification : undeliveredNotifications) {
+            badgeWebSocketController.sendBadgeNotification(notification.getUserId(), notification.getId(), notification.getBadgeId());
+            
+        }
     }
 
         @Transactional
