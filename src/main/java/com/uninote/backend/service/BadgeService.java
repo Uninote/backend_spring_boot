@@ -123,12 +123,12 @@ public class BadgeService {
         if (!meetsRequirement(user, badge)) {
             throw new IllegalArgumentException("User does not meet the requirements for this badge.");
         }
-
+        logger.debug("assigning badge {}", badge.getId());
         UserBadge userBadge = new UserBadge();
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
-        
+        userBadgeRepository.save(userBadge);
         BadgeNotification badgeNotification = new BadgeNotification(
                 badge.getId(),
                 user.getId(),
@@ -180,7 +180,10 @@ public class BadgeService {
 
         } */
         private boolean meetsRequirement(User user, Badge badge) {
+            logger.debug("checking badge TYPE {}", badge.getType().getId().intValue());
+            logger.debug("USER Notes {}", noteRepository.countByUserId(user.getId()));
             switch (badge.getType().getId().intValue()) {
+                
                 case 1:     
                     return noteRepository.countByUserId(user.getId()) >= badge.getRequirement();
                 case 2:         
@@ -200,6 +203,7 @@ public class BadgeService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<Badge> badges = badgeRepository.findAll();
         for (Badge badge : badges) {
+            logger.debug("checking badge {}", badge.getName());
             if (meetsRequirement(user, badge)) {
                 if (!userBadgeRepository.existsById(new UserBadgeId(user.getId(), badge.getId()))) {
                     assignBadgeToUser(user.getId(), badge.getId());
