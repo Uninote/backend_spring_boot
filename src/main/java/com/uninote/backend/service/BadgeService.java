@@ -185,7 +185,7 @@ public class BadgeService {
             switch (badge.getType().getId().intValue()) {
                 
                 case 1:     
-                    return noteRepository.countByUserId(user.getId()) >= badge.getRequirement();
+                    return userRepository.countUserPublicNotes(user.getId()) >= badge.getRequirement();
                 case 2:         
                     return inviteRepository.countByUserIdAndInviteeIsNotNull(user.getId()) >= badge.getRequirement();
                 case 3: 

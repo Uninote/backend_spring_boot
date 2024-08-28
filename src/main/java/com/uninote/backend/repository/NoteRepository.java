@@ -285,7 +285,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 NoteDTO findFirstNoteByCollectionId(@Param("collectionId") Long collectionId);
 
 
-
+long countByUserIdAndIsPublic(Long userId, boolean isPublic);
 
 }
 
