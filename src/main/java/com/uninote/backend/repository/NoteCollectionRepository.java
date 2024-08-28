@@ -6,6 +6,7 @@ import com.uninote.backend.interfaceProjection.CollectionProjection;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -23,6 +24,17 @@ public interface NoteCollectionRepository extends JpaRepository<NoteCollection, 
        "JOIN users u ON c.admin_id = u.user_id " +
        "WHERE c.is_public = 1", nativeQuery = true)
 List<CollectionProjection> findPublicCollections();
+
+@Query(value = "SELECT c.collection_id AS collectionId, c.name AS name, " +
+        "(CASE WHEN c.is_public = 1 THEN 1 ELSE 0 END) AS isPublicRaw, " +  // Use CASE statement for boolean conversion
+        "u.username AS adminUsername, " +
+        "(SELECT COUNT(cl.collection_id) FROM collection_likes cl WHERE cl.collection_id = c.collection_id AND cl.is_active = 1) AS totalLikes, " +
+        "(SELECT COUNT(nci.collection_id) FROM note_collection_items nci WHERE nci.collection_id = c.collection_id) AS noteNum, " +
+        "DBMS_LOB.SUBSTR(c.description, 4000, 1) AS description " +
+        "FROM note_collections c " +
+        "JOIN users u ON c.admin_id = u.user_id " +
+        "WHERE c.collection_id = :collectionId", nativeQuery = true)
+CollectionProjection findCollectionProjectionById(@Param("collectionId") Long collectionId);
 
 
 

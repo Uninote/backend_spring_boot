@@ -138,6 +138,9 @@ public class NoteCollectionService {
         return noteCollectionRepository.findCollectionsByUser(userId);
     }
     
+    public CollectionProjection getCollectionDetails(Long collectionId) {
+        return noteCollectionRepository.findCollectionProjectionById(collectionId);
+    }
     
 
     public boolean hasUserLiked(Long collectionId, Long userId) {

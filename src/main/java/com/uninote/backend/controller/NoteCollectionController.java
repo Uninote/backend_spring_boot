@@ -61,6 +61,14 @@ public class NoteCollectionController {
         return ResponseEntity.ok(publicNoteCollections);
     }
 
+    @GetMapping("/details/{collectionId}")
+public ResponseEntity<CollectionProjection> getCollectionsDetails(@PathVariable Long collectionId) {
+    CollectionProjection publicNoteCollection = noteCollectionService.getCollectionDetails(collectionId);
+    return ResponseEntity.ok(publicNoteCollection);
+}
+
+
+
     
 
     @GetMapping("/{collectionId}/likes/user/{userId}")
