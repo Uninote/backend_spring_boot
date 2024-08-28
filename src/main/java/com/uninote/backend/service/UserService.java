@@ -347,4 +347,10 @@ public class UserService {
     }
 
 
+
+    public Long getUserIdByUsername(String username) {
+        return userRepository.findUserIdByUsername(username)
+                             .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
 }

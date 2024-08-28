@@ -123,6 +123,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 Integer findUserGlobalRank(@Param("userId") Long userId);
 
 
+        @Query("SELECT u.id FROM User u WHERE u.username = :username")
+      Optional<Long> findUserIdByUsername(@Param("username") String username);
+
+
 
 
 

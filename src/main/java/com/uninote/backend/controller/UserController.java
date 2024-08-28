@@ -206,4 +206,9 @@ public class UserController {
     public Map<String, Integer> getUserRanks(@PathVariable Long userId) {
         return userService.getUserRanks(userId);
     }
+
+    @GetMapping("/{username}/userId")
+    public Long getUserIdByUsername(@PathVariable String username) {
+        return userService.getUserIdByUsername(username);
+    }
 }
