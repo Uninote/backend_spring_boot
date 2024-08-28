@@ -31,6 +31,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -429,9 +430,14 @@ public class NoteService {
 
     
     // NEEDS FIXING
-    public void deleteNoteById(Long id) {
-        noteRepository.deleteById(id);
-    }
+    @Transactional
+    public void deleteNoteById(Long noteId) {
+    
+    Note note = noteRepository.findById(noteId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid note ID"));
+    note.setDeleted(true);
+    noteRepository.save(note);
+}
     public Page<NoteDTO> getPublicNotes(int page, int size, String sortBy, String sortDir) {
         
         Map<String, String> validSortFields = new HashMap<>();

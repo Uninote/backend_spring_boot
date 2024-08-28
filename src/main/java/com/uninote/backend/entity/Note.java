@@ -49,6 +49,18 @@ public class Note {
     @Column(name = "like_count")
     private Long likes;
 
+
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
+
     @Column()  
     private String filename;
     
