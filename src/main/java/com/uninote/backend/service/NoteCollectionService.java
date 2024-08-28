@@ -12,6 +12,7 @@ import com.uninote.backend.entity.User;
 import com.uninote.backend.interfaceProjection.CollectionProjection;
 import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.CollectionDTO;
 import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.CollectionLike;
@@ -27,6 +28,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -111,8 +113,25 @@ public class NoteCollectionService {
         return items;
     }
 
-    public List<CollectionProjection> getPublicCollections() {
-        return noteCollectionRepository.findPublicCollections();
+     public List<CollectionDTO> getPublicCollections() {
+        List<CollectionProjection> collections = noteCollectionRepository.findPublicCollections();
+        List<CollectionDTO> collectionDTOs = new ArrayList<>();
+
+        for (CollectionProjection collection : collections) {
+            List<NoteProjection> notes = noteCollectionItemRepository.findNoteProjectionsByCollectionId(collection.getCollectionId());
+            NoteProjection firstNote = notes.isEmpty() ? null : notes.get(0);
+            CollectionDTO collectionDTO = new CollectionDTO(
+                    collection.getCollectionId(),
+                    collection.getName(),
+                    collection.getIsPublic(),
+                    collection.getAdminUsername(),
+                    collection.getTotalLikes(),
+                    collection.getNoteNum(),
+                    firstNote
+            );
+            collectionDTOs.add(collectionDTO);
+        }
+        return collectionDTOs;
     }
 
     public List<CollectionProjection> getUserCollections(Long userId) {

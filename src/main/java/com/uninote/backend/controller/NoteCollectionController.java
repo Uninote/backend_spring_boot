@@ -1,5 +1,6 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.dto.CollectionDTO;
 import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.NoteCollection;
@@ -55,8 +56,8 @@ public class NoteCollectionController {
     }
 
      @GetMapping("/public")
-    public ResponseEntity<List<CollectionProjection>> getPublicNoteCollections() {
-        List<CollectionProjection> publicNoteCollections = noteCollectionService.getPublicCollections();
+    public ResponseEntity<List<CollectionDTO>> getPublicNoteCollections() {
+        List<CollectionDTO> publicNoteCollections = noteCollectionService.getPublicCollections();
         return ResponseEntity.ok(publicNoteCollections);
     }
 

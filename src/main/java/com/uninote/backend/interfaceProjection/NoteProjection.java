@@ -2,6 +2,8 @@ package com.uninote.backend.interfaceProjection;
 
 import java.time.LocalDateTime;
 
+import com.uninote.backend.dto.NoteDTO;
+
 public interface NoteProjection {
     Long getId();
     Long getCourseId();
@@ -17,4 +19,5 @@ public interface NoteProjection {
     String getUsername();
     String getProfileImageUrl();
     LocalDateTime getCreatedAt();
+    NoteDTO getFirstNote();
 }
