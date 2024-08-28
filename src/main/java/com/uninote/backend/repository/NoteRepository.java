@@ -234,6 +234,35 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "ORDER BY n.likes DESC, n.createdAt DESC")
     Page<NoteDTO> searchNotes(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
+       "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+       "FROM Note n " +
+       "JOIN n.course c " +
+       "JOIN c.department d " +
+       "JOIN n.user u " +
+       "JOIN c.courseNames cn " +
+       "JOIN cn.language l " +
+       "JOIN d.university univ " +
+       "JOIN univ.universityNames un " +
+       "JOIN un.language ul " +
+       "JOIN d.departmentNames dn " +
+       "JOIN dn.language dl " +
+       "WHERE n.user.id = :userId " +
+       "AND l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+       "AND (" +
+       "LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+       "LOWER(n.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+       "LOWER(cn.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+       "LOWER(un.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+       "LOWER(dn.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+       ") " +
+       "ORDER BY n.likes DESC, n.createdAt DESC")
+    Page<NoteDTO> searchUserNotes(@Param("keyword") String keyword,@Param("userId") Long userId, Pageable pageable);
+    
+
+
+
 
 
 
