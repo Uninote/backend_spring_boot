@@ -68,6 +68,7 @@ public class Note {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.likes = 0L;
     }
 
     @PreUpdate
