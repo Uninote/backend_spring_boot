@@ -211,4 +211,9 @@ public class UserController {
     public Long getUserIdByUsername(@PathVariable String username) {
         return userService.getUserIdByUsername(username);
     }
+
+    @GetMapping("/{username}/email")
+    public String getUserEmailByUsername(@PathVariable String username) {
+        return userService.getUserEmailByUsername(username);
+    }
 }

@@ -126,7 +126,8 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
         @Query("SELECT u.id FROM User u WHERE u.username = :username")
       Optional<Long> findUserIdByUsername(@Param("username") String username);
 
-
+        @Query("SELECT u.email FROM User u WHERE u.username = :username")
+        Optional<String> findUserEmailByUsername(@Param("username") String username);
 
 
 
