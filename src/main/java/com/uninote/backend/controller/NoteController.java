@@ -265,7 +265,7 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
 }
 
 
-    @GetMapping("/search")
+    @GetMapping("public/search")
     public Page<NoteDTO> searchNotes(@RequestParam String keyword,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
