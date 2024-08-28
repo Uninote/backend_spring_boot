@@ -165,5 +165,10 @@ public class NoteCollectionService {
             logger.debug("deleting collection {}", collection.getDeleted());
             noteCollectionRepository.save(collection);
     }
+
+    @Transactional
+    public void softDeleteCollectionsByUserId(Long userId) {
+        noteCollectionRepository.softDeleteCollectionsByUserId(userId);
+    }
 }
 

@@ -16,6 +16,7 @@ import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.CommentRepository;
 import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.NoteCollectionRepository;
 import com.uninote.backend.repository.NoteLikeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
@@ -88,6 +89,9 @@ public class UserService {
     @Autowired
     private CommentRepository commentRepository;
 
+    @Autowired
+    private NoteCollectionRepository noteCollectionRepository;
+
     public Void loginUserAndUpdateStreak(Long userId) {
         Boolean eligibleForUniscore = false;
         User user = userRepository.findById(userId)
@@ -139,12 +143,14 @@ public void softDeleteUserById(Long userId) {
         
         commentRepository.deleteByUserId(userId);
 
+        noteCollectionRepository.softDeleteCollectionsByUserId(userId);
        
         noteLikeRepository.setInactiveByUserId(userId);
 
        
         noteSaveRepository.setInactiveByUserId(userId);
-
+        
+    
         
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));

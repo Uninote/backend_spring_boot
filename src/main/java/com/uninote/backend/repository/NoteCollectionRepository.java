@@ -5,8 +5,10 @@ import com.uninote.backend.entity.User;
 import com.uninote.backend.interfaceProjection.CollectionProjection;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -35,6 +37,12 @@ List<CollectionProjection> findPublicCollections();
         "JOIN users u ON c.admin_id = u.user_id " +
         "WHERE c.collection_id = :collectionId", nativeQuery = true)
 CollectionProjection findCollectionProjectionById(@Param("collectionId") Long collectionId);
+
+
+        @Modifying
+    @Transactional
+    @Query("UPDATE NoteCollection c SET c.deleted = 1 WHERE c.admin.id = :userId")
+    void softDeleteCollectionsByUserId(@Param("userId") Long userId);
 
 
 

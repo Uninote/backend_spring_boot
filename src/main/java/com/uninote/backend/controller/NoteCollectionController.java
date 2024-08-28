@@ -94,4 +94,14 @@ public ResponseEntity<CollectionProjection> getCollectionsDetails(@PathVariable 
             return ResponseEntity.status(500).build(); 
         }
     }
+
+    @DeleteMapping("/user/{userId}")
+    public ResponseEntity<Void> softDeleteCollectionsByUserId(@PathVariable Long userId) {
+        try {
+            noteCollectionService.softDeleteCollectionsByUserId(userId);
+            return ResponseEntity.ok().build();  
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();  
+        }
+    }
     }
