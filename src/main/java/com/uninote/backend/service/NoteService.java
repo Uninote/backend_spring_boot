@@ -24,6 +24,7 @@ import com.uninote.backend.repository.NoteLikeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.NoteViewRepository;
+import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UserRepository;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -51,6 +52,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
 public class NoteService {
+
+    @Autowired
+    private UniscoreIncreaseLogRepository uniscoreIncreaseLogsRepository;
 
     @Autowired
     private NoteRepository noteRepository;
@@ -624,12 +628,15 @@ public class NoteService {
         note.setIsPublic(noteDto.getIsPublic());
 
         Note savedNote = noteRepository.save(note);
-        long noteCount = noteRepository.countByUserId(user.getId());
-        if (noteCount == 1) {
-            userService.updateUniScore(user, 22L); // Assign a higher UniScore for the first note upload
-        } else {
-            userService.updateUniScore(user, 23L); // Regular UniScore for subsequent note uploads
-        }
+        boolean hasReceivedFirstLog = uniscoreIncreaseLogsRepository.existsByUserIdAndIncreaseTypeId(user.getId(), 22L);
+
+            if (!hasReceivedFirstLog) {
+                
+                userService.updateUniScore(user, 22L); 
+            } else {
+                
+                userService.updateUniScore(user, 23L); 
+            }
         badgeService.checkBadgesForUser(user.getId()); 
         return savedNote;
     }

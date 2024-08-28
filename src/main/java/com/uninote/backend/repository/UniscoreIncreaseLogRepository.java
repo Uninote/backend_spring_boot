@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UniscoreIncreaseLogRepository extends JpaRepository<UniscoreIncreaseLog, Long> {
+
+
+    boolean existsByUserIdAndIncreaseTypeId(Long userId, Long increaseTypeId);
 }
