@@ -263,6 +263,16 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
     Page<NoteDTO> notes = noteService.getPublicNotesByCourse(course, page, size, sortBy, sortDir);
     return ResponseEntity.ok(notes);
 }
+
+
+@GetMapping("/search")
+    public Page<NoteDTO> searchNotes(@RequestParam String keyword,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "likes") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir) {
+        return noteService.searchNotes(keyword, page, size, sortBy, sortDir);
+    }
     @GetMapping("/public/user-course/{userId}/{courseId}")
     public ResponseEntity<List<NoteDTO>> getPublicNotesByUserAndCourse(@PathVariable Long userId, @PathVariable Long courseId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));

@@ -575,6 +575,22 @@ public class NoteService {
         return dto;
     }
 
+
+    public Page<NoteDTO> searchNotes(String keyword, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return noteRepository.searchNotes(keyword, pageable);
+    }
     
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
