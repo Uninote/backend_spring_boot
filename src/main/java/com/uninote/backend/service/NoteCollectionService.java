@@ -23,9 +23,12 @@ import com.uninote.backend.repository.NoteCollectionRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,7 +40,7 @@ import java.util.stream.Collectors;
 @Service
 public class NoteCollectionService {
     
-    
+    private static final Logger logger = LoggerFactory.getLogger(NoteCollectionService.class);
     @Autowired
     private NoteCollectionRepository noteCollectionRepository;
 
@@ -150,6 +153,17 @@ public class NoteCollectionService {
     
     public boolean hasUserSaved(Long collectionId, Long userId) {
             return collectionSaveRepository.existsByCollectionIdAndUserIdAndIsActive(collectionId, userId);
+    }
+
+
+    @Transactional
+        public void softDeleteCollection(Long collectionId) {
+            NoteCollection collection = noteCollectionRepository.findById(collectionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid collection ID"));
+            logger.debug("deleting collection {}", collectionId);
+            collection.setDeleted(true);
+            logger.debug("deleting collection {}", collection.getDeleted());
+            noteCollectionRepository.save(collection);
     }
 }
 

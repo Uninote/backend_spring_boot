@@ -29,6 +29,9 @@ public class NoteCollection {
     @Column(name = "is_public", nullable = false)
     private Boolean isPublic;
 
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
     @ManyToMany
     @JoinTable(
         name = "note_collection_items",
@@ -82,6 +85,14 @@ public class NoteCollection {
 
     public void setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
     }
 
     public Set<Note> getNotes() {

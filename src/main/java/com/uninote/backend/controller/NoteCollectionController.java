@@ -81,4 +81,17 @@ public ResponseEntity<CollectionProjection> getCollectionsDetails(@PathVariable 
         boolean hasSaved = collectionService.hasUserSaved(collectionId, userId);
         return ResponseEntity.ok(hasSaved);
     }
+
+
+    @DeleteMapping("/{collectionId}")
+    public ResponseEntity<Void> softDeleteCollection(@PathVariable Long collectionId) {
+        try {
+            noteCollectionService.softDeleteCollection(collectionId);
+            return ResponseEntity.ok().build(); 
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build(); 
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build(); 
+        }
+    }
     }
