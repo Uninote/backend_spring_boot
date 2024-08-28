@@ -3,6 +3,7 @@ package com.uninote.backend.repository;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,4 +23,9 @@ public interface NoteSaveRepository extends JpaRepository<NoteSave, Long> {
     boolean existsByNoteIdAndUserIdAndIsActive(@Param("noteId") Long noteId, @Param("userId") Long userId);
     @Query("SELECT ns FROM NoteSave ns JOIN ns.note n WHERE ns.user.id = :userId AND n.isPublic = true")
     List<NoteSave> findPublicSavedNotesByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("UPDATE NoteSave ns SET ns.isActive = false WHERE ns.user.id = :userId")
+    void setInactiveByUserId(@Param("userId") Long userId);
+
 }

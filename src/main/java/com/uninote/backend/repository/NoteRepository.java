@@ -12,6 +12,7 @@ import com.uninote.backend.entity.University;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -282,10 +283,16 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "WHERE ci.collection_id = :collectionId " +  
                "ORDER BY n.created_at ASC " +  
                "FETCH FIRST 1 ROWS ONLY", nativeQuery = true)
-NoteDTO findFirstNoteByCollectionId(@Param("collectionId") Long collectionId);
+   NoteDTO findFirstNoteByCollectionId(@Param("collectionId") Long collectionId);
 
 
-long countByUserIdAndIsPublic(Long userId, boolean isPublic);
+   long countByUserIdAndIsPublic(Long userId, boolean isPublic);
+
+
+   @Modifying
+   @Query("UPDATE Note n SET n.deleted = true WHERE n.user.id = :userId")
+   void softDeleteByUserId(@Param("userId") Long userId);
+
 
 }
 

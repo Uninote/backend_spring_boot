@@ -137,7 +137,7 @@ public class NoteController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNoteById(@PathVariable Long id) {
-        noteService.deleteNoteById(id);
+        noteService.softDeleteNoteById(id);
         return ResponseEntity.noContent().build();
     }
 

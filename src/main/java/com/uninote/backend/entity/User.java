@@ -21,7 +21,7 @@ public class User {
     @Column(name = "user_id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "firebase_uid", nullable = false, unique = true)
+    @Column(name = "firebase_uid", nullable = true, unique = true)
     private String firebaseUid;
 
     @Lob
@@ -44,7 +44,7 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = true)
     private String name;
 
     @ManyToOne
@@ -55,7 +55,7 @@ public class User {
     @JoinColumn(name = "university_id", nullable = false)
     private University university;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", nullable = true, unique = true)
     private String email;
 
    
@@ -67,10 +67,10 @@ public class User {
     @JoinColumn(name = "rank_id", nullable = false)
     private Rank rank;
 
-    @Column(name = "username", nullable = false, unique = true)
+    @Column(name = "username", nullable = true, unique = true)
     private String username;
 
-    @Column(name = "profile_image_url")
+    @Column(name = "profile_image_url", nullable = true)
     private String profileImageUrl;
 
     @Column(name = "banner_url")

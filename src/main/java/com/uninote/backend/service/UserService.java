@@ -14,7 +14,11 @@ import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
+import com.uninote.backend.repository.CommentRepository;
 import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.NoteLikeRepository;
+import com.uninote.backend.repository.NoteRepository;
+import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.RankRepository;
 import com.uninote.backend.repository.RoleRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
@@ -33,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 
 @Service
@@ -43,6 +48,15 @@ public class UserService {
     
     @Autowired
     private RankService rankService;
+
+    @Autowired
+    private NoteRepository noteRepository;
+
+    @Autowired
+    private NoteLikeRepository noteLikeRepository;
+
+    @Autowired
+    private NoteSaveRepository noteSaveRepository;
 
     @Autowired
     private final DepartmentRepository departmentRepository = null;
@@ -70,6 +84,9 @@ public class UserService {
 
     @Autowired
     private LoginWebSocketController loginWebSocketController;
+
+    @Autowired
+    private CommentRepository commentRepository;
 
     public Void loginUserAndUpdateStreak(Long userId) {
         Boolean eligibleForUniscore = false;
@@ -114,13 +131,36 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
-        if (userRepository.existsById(userId)) {
-            userRepository.deleteById(userId);
-        } else {
-            throw new IllegalArgumentException("User not found with ID: " + userId);
-        }
+public void softDeleteUserById(Long userId) {
+    try {
+        
+        noteRepository.softDeleteByUserId(userId);
+
+        
+        commentRepository.deleteByUserId(userId);
+
+       
+        noteLikeRepository.setInactiveByUserId(userId);
+
+       
+        noteSaveRepository.setInactiveByUserId(userId);
+
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
+        user.setUsername(null);
+        user.setFirebaseUid(null);
+        user.setEmail(null);
+        user.setName(null);
+        Role role = roleRepository.findById(21L). orElseThrow(() -> new IllegalArgumentException("Role with id 4 not found"));
+        user.setRole(role);
+        userRepository.save(user);
+
+    } catch (Exception e) {
+        
+        throw new RuntimeException("Failed to delete user", e);
     }
+}
 
     public User saveUser(User user) {
         return userRepository.save(user);

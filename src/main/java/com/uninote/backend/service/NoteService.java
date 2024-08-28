@@ -431,7 +431,7 @@ public class NoteService {
     
     // NEEDS FIXING
     @Transactional
-    public void deleteNoteById(Long noteId) {
+    public void softDeleteNoteById(Long noteId) {
     
     Note note = noteRepository.findById(noteId)
             .orElseThrow(() -> new IllegalArgumentException("Invalid note ID"));
