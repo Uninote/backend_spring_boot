@@ -27,7 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -159,6 +162,37 @@ public class BadgeService {
         public List<BadgeProjection> getAllBagdesByUser(Long userId) {
             return userBadgeRepository.findAllBadgesByUserId(userId);
          }
+
+
+         public List<BadgeProjection> getTopBadgesPerCategory(Long userId) {
+            // Fetch badges using the custom query
+            List<BadgeProjection> allBadges = userBadgeRepository.findAllBadgesByUserId(userId);
+    
+            // Group badges by category (typeName)
+            Map<String, List<BadgeProjection>> badgesByCategory = allBadges.stream()
+                    .collect(Collectors.groupingBy(BadgeProjection::getTypeName));
+    
+            List<BadgeProjection> topBadges = new ArrayList<>();
+    
+            // For each category, find the top badge
+            for (Map.Entry<String, List<BadgeProjection>> entry : badgesByCategory.entrySet()) {
+                List<BadgeProjection> categoryBadges = entry.getValue();
+    
+                // Find the badge that the user has, or the one with the lowest requirement
+                BadgeProjection topBadge = categoryBadges.stream()
+                        .filter(BadgeProjection::getUserHasBadge)  // Use getUserHasBadge() method
+                        .findFirst()  // If user has a badge, pick that one
+                        .orElseGet(() -> categoryBadges.stream()
+                                .min(Comparator.comparingInt(BadgeProjection::getRequirement))  // Else, pick the one with the lowest requirement
+                                .orElse(null));
+    
+                if (topBadge != null) {
+                    topBadges.add(topBadge);
+                }
+            }
+    
+            return topBadges;
+        }
        /*  @Transactional
         public List<UserHasBadgeDTO> getAllBagdesByUser(Long userId) {
             User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User Not found"));
@@ -211,4 +245,7 @@ public class BadgeService {
             }
         }
     }
+
+
+   
 }

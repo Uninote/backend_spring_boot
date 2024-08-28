@@ -65,4 +65,9 @@ public class BadgeController {
         badgeService.deliverPendingNotifications(userId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/users/{userId}/top")
+    public List<BadgeProjection> getTopBadgesPerCategory(@PathVariable Long userId) {
+        return badgeService.getTopBadgesPerCategory(userId);
+    }
 }   
