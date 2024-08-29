@@ -52,7 +52,7 @@ public class NoteViewService {
             noteView.setUserId(userId);
             noteView.setCreatedAt(LocalDateTime.now());; 
         
-
+            userService.updateUniScore(note.getUser(), 3L);
        
         return noteViewRepository.save(noteView);
     }
