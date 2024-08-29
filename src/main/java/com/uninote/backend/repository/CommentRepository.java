@@ -31,6 +31,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     void deleteByUserId(@Param("userId") Long userId);
 
 
-    void deleteByUserId(Long userId);
+    
 
 }
