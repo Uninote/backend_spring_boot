@@ -160,6 +160,11 @@ public class UserService {
     @Transactional
 public void softDeleteUserById(Long userId) {
     try {
+
+        List<Long> commentIds = commentRepository.findCommentIdsByUserId(userId);
+        if (!commentIds.isEmpty()) {
+            commentLikeRepository.deleteByComment_CommentIdIn(commentIds);
+        }
         commentLikeRepository.deleteByUserId(userId);
         commentRepository.deleteByUserId(userId);
 
