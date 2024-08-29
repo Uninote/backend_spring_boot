@@ -14,6 +14,7 @@ import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
+import com.uninote.backend.repository.CommentLikeRepository;
 import com.uninote.backend.repository.CommentRepository;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.NoteCollectionRepository;
@@ -46,6 +47,9 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 public class UserService {
+
+    @Autowired
+    private CommentLikeRepository commentLikeRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -156,6 +160,7 @@ public class UserService {
     @Transactional
 public void softDeleteUserById(Long userId) {
     try {
+        commentLikeRepository.deleteByUserId(userId);
         commentRepository.deleteByUserId(userId);
 
         

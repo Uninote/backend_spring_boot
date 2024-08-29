@@ -30,4 +30,6 @@ public interface NoteLikeRepository extends JpaRepository<NoteLike, NoteLikeId> 
     @Modifying
     @Query("UPDATE NoteLike nl SET nl.isActive = false WHERE nl.user.id = :userId")
     void setInactiveByUserId(@Param("userId") Long userId);
+    
+    void deleteByUserId(Long userId);
 }
