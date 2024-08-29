@@ -156,11 +156,12 @@ public class UserService {
     @Transactional
 public void softDeleteUserById(Long userId) {
     try {
+        commentRepository.deleteByUserId(userId);
+
         
         noteRepository.softDeleteByUserId(userId);
 
         
-        commentRepository.deleteByUserId(userId);
 
         noteCollectionRepository.softDeleteCollectionsByUserId(userId);
        
