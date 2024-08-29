@@ -30,7 +30,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("DELETE FROM Comment c WHERE c.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 
-    @Query(value = "SELECT comment_id FROM comments WHERE user_id = :userId")
+    @Query(value = "SELECT comment_id FROM comments WHERE user_id = :userId", nativeQuery =  true)
     List<Long> findCommentIdsByUserId(@Param("userId") Long userId);
 
 
