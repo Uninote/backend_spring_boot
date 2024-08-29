@@ -40,10 +40,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+
 
 @Service
 public class UserService {
-    
+
     @Autowired
     private UserRepository userRepository;
     
@@ -93,39 +96,55 @@ public class UserService {
     private NoteCollectionRepository noteCollectionRepository;
 
     public Void loginUserAndUpdateStreak(Long userId) {
-        Boolean eligibleForUniscore = false;
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         LocalDate lastLoginDate = (user.getLastLogin() != null) ? user.getLastLogin().toLocalDate() : null;
         LocalDate today = LocalDate.now();
 
-        if (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1))) {
+
+        boolean isFirstLogin = (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1)));
+        boolean isConsecutiveLogin = (lastLoginDate != null && lastLoginDate.isEqual(today.minusDays(1)));
+
+
+        if (isFirstLogin) {
             user.setStreak(1);
-            user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
-            eligibleForUniscore = true;
-        } else if (lastLoginDate.isEqual(today.minusDays(1))) {
+        } else if (isConsecutiveLogin) {
             user.setStreak(user.getStreak() + 1);
-            user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
             updateUniScore(user, 25L);
-            eligibleForUniscore = true;
-        } else if (lastLoginDate.isEqual(today)) {
-            user.setLastLogin(LocalDateTime.now());
         }
 
-        if (eligibleForUniscore) {
-            loginWebSocketController.sendLoginNotification(user.getFirebaseUid(), "Congratulations! You have received 50 uniscore for logging in today.");
-        }
-        
+
+        user.setLastLogin(LocalDateTime.now());
+        CompletableFuture<Void> notificationFuture = CompletableFuture.runAsync(()-> {
+            if (isFirstLogin || isConsecutiveLogin) {
+                loginWebSocketController.sendLoginNotification(
+                        user.getFirebaseUid(),
+                        "Congratulations! You have received 50 uniscore for logging in today."
+                );
+            }
+        });
         userRepository.save(user);
 
+        CompletableFuture<Void> badgeFuture = CompletableFuture.runAsync(() -> {
+            badgeService.checkBadgesForUser(userId);
+
+        });
+        
         UserLogin userLogin = new UserLogin();  
         userLogin.setUser(user);
         userLogin.setLoginTimestamp(LocalDateTime.now());
         userLoginRepository.save(userLogin);
-        badgeService.checkBadgesForUser(userId);
+
+
+        CompletableFuture<Void> allTasks = CompletableFuture.allOf(notificationFuture,badgeFuture);
+        allTasks.exceptionally(ex -> {
+            System.err.println("An error occurred during asynchronous operations: " + ex.getMessage());
+            return null;
+        });
+        allTasks.join();
         return null;
     }
 
