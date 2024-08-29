@@ -132,7 +132,7 @@ public class UserService {
             badgeService.checkBadgesForUser(userId);
 
         });
-        
+
         UserLogin userLogin = new UserLogin();  
         userLogin.setUser(user);
         userLogin.setLoginTimestamp(LocalDateTime.now());
@@ -144,7 +144,7 @@ public class UserService {
             System.err.println("An error occurred during asynchronous operations: " + ex.getMessage());
             return null;
         });
-        allTasks.join();
+        //allTasks.join();
         return null;
     }
 

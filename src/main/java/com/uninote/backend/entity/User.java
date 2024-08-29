@@ -47,11 +47,11 @@ public class User {
     @Column(name = "name", nullable = true)
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "university_id", nullable = false)
     private University university;
 
@@ -63,7 +63,7 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rank_id", nullable = false)
     private Rank rank;
 
@@ -77,7 +77,7 @@ public class User {
     private String bannerUrl;
 
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "user_approvals",
         joinColumns = @JoinColumn(name = "user_id"),
