@@ -24,6 +24,9 @@ public class MultipleChoiceQuestion  {
     @OneToMany(mappedBy = "multipleChoiceQuestion")
     private List<Choice> choices;
 
+    @Column(name = "image_url", nullable = true)
+    private String imageUrl;
+
     // Getters and Setters
 
     public Long getId() {
@@ -56,5 +59,13 @@ public class MultipleChoiceQuestion  {
 
     public void setChoices(List<Choice> choices) {
         this.choices = choices;
+    }
+
+    public String getImageUrl()  {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl= imageUrl;
     }
 }

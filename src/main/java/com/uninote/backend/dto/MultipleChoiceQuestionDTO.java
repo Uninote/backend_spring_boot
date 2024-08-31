@@ -8,7 +8,7 @@ public class MultipleChoiceQuestionDTO extends QuestionDTO{
     private Long questionId;
     private int correctChoiceLabel;
     private List<ChoiceDTO> choices;
-
+    private String imageUrl;
    
     public Long getId() {
         return id;
@@ -41,4 +41,13 @@ public class MultipleChoiceQuestionDTO extends QuestionDTO{
     public void setChoices(List<ChoiceDTO> choices) {
         this.choices = choices;
     }
+
+    public String getImageUrl()  {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl= imageUrl;
+    }
+    
 }

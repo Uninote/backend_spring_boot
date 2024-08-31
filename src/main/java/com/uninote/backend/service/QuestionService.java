@@ -112,6 +112,7 @@ public class QuestionService {
         Flashcard flashcard = new Flashcard();
         flashcard.setQuestion(question);
         flashcard.setAnswer(flashcardDTO.getAnswer());
+        
 
         return flashcardRepository.save(flashcard);
     }
@@ -123,7 +124,10 @@ public class QuestionService {
         TrueFalseQuestion trueFalseQuestion = new TrueFalseQuestion();
         trueFalseQuestion.setQuestion(question);
         trueFalseQuestion.setCorrectAnswer(trueFalseQuestionDTO.getCorrectAnswer());
-
+        if(trueFalseQuestionDTO.getImageUrl() != null) {
+            logger.debug(trueFalseQuestionDTO.getImageUrl());
+            trueFalseQuestion.setImageUrl(trueFalseQuestionDTO.getImageUrl());
+        }
         return tfqRepository.save(trueFalseQuestion);
     }
 
@@ -133,7 +137,9 @@ public class QuestionService {
         Question question = createQuestion(multipleChoiceQuestionDTO);
         MultipleChoiceQuestion multipleChoiceQuestion = new MultipleChoiceQuestion();
         multipleChoiceQuestion.setQuestion(question);
-
+        if(multipleChoiceQuestionDTO.getImageUrl() !=null) {
+            multipleChoiceQuestion.setImageUrl(multipleChoiceQuestionDTO.getImageUrl());
+        }
         
         MultipleChoiceQuestion saved = multipleChoiceQuestionRepository.saveAndFlush(multipleChoiceQuestion);
         logger.info("MultipleChoiceQuestion saved with ID: {}", saved.getId());

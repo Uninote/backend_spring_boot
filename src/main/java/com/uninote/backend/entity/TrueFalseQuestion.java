@@ -19,6 +19,10 @@ public class TrueFalseQuestion {
     @Column(name = "correct_answer", nullable = false)
     private Boolean correctAnswer;
 
+
+    @Column(name = "image_url", nullable = true)
+    private String imageUrl;
+
     
 
     public Long getId() {
@@ -43,6 +47,14 @@ public class TrueFalseQuestion {
 
     public void setCorrectAnswer(Boolean correctAnswer) {
         this.correctAnswer = correctAnswer;
+    }
+
+    public String getImageUrl()  {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl= imageUrl;
     }
 }
 
