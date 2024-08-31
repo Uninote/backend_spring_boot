@@ -38,7 +38,7 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @Column(name = "last_login", nullable = false)
+    @Column(name = "last_login", nullable = true)
     private LocalDateTime lastLogin = LocalDateTime.now();
 
     @Column(name = "created_at", nullable = false)
@@ -72,7 +72,7 @@ public class User {
 
     @Column(name = "profile_image_url", nullable = true)
     private String profileImageUrl;
-
+    
     @Column(name = "banner_url")
     private String bannerUrl;
 
@@ -105,7 +105,7 @@ public class User {
         }
 
         updatedAt = LocalDateTime.now();
-        lastLogin = LocalDateTime.now();
+        //lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
     }
 

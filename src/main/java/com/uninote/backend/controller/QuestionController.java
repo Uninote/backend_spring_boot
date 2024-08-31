@@ -79,6 +79,20 @@ public class QuestionController {
         return ResponseEntity.ok(updatedMultipleChoiceQuestion);
     }
 
+
+    @PostMapping("/multiple_choice/full")
+public ResponseEntity<MultipleChoiceQuestion> createFullMultipleChoiceQuestion(@RequestBody MultipleChoiceQuestionDTO multipleChoiceQuestionDTO) {
+    // Step 1: Create the multiple-choice question
+    
+    MultipleChoiceQuestion createdMultipleChoiceQuestion = questionService.fullMultipleChoiceQuestionCreation(multipleChoiceQuestionDTO);
+    
+    
+    
+    
+    return ResponseEntity.ok(createdMultipleChoiceQuestion);
+}
+
+
     @GetMapping("/random_test")
     public ResponseEntity<?> getRandomTest(@RequestParam Long courseId, @RequestParam String type, @RequestParam int count) {
         if (type.equalsIgnoreCase("flashcard")) {

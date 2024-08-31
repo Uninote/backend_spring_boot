@@ -63,6 +63,7 @@ public class NoteLikeService {
 
     @Transactional
     public void unlikeNote(Long noteId, Long userId) {
+        
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 

@@ -176,6 +176,8 @@ public class QuestionService {
         return multipleChoiceQuestion;
     }
 
+
+
     @Transactional
     public MultipleChoiceQuestion setCorrectChoiceForMultipleChoiceQuestion(Long multipleChoiceQuestionId, int correctChoiceLabel) {
         MultipleChoiceQuestion multipleChoiceQuestion = multipleChoiceQuestionRepository.findById(multipleChoiceQuestionId)
@@ -189,6 +191,21 @@ public class QuestionService {
         return multipleChoiceQuestionRepository.save(multipleChoiceQuestion);
     }
 
+    @Transactional
+    public MultipleChoiceQuestion fullMultipleChoiceQuestionCreation(MultipleChoiceQuestionDTO multipleChoiceQuestionDTO) {
+        multipleChoiceQuestionDTO.setQuestionTypeId(3L);
+        MultipleChoiceQuestion createdMultipleChoiceQuestion = createMultipleChoiceQuestion(multipleChoiceQuestionDTO);
+    
+    // Step 2: Add choices to the multiple-choice question
+        createdMultipleChoiceQuestion = addChoicesMultipleChoice(createdMultipleChoiceQuestion, multipleChoiceQuestionDTO.getChoices());
+
+    // Step 3: Set the correct choice for the multiple-choice question
+        createdMultipleChoiceQuestion = setCorrectChoiceForMultipleChoiceQuestion(
+                createdMultipleChoiceQuestion.getId(), 
+                multipleChoiceQuestionDTO.getCorrectChoiceLabel()
+        );
+        return createdMultipleChoiceQuestion;
+    }
 
     @Transactional
     public List<FlashcardDTO> getFlashcardsByCourseId(Long courseId) {

@@ -245,7 +245,7 @@ public void softDeleteUserById(Long userId) {
         user.setProfileImageUrl(userDto.getProfileImageUrl());
         user.setRank(defaultRank);
         user.setUpdatedAt(LocalDateTime.now());
-        user.setLastLogin(LocalDateTime.now());
+        //user.setLastLogin(LocalDateTime.now());
         user.setRole(role);
 
         
