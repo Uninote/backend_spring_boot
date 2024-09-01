@@ -255,7 +255,10 @@ public class QuestionService {
     Map<Long, MultipleChoiceQuestionDTO> questionMap = new LinkedHashMap<>();
 
     for (Object[] result : rawResults) {
+        logger.debug(""+result);
         Long questionId = ((BigDecimal) result[0]).longValue();
+
+        // Fetch or create the MultipleChoiceQuestionDTO
         MultipleChoiceQuestionDTO questionDTO = questionMap.computeIfAbsent(questionId, id -> {
             MultipleChoiceQuestionDTO dto = new MultipleChoiceQuestionDTO();
             dto.setId(id);
@@ -267,7 +270,8 @@ public class QuestionService {
             dto.setImageUrl((String) result[9]);
             return dto;
         });
-
+        logger.debug("processing question " + questionId);
+        // Create and add the ChoiceDTO
         ChoiceDTO choiceDTO = new ChoiceDTO();
         choiceDTO.setId(((BigDecimal) result[6]).longValue());
         choiceDTO.setChoiceText((String) result[7]);

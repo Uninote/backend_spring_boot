@@ -21,7 +21,7 @@ public interface MultipleChoiceQuestionRepository extends JpaRepository<Multiple
     @Query(value = "SELECT mc.multiple_choice_id AS id, " +
                "mc.question_id AS questionId, " +
                "q.question_type_id AS questionTypeId, " +
-               "DBMS_LOB.SUBSTR(q.question_text, 4000, 1) AS questionText, " +  // Extract up to 4000 characters from question_text
+               "DBMS_LOB.SUBSTR(q.question_text, 4000, 1) AS questionText, " +
                "q.is_difficult AS isDifficultRaw, " +
                "mc.correct_choice_id AS correctChoiceId, " +
                "c.id AS choiceId, " +
@@ -32,9 +32,18 @@ public interface MultipleChoiceQuestionRepository extends JpaRepository<Multiple
                "JOIN questions q ON mc.question_id = q.question_id " +
                "JOIN choices c ON mc.multiple_choice_id = c.multiple_choice_id " +
                "WHERE q.course_id = :courseId " +
-               "ORDER BY DBMS_RANDOM.VALUE " +
-               "FETCH FIRST :limit ROWS ONLY",
+               "AND q.question_type_id = 3 " +
+               "AND mc.question_id IN ( " +
+               "    SELECT mc1.question_id " +
+               "    FROM multiple_choice_questions mc1 " +
+               "    JOIN questions q1 ON mc1.question_id = q1.question_id " +
+               "    WHERE q1.course_id = :courseId " +
+               "    AND q1.question_type_id = 3 " +
+               "    ORDER BY DBMS_RANDOM.VALUE " +
+               "    FETCH FIRST :limit ROWS ONLY" +
+               ")",
        nativeQuery = true)
 List<Object[]> findRandomMultipleChoiceQuestionsWithChoicesByCourseId(@Param("courseId") Long courseId, @Param("limit") int limit);
+
 
 }
