@@ -266,12 +266,18 @@ public class QuestionService {
             dto.setQuestionTypeId(((BigDecimal) result[2]).longValue());
             dto.setQuestionText((String) result[3]);
             dto.setIsDifficult(((BigDecimal) result[4]).intValue() == 1);
-            dto.setCorrectChoiceLabel(((BigDecimal) result[5]).intValue());
+            //dto.setCorrectChoiceLabel(((BigDecimal) result[5]).intValue());
             dto.setImageUrl((String) result[9]);
             return dto;
         });
         logger.debug("processing question " + questionId);
-        // Create and add the ChoiceDTO
+        Long choiceId = ((BigDecimal) result[6]).longValue();
+        int choiceLabel = ((BigDecimal) result[8]).intValue();
+        
+        
+        if (choiceId.equals(((BigDecimal) result[5]).longValue())) {
+            questionDTO.setCorrectChoiceLabel(choiceLabel); 
+        }
         ChoiceDTO choiceDTO = new ChoiceDTO();
         choiceDTO.setId(((BigDecimal) result[6]).longValue());
         choiceDTO.setChoiceText((String) result[7]);
