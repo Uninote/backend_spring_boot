@@ -27,4 +27,21 @@ List<CourseProjection> findCoursesByDepartmentAndSemesterAndLanguage(
     @Param("departmentId") Long departmentId,
     @Param("semesterId") int semesterId,
     @Param("languageCode") String languageCode);
+
+
+    @Query(value = "SELECT DISTINCT c.course_id AS id, cn.course_name AS name " +
+               "FROM courses c " +
+               "JOIN course_names cn ON c.course_id = cn.course_id " +
+               "JOIN questions q ON c.course_id = q.course_id " +
+               "JOIN languages l ON cn.language_id = l.language_id " +
+               "WHERE l.language_code = :language " +
+               "AND c.department_id = :departmentId " +
+               "AND c.semester = :semester " +
+               "AND q.question_id IS NOT NULL",
+       nativeQuery = true)
+List<CourseProjection> findCoursesWithQuestionsByDepartmentSemesterAndLanguage(
+    @Param("departmentId") Long departmentId, 
+    @Param("semester") int semester,
+    @Param("language") String language);
+
 }
