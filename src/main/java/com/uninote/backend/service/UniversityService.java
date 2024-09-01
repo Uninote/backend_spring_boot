@@ -6,6 +6,7 @@ import com.uninote.backend.dto.UniversityNameDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
+import com.uninote.backend.interfaceProjection.UniversityDetailsProjection;
 import com.uninote.backend.repository.UniversityRepository;
 
 import org.slf4j.Logger;
@@ -78,6 +79,9 @@ public class UniversityService {
         university.getDepartments().stream().map(Department::getId).collect(Collectors.toSet())
     );
 }
+ public List<UniversityDetailsProjection> getUniversitiesWithQuestionsInLanguage(String language) {
+        return universityRepository.findUniversitiesWithQuestionsInLanguage(language);
+    }
 
     
 }

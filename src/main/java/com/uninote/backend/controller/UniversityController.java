@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.UniversityDTO;
+import com.uninote.backend.interfaceProjection.UniversityDetailsProjection;
 import com.uninote.backend.service.UniversityService;
 
 import java.util.List;
@@ -33,5 +34,10 @@ public class UniversityController {
     public ResponseEntity<List<Map<String, String>>> getUniversityDetails(@RequestParam String language) {
         List<Map<String, String>> universityDetails = universityService.getUniversityDetails(language);
         return ResponseEntity.ok(universityDetails);
+    }
+
+    @GetMapping("/with-questions")
+    public List<UniversityDetailsProjection> getUniversitiesWithQuestions(@RequestParam("language") String language) {
+        return universityService.getUniversitiesWithQuestionsInLanguage(language);
     }
 }
