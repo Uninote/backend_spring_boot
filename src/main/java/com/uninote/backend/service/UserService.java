@@ -12,7 +12,15 @@ import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
+import com.uninote.backend.interfaceProjection.UserInfoProjection;
+import com.uninote.backend.interfaceProjection.UserProfileProjection;
+import com.uninote.backend.repository.CommentLikeRepository;
+import com.uninote.backend.repository.CommentRepository;
 import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.NoteCollectionRepository;
+import com.uninote.backend.repository.NoteLikeRepository;
+import com.uninote.backend.repository.NoteRepository;
+import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.RankRepository;
 import com.uninote.backend.repository.RoleRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
@@ -24,20 +32,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+
 
 @Service
 public class UserService {
-    
+
+    @Autowired
+    private CommentLikeRepository commentLikeRepository;
+
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private RankService rankService;
+
+    @Autowired
+    private NoteRepository noteRepository;
+
+    @Autowired
+    private NoteLikeRepository noteLikeRepository;
+
+    @Autowired
+    private NoteSaveRepository noteSaveRepository;
+
     @Autowired
     private final DepartmentRepository departmentRepository = null;
     
@@ -65,41 +93,63 @@ public class UserService {
     @Autowired
     private LoginWebSocketController loginWebSocketController;
 
-    public User loginUserAndUpdateStreak(Long userId) {
-        Boolean eligibleForUniscore = false;
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private NoteCollectionRepository noteCollectionRepository;
+
+    public Void loginUserAndUpdateStreak(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         LocalDate lastLoginDate = (user.getLastLogin() != null) ? user.getLastLogin().toLocalDate() : null;
         LocalDate today = LocalDate.now();
 
-        if (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1))) {
+
+        boolean isFirstLogin = (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1)));
+        boolean isConsecutiveLogin = (lastLoginDate != null && lastLoginDate.isEqual(today.minusDays(1)));
+
+
+        if (isFirstLogin) {
             user.setStreak(1);
-            user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
-            eligibleForUniscore = true;
-        } else if (lastLoginDate.isEqual(today.minusDays(1))) {
+        } else if (isConsecutiveLogin) {
             user.setStreak(user.getStreak() + 1);
-            user.setLastLogin(LocalDateTime.now());
             updateUniScore(user, 24L);
             updateUniScore(user, 25L);
-            eligibleForUniscore = true;
-        } else if (lastLoginDate.isEqual(today)) {
-            user.setLastLogin(LocalDateTime.now());
         }
 
-        if (eligibleForUniscore) {
-            loginWebSocketController.sendLoginNotification(user.getFirebaseUid(), "Congratulations! You have received 50 uniscore for logging in today.");
-        }
-        
+
+        user.setLastLogin(LocalDateTime.now());
+        CompletableFuture<Void> notificationFuture = CompletableFuture.runAsync(()-> {
+            if (isFirstLogin || isConsecutiveLogin) {
+                loginWebSocketController.sendLoginNotification(
+                        user.getFirebaseUid(),
+                        "Congratulations! You have received 50 uniscore for logging in today."
+                );
+            }
+        });
         userRepository.save(user);
+
+        CompletableFuture<Void> badgeFuture = CompletableFuture.runAsync(() -> {
+            badgeService.checkBadgesForUser(userId);
+
+        });
 
         UserLogin userLogin = new UserLogin();  
         userLogin.setUser(user);
         userLogin.setLoginTimestamp(LocalDateTime.now());
         userLoginRepository.save(userLogin);
-        badgeService.checkBadgesForUser(userId);
-        return user;
+
+
+        CompletableFuture<Void> allTasks = CompletableFuture.allOf(notificationFuture,badgeFuture);
+        allTasks.exceptionally(ex -> {
+            System.err.println("An error occurred during asynchronous operations: " + ex.getMessage());
+            return null;
+        });
+        //allTasks.join();
+        return null;
     }
 
     public User findById(Long userId) {
@@ -108,13 +158,45 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
-        if (userRepository.existsById(userId)) {
-            userRepository.deleteById(userId);
-        } else {
-            throw new IllegalArgumentException("User not found with ID: " + userId);
+public void softDeleteUserById(Long userId) {
+    try {
+
+        List<Long> commentIds = commentRepository.findCommentIdsByUserId(userId);
+        if (!commentIds.isEmpty()) {
+            commentLikeRepository.deleteByComment_CommentIdIn(commentIds);
         }
+        commentLikeRepository.deleteByUserId(userId);
+        commentRepository.deleteByUserId(userId);
+
+        
+        noteRepository.softDeleteByUserId(userId);
+
+        
+
+        noteCollectionRepository.softDeleteCollectionsByUserId(userId);
+       
+        noteLikeRepository.setInactiveByUserId(userId);
+
+       
+        noteSaveRepository.setInactiveByUserId(userId);
+        
+    
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
+        user.setUsername(null);
+        user.setFirebaseUid(null);
+        user.setEmail(null);
+        user.setName(null);
+        Role role = roleRepository.findById(21L). orElseThrow(() -> new IllegalArgumentException("Role with id 4 not found"));
+        user.setRole(role);
+        userRepository.save(user);
+
+    } catch (Exception e) {
+        
+        throw new RuntimeException("Failed to delete user", e);
     }
+}
 
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -163,7 +245,7 @@ public class UserService {
         user.setProfileImageUrl(userDto.getProfileImageUrl());
         user.setRank(defaultRank);
         user.setUpdatedAt(LocalDateTime.now());
-        user.setLastLogin(LocalDateTime.now());
+        //user.setLastLogin(LocalDateTime.now());
         user.setRole(role);
 
         
@@ -213,18 +295,18 @@ public class UserService {
     }
     
 
-    public List<UserDTO> getTop100UsersByUniscore(){
-        List<User> topUsers = userRepository.findTop100ByUniscore();
-        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    public List<UserInfoProjection> getTop100UsersByUniscore(){
+        return userRepository.findTop100ByUniscore();
+        
     }
 
-    public List<UserDTO> getTop100UsersByUniscoreByDepartment(Department department){
-        List<User> topUsers = userRepository.findTop100ByUniscoreByDepartment(department);
-        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    public List<UserInfoProjection> getTop100UsersByUniscoreByDepartment(Long departmentId){
+        return userRepository.findTop100ByUniscoreByDepartment(departmentId);
+        
     }
-    public List<UserDTO> getTop100UsersByUniscoreByUniversity(University university){
-        List<User> topUsers = userRepository.findTop100ByUniscoreByUniversity(university);
-        return topUsers.stream().map(EntityToDTOConverter::convertUserToDTO).collect(Collectors.toList());
+    public List<UserInfoProjection> getTop100UsersByUniscoreByUniversity(Long universityId){
+        return userRepository.findTop100ByUniscoreByUniversity(universityId);
+       
     }
 
     
@@ -235,18 +317,21 @@ public class UserService {
         UniscoreIncreaseType uniScoreIncreaseType = uniScoreIncreaseTypeRepository.findById(activityType).orElseThrow(() -> new IllegalArgumentException("Invalid increase Type"));
         if (uniScoreIncreaseType != null) {
             user.setUniscore(user.getUniscore() + uniScoreIncreaseType.getIncreaseAmount());
+            Rank newRank = rankService.determineRank(user.getUniscore());
+            user.setRank(newRank);
             UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(user, uniScoreIncreaseType);
             uniscoreIncreaseLogRepository.save(increaseLog);
             userRepository.save(user);
+            badgeService.checkBadgesForUser(user.getId());
         } else {
             throw new IllegalArgumentException("Unknown activity type: " + activityType);
         }
     }
 
-    public UserDTO findByFirebaseUid(String firebaseUid) {
-        Optional<User> userOptional = userRepository.findByFirebaseUid(firebaseUid);
-        if (userOptional.isPresent()) {
-            return EntityToDTOConverter.convertUserToDTO(userOptional.get());
+    public Long findByFirebaseUid(String firebaseUid) {
+        Optional<Long> userId = userRepository.findUserIdByFirebaseUid(firebaseUid);
+        if (userId.isPresent()) {
+            return userId.get();
         } else {
             return null;
         }
@@ -283,5 +368,70 @@ public class UserService {
         long totalLikes = userRepository.countUserLikes(userId);
 
         return new UserStatsDTO(totalNotes, totalPublicNotes, totalLikes);
+    }
+
+
+    @Transactional(readOnly = true)
+    public boolean doesUsernameExist(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean doesEmailExist(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public UserProfileProjection getUserProfileById(Long userId, Long languageId) {
+        return userRepository.findUserProfileById(userId, languageId);
+    }
+
+
+     public UserInfoProjection getUserInfo(Long userId) {
+        return userRepository.findUserInfoById(userId,1L);
+    }
+
+    
+    public Integer getUserRankInDepartment(Long userId) {
+        return userRepository.findUserRankInDepartment(userId);
+    }
+
+    
+    public Integer getUserRankInUniversity(Long userId) {
+        return userRepository.findUserRankInUniversity(userId);
+    }
+
+    
+    public Integer getUserGlobalRank(Long userId) {
+        return userRepository.findUserGlobalRank(userId);
+    }
+
+    public Map<String, Integer> getUserRanks(Long userId) {
+        Map<String, Integer> userRanks = new HashMap<>();
+
+        
+        Integer rankInDepartment = userRepository.findUserRankInDepartment(userId);
+        userRanks.put("department", rankInDepartment);
+
+        Integer rankInUniversity = userRepository.findUserRankInUniversity(userId);
+        userRanks.put("university", rankInUniversity);
+
+        
+        Integer globalRank = userRepository.findUserGlobalRank(userId);
+        userRanks.put("global", globalRank);
+
+        return userRanks;
+    }
+
+
+
+    public Long getUserIdByUsername(String username) {
+        return userRepository.findUserIdByUsername(username)
+                             .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+
+    public String getUserEmailByUsername(String username) {
+        return userRepository.findUserEmailByUsername(username)
+                             .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 }

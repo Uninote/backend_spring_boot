@@ -7,9 +7,12 @@ import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
 import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.Badge;
+import com.uninote.backend.entity.BadgeNotification;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
 import com.uninote.backend.entity.UserBadgeId;
+import com.uninote.backend.interfaceProjection.BadgeProjection;
+import com.uninote.backend.repository.BadgeNotificationRepository;
 import com.uninote.backend.repository.BadgeRepository;
 import com.uninote.backend.repository.BadgeTypeRepository;
 import com.uninote.backend.repository.InviteRepository;
@@ -24,7 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -52,6 +58,9 @@ public class BadgeService {
 
     @Autowired
     private InviteRepository inviteRepository;
+
+    @Autowired
+    private BadgeNotificationRepository badgeNotificationRepository;
 
 
     private static final Logger logger = LoggerFactory.getLogger(BadgeService.class);
@@ -95,10 +104,16 @@ public class BadgeService {
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
-        badgeWebSocketController.sendBadgeNotification(user.getFirebaseUid(), userBadge.getBadge().getId());
+        
         logger.debug("Badge assigned: {}", userBadgeDTO);
-        userBadgeRepository.save(userBadge);
-    }
+        BadgeNotification badgeNotification = new BadgeNotification(
+                badge.getId(),
+                user.getId(),
+                LocalDateTime.now()
+        );
+        badgeNotificationRepository.save(badgeNotification);
+
+        badgeWebSocketController.sendBadgeNotification(user.getId(),badgeNotification.getId(), badge.getId());    }
 
 
     @Transactional
@@ -111,14 +126,29 @@ public class BadgeService {
         if (!meetsRequirement(user, badge)) {
             throw new IllegalArgumentException("User does not meet the requirements for this badge.");
         }
-
+        logger.debug("assigning badge {}", badge.getId());
         UserBadge userBadge = new UserBadge();
         userBadge.setUser(user);
         userBadge.setBadge(badge);
         userBadge.setAwardedAt(LocalDateTime.now());
-        badgeWebSocketController.sendBadgeNotification(user.getFirebaseUid(), userBadge.getBadge().getId());
-
         userBadgeRepository.save(userBadge);
+        BadgeNotification badgeNotification = new BadgeNotification(
+                badge.getId(),
+                user.getId(),
+                LocalDateTime.now()
+        );
+        badgeNotificationRepository.save(badgeNotification);
+
+        badgeWebSocketController.sendBadgeNotification(user.getId(),  badgeNotification.getId(),badge.getId());
+    }
+
+    public void deliverPendingNotifications(Long userId) {
+        List<BadgeNotification> undeliveredNotifications = badgeNotificationRepository.findByUserIdAndDeliveredFalse(userId);
+
+        for (BadgeNotification notification : undeliveredNotifications) {
+            badgeWebSocketController.sendBadgeNotification(notification.getUserId(), notification.getId(), notification.getBadgeId());
+            
+        }
     }
 
         @Transactional
@@ -129,7 +159,42 @@ public class BadgeService {
         }
 
         //add extra field 0 or 1 depending on if user has badge
-        @Transactional
+        public List<BadgeProjection> getAllBagdesByUser(Long userId) {
+            return userBadgeRepository.findAllBadgesByUserId(userId);
+         }
+
+
+         public List<BadgeProjection> getTopBadgesPerCategory(Long userId) {
+            // Fetch badges using the custom query
+            List<BadgeProjection> allBadges = userBadgeRepository.findAllBadgesByUserId(userId);
+        
+            // Group badges by category (typeName)
+            Map<String, List<BadgeProjection>> badgesByCategory = allBadges.stream()
+                    .collect(Collectors.groupingBy(BadgeProjection::getTypeName));
+        
+            List<BadgeProjection> topBadges = new ArrayList<>();
+        
+            // For each category, find the top badge
+            for (Map.Entry<String, List<BadgeProjection>> entry : badgesByCategory.entrySet()) {
+                List<BadgeProjection> categoryBadges = entry.getValue();
+        
+                // Find the badge that the user has with the highest requirement, or the one with the lowest requirement
+                BadgeProjection topBadge = categoryBadges.stream()
+                        .filter(BadgeProjection::getUserHasBadge)  // Filter to badges the user owns
+                        .max(Comparator.comparingInt(BadgeProjection::getRequirement))  // Get the badge with the highest requirement
+                        .orElseGet(() -> categoryBadges.stream()
+                                .min(Comparator.comparingInt(BadgeProjection::getRequirement))  // If user doesn't own any, pick the one with the lowest requirement
+                                .orElse(null));
+        
+                if (topBadge != null) {
+                    topBadges.add(topBadge);
+                }
+            }
+        
+            return topBadges;
+        }
+        
+       /*  @Transactional
         public List<UserHasBadgeDTO> getAllBagdesByUser(Long userId) {
             User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User Not found"));
             List<Badge> allBadges = badgeRepository.findAll();
@@ -144,20 +209,25 @@ public class BadgeService {
                 badge.getDescription(),
                 badge.getImageUrl(),
                 userBadgeIds.contains(badge.getId()), 
-                userId))
+                userId,
+                badge.getType().getName()))
             .collect(Collectors.toList());
 
-        }
+        } */
         private boolean meetsRequirement(User user, Badge badge) {
+            logger.debug("checking badge TYPE {}", badge.getType().getId().intValue());
+            logger.debug("USER Notes {}", noteRepository.countByUserId(user.getId()));
             switch (badge.getType().getId().intValue()) {
+                
                 case 1:     
-                return noteRepository.countByUserId(user.getId()) >= badge.getRequirement();
+                    return userRepository.countUserPublicNotes(user.getId()) >= badge.getRequirement();
                 case 2:         
-                return inviteRepository.countByUserId(user.getId()) >= badge.getRequirement();
+                    return inviteRepository.countByUserIdAndInviteeIsNotNull(user.getId()) >= badge.getRequirement();
                 case 3: 
-                    return user.getStreak() >=badge.getRequirement();
-                case 4:
+                    
                     return user.getUniscore() >=badge.getRequirement();
+                case 4:
+                    return user.getStreak() >=badge.getRequirement();
                 default:
                     return false;
             }
@@ -168,11 +238,15 @@ public class BadgeService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<Badge> badges = badgeRepository.findAll();
         for (Badge badge : badges) {
+            logger.debug("checking badge {}", badge.getName());
             if (meetsRequirement(user, badge)) {
                 if (!userBadgeRepository.existsById(new UserBadgeId(user.getId(), badge.getId()))) {
-                    assignBadgeToUser(user  .getId(), badge.getId());
+                    assignBadgeToUser(user.getId(), badge.getId());
                 }
             }
         }
     }
+
+
+   
 }

@@ -21,7 +21,7 @@ public class User {
     @Column(name = "user_id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "firebase_uid", nullable = false, unique = true)
+    @Column(name = "firebase_uid", nullable = true, unique = true)
     private String firebaseUid;
 
     @Lob
@@ -38,24 +38,24 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @Column(name = "last_login", nullable = false)
+    @Column(name = "last_login", nullable = true)
     private LocalDateTime lastLogin = LocalDateTime.now();
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = true)
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "university_id", nullable = false)
     private University university;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", nullable = true, unique = true)
     private String email;
 
    
@@ -63,21 +63,21 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rank_id", nullable = false)
     private Rank rank;
 
-    @Column(name = "username", nullable = false, unique = true)
+    @Column(name = "username", nullable = true, unique = true)
     private String username;
 
-    @Column(name = "profile_image_url")
+    @Column(name = "profile_image_url", nullable = true)
     private String profileImageUrl;
-
+    
     @Column(name = "banner_url")
     private String bannerUrl;
 
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "user_approvals",
         joinColumns = @JoinColumn(name = "user_id"),
@@ -105,7 +105,7 @@ public class User {
         }
 
         updatedAt = LocalDateTime.now();
-        lastLogin = LocalDateTime.now();
+        //lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
     }
 

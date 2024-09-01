@@ -28,7 +28,7 @@
         @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
         private Set<DepartmentName> departmentNames = new HashSet<>();
 
-        @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
+        @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
         private Set<Course> courses = new HashSet<>();
 
         

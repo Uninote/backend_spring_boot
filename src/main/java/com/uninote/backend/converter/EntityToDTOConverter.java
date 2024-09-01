@@ -1,6 +1,7 @@
 package com.uninote.backend.converter;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -16,6 +17,7 @@ import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.InviteDTO;
 import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
+import com.uninote.backend.dto.NoteCollectionDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.QuestionDTO;
 import com.uninote.backend.dto.TestDTO;
@@ -36,6 +38,7 @@ import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.Invite;
 import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteCollection;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.Test;
 import com.uninote.backend.entity.TestResult;
@@ -45,11 +48,17 @@ import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
+import com.uninote.backend.service.CollectionLikeService;
 import com.uninote.backend.service.QuestionService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 public class EntityToDTOConverter {
+
+    @Autowired
+    private  CollectionLikeService collectionLikeService ;
+
 
      private static final Logger logger = LoggerFactory.getLogger(EntityToDTOConverter.class);
     public static DepartmentDTO convertDepartmentToDTO(Department department){
@@ -126,6 +135,7 @@ public class EntityToDTOConverter {
         userDTO.setRoleId(user.getRole().getId());
         userDTO.setBio(user.getBio());
         userDTO.setRank(user.getRank().getRankName());
+        userDTO.setStreak(user.getStreak());
         return userDTO;
     }
 
@@ -185,13 +195,14 @@ public class EntityToDTOConverter {
     }
 
     public static CommentDTO convertCommentToDTO(Comment comment) {
-        return new CommentDTO(
+        return  new CommentDTO(
             comment.getCommentId(),
             comment.getNote().getId(),
             comment.getUser().getId(),
             comment.getContent(),
             comment.getCreatedAt()
         );
+        
     }
 
     public static InviteDTO convertInviteToDTO(Invite invite) {
@@ -242,6 +253,26 @@ public class EntityToDTOConverter {
             note.getFilename(),
             note.getIsPublic()
         );
+        String englishCourseName = note.getCourse().getCourseNames().stream()
+            .filter(courseName -> "EN".equals(courseName.getLanguage().getCode()))
+            .map(CourseName::getName)
+            .findFirst()
+            .orElse("Unknown Course Name");  
+
+        dto.setCourseName(englishCourseName);   
+        String englishDepartmentName = note.getCourse().getDepartment().getDepartmentNames().stream()
+            .filter(departmentName -> "EN".equals(departmentName.getLanguage().getCode()))
+            .map(DepartmentName::getName)
+            .findFirst()
+            .orElse("Unknown Department Name"); 
+        dto.setDepartmentName(englishDepartmentName);     
+
+        String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
+            .filter(universityName -> "EN".equals(universityName.getLanguage().getCode()))
+            .map(UniversityName::getName)
+            .findFirst()
+            .orElse("Unknown University Name");  
+        dto.setUniversityName(englishUniversityName);
         return dto;
     }
 
@@ -266,5 +297,27 @@ public class EntityToDTOConverter {
         choiceDTO.setChoiceText(choice.getChoiceText());
         choiceDTO.setChoiceLabel(choice.getChoiceLabel());
         return choiceDTO;
+    }
+
+    public  static NoteCollectionDTO convertCollectionToDTO(NoteCollection noteCollection) {
+        NoteCollectionDTO dto = new NoteCollectionDTO();
+
+        if (noteCollection == null) {
+            throw new IllegalArgumentException("NoteCollection cannot be null");
+        }
+
+        dto.setCollectionId(noteCollection.getCollectionId());
+
+        if (noteCollection.getAdmin() != null) {
+            dto.setAdminId(noteCollection.getAdmin().getId());
+        }
+
+        dto.setTitle(noteCollection.getName());
+        dto.setDescription(noteCollection.getDescription());
+        dto.setIsPublic(noteCollection.getIsPublic());
+
+       
+
+        return dto;
     }
 }

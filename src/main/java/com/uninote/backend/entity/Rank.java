@@ -20,7 +20,7 @@ public class Rank {
     private String rankName;
 
     @Column(name = "min_score", nullable = false)
-    private int minScore;
+    private Long minScore;
 
     @OneToMany(mappedBy = "rank", cascade = CascadeType.ALL, orphanRemoval = false)
     private Set<User> users = new HashSet<>();
@@ -42,11 +42,11 @@ public class Rank {
         this.rankName = rankName;
     }
 
-    public int getMinScore() {
+    public Long getMinScore() {
         return minScore;
     }
 
-    public void setMinScore(int minScore) {
+    public void setMinScore(Long minScore) {
         this.minScore = minScore;
     }
 

@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
+import com.uninote.backend.interfaceProjection.DepartmentProjection;
 import com.uninote.backend.service.DepartmentNameService;
 import com.uninote.backend.service.DepartmentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,15 +61,21 @@ public class DepartmentController {
     }
 
     @GetMapping("/details-uni-lang")
-    public ResponseEntity<List<Map<String, String>>> getDepartmentsByUniversityIdAndLanguage(
+    public ResponseEntity<List<DepartmentProjection>> getDepartmentsByUniversityIdAndLanguage(
             @RequestParam String universityId,
             @RequestParam String languageCode) {
         try {
             Long universityIdLong = Long.parseLong(universityId);
-            List<Map<String, String>> departmentDetails = departmentService.getDepartmentsByUniversityIdAndLanguage(universityIdLong, languageCode);
+            List<DepartmentProjection> departmentDetails = departmentService.getDepartmentsByUniversityIdAndLanguage(universityIdLong, languageCode);
             return ResponseEntity.ok(departmentDetails);
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().body(null);
         }
+    }
+
+    @GetMapping("/{departmentId}/names")
+    public ResponseEntity<List<DepartmentNameDTO>> getDepartmentNames(@PathVariable Long departmentId) {
+        List<DepartmentNameDTO> departmentNames = departmentService.getDepartmentNames(departmentId);
+        return ResponseEntity.ok(departmentNames);
     }
     }

@@ -6,11 +6,14 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.UserInfoProjection;
+import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -57,8 +60,8 @@ public class UserController {
         }
     }
     @GetMapping("/leaderboard")
-    public ResponseEntity<List<UserDTO>> getLeaderboard(){
-        List <UserDTO> leaderborad = userService.getTop100UsersByUniscore();
+    public ResponseEntity<List<UserInfoProjection>> getLeaderboard(){
+        List <UserInfoProjection> leaderborad = userService.getTop100UsersByUniscore();
         return ResponseEntity.ok(leaderborad);
     }
 
@@ -81,37 +84,33 @@ public class UserController {
 
      
     @GetMapping("/leaderboard/university/{universityId}")
-    public ResponseEntity<List<UserDTO>> getLeaderboardByUniversity(@PathVariable Long universityId) {
-        University university = universityRepository.findById(universityId)
-                .orElseThrow(() -> new IllegalArgumentException("University not found"));
-        List<UserDTO> leaderboard = userService.getTop100UsersByUniscoreByUniversity(university);
+    public ResponseEntity<List<UserInfoProjection>> getLeaderboardByUniversity(@PathVariable Long universityId) {
+        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByUniversity(universityId);
         return ResponseEntity.ok(leaderboard);
     }
 
     @GetMapping("/leaderboard/department/{departmentId}")
-    public ResponseEntity<List<UserDTO>> getLeaderboardByDepartment(@PathVariable Long departmentId) {
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Department not found"));
-        List<UserDTO> leaderboard = userService.getTop100UsersByUniscoreByDepartment(department);
+    public ResponseEntity<List<UserInfoProjection>> getLeaderboardByDepartment(@PathVariable Long departmentId) {
+        List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByDepartment(departmentId);
         return ResponseEntity.ok(leaderboard);
     }
 
     @PutMapping("/{id}/login")
-    public ResponseEntity<User> loginUserAndUpdateStreak(@PathVariable Long id) {
-        User updatedUser = userService.loginUserAndUpdateStreak(id);
-        return ResponseEntity.ok(updatedUser);
+    public ResponseEntity<Void> loginUserAndUpdateStreak(@PathVariable Long id) {
+        userService.loginUserAndUpdateStreak(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/firebase/{firebaseUid}")
-    public ResponseEntity<UserDTO> findByFirebaseUid(@PathVariable String firebaseUid) {
-        UserDTO userDTO = userService.findByFirebaseUid(firebaseUid);
-        return userDTO != null ? ResponseEntity.ok(userDTO) : ResponseEntity.notFound().build();
+    public ResponseEntity<Long> findByFirebaseUid(@PathVariable String firebaseUid) {
+        Long userId = userService.findByFirebaseUid(firebaseUid);
+        return userId!= null ? ResponseEntity.ok(userId) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         try {
-            userService.deleteUser(userId);
+            userService.softDeleteUserById(userId);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -157,5 +156,64 @@ public class UserController {
         }
 
     
-}
+    }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<Boolean> validateUsername(@RequestParam String username) {
+        boolean usernameExists = userService.doesUsernameExist(username);
+        return ResponseEntity.ok(usernameExists);
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> validateEmail(@RequestParam String email) {
+        boolean emailExists = userService.doesEmailExist(email);
+        return ResponseEntity.ok(emailExists);
+    }
+
+     @GetMapping("/{userId}/profile")
+    public ResponseEntity<UserProfileProjection> getUserProfile(
+            @PathVariable Long userId, 
+            @RequestParam Long languageId) {
+        UserProfileProjection userProfile = userService.getUserProfileById(userId, languageId);
+        return ResponseEntity.ok(userProfile);
+    }
+
+    @GetMapping("/{userId}/info")
+    public ResponseEntity<UserInfoProjection> getUserInfo(@PathVariable Long userId) {
+        UserInfoProjection userInfo = userService.getUserInfo(userId);
+        if (userInfo == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(userInfo);
+    }
+
+    @GetMapping("/{userId}/rank/department")
+    public Integer getUserRankInDepartment(@PathVariable Long userId) {
+        return userService.getUserRankInDepartment(userId);
+    }
+
+    @GetMapping("/{userId}/rank/university")
+    public Integer getUserRankInUniversity(@PathVariable Long userId) {
+        return userService.getUserRankInUniversity(userId);
+    }
+
+    @GetMapping("/{userId}/rank/global")
+    public Integer getUserGlobalRank(@PathVariable Long userId) {
+        return userService.getUserGlobalRank(userId);
+    }
+
+    @GetMapping("/{userId}/ranks")
+    public Map<String, Integer> getUserRanks(@PathVariable Long userId) {
+        return userService.getUserRanks(userId);
+    }
+
+    @GetMapping("/{username}/userId")
+    public Long getUserIdByUsername(@PathVariable String username) {
+        return userService.getUserIdByUsername(username);
+    }
+
+    @GetMapping("/{username}/email")
+    public String getUserEmailByUsername(@PathVariable String username) {
+        return userService.getUserEmailByUsername(username);
+    }
 }

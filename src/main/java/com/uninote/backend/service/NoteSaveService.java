@@ -10,6 +10,9 @@ import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserRepository;
+
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,14 +47,14 @@ public class NoteSaveService {
 
         User noteCreator = note.getUser();
 
-        NoteSave noteSave = noteSaveRepository.findByNoteIdAndUserId(noteId, userId);
-        if (noteSave == null) {
-            noteSave = new NoteSave(noteId, userId);
-            noteSaveRepository.save(noteSave);
+        Optional<NoteSave> noteSave = noteSaveRepository.findByNoteIdAndUserId(noteId, userId);
+        if (!noteSave.isPresent()) {
+            NoteSave newNoteSave = new NoteSave(noteId, userId);
+            noteSaveRepository.save(newNoteSave);
             userService.updateUniScore(noteCreator, 2l);
-        } else if (!noteSave.getIsActive()) {
-            noteSave.setIsActive(true);
-            noteSaveRepository.save(noteSave);
+        } else if (!noteSave.get().getIsActive()) {
+            noteSave.get().setIsActive(true);
+            noteSaveRepository.save(noteSave.get());
 
            
         }
@@ -59,10 +62,10 @@ public class NoteSaveService {
 
     @Transactional
     public void unsaveNote(Long noteId, Long userId) {
-        NoteSave noteSave = noteSaveRepository.findByNoteIdAndUserId(noteId, userId);
-        if (noteSave != null && noteSave.getIsActive()) {
-            noteSave.setIsActive(false);
-            noteSaveRepository.save(noteSave);
+        Optional<NoteSave> noteSave = noteSaveRepository.findByNoteIdAndUserId(noteId, userId);
+        if (noteSave.isPresent() && noteSave.get().getIsActive()) {
+            noteSave.get().setIsActive(false);
+            noteSaveRepository.save(noteSave.get());
 
             
         }

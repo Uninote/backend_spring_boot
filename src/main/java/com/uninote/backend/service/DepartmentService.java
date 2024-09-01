@@ -7,6 +7,7 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.DepartmentNameId;
 import com.uninote.backend.entity.Language;
+import com.uninote.backend.interfaceProjection.DepartmentProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.DepartmentNameRepository;
 import com.uninote.backend.repository.DepartmentRepository;
@@ -52,21 +53,11 @@ public class DepartmentService {
         this.departmentRepository = departmentRepository;
     }
 
-    public List<Map<String, String>> getDepartmentsByUniversityIdAndLanguage(Long universityId, String languageCode) {
-        List<Department> departments = departmentRepository.findByUniversityId(universityId);
+    public List<DepartmentProjection> getDepartmentsByUniversityIdAndLanguage(Long universityId, String languageCode) {
+        List<DepartmentProjection> departmentProjections = departmentRepository
+            .findDepartmentProjectionsByUniversityIdAndLanguageCode(universityId, languageCode);
 
-        return departments.stream()
-            .flatMap(department -> department.getDepartmentNames().stream()
-                .filter(name -> name.getLanguage().getCode().equals(languageCode))
-                .map(name -> {
-                    Map<String, String> deptMap = new HashMap<>();
-                    deptMap.put("id", String.valueOf(department.getId()));
-                    deptMap.put("fullName", name.getFullName());
-                    deptMap.put("name", name.getName());
-                    deptMap.put("languageCode", name.getLanguage().getCode());
-                    return deptMap;
-                }))
-            .collect(Collectors.toList());
+        return departmentProjections;
     }
 
     public DepartmentDTO getDepartment(Long id) {
@@ -75,6 +66,9 @@ public class DepartmentService {
         return EntityToDTOConverter.convertDepartmentToDTO(department);
     }
 
+    public List<DepartmentNameDTO> getDepartmentNames(Long departmentId) {
+        return departmentRepository.findNamesById(departmentId);
+    }
     public List<DepartmentDTO> getAllDepartments() {
         return departmentRepository.findAll().stream()
                 .map(EntityToDTOConverter::convertDepartmentToDTO)

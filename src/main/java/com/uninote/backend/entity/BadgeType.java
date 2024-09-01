@@ -12,6 +12,7 @@ public class BadgeType {
     @Column(name = "badge_type_id")
     private Long id;
 
+    @Column(name = "name")
     private String name;
 
     @OneToMany(mappedBy = "type")

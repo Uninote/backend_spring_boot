@@ -1,28 +1,37 @@
 package com.uninote.backend.service;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.entity.Course;
+import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
+import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.University;
+import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.NoteClickRepository;
 import com.uninote.backend.repository.NoteLikeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.NoteViewRepository;
+import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UserRepository;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -38,14 +47,22 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
 public class NoteService {
 
     @Autowired
+    private UniscoreIncreaseLogRepository uniscoreIncreaseLogsRepository;
+
+    @Autowired
     private NoteRepository noteRepository;
     
+    @Autowired
+    private NoteSaveRepository noteSaveRepository;
+
      @Autowired
     private CourseRepository courseRepository;
 
@@ -75,6 +92,8 @@ public class NoteService {
     @Autowired
     private UserService userService;
 
+    
+
 
     private RealMatrix ratingsMatrix;
     private static final double CLICK_WEIGHT = 0.05;
@@ -89,12 +108,12 @@ public class NoteService {
 
 
 
-    @PostConstruct
+    /*@PostConstruct
     public void init() {
         recomputeRatingsMatrix();
-    }
+    }*/
 
-    @Scheduled(fixedRate = 3600000) 
+    /*@Scheduled(fixedRate = 3600000) 
     public void recomputeRatingsMatrix() {
         if (ratingsMatrix == null) {
             ratingsMatrix = createRatingsMatrix();
@@ -103,9 +122,9 @@ public class NoteService {
         } else {
             updateRatingsMatrix();
         }
-    }
+    }*/
 
-    public double calculateCompositeScore(Long noteId) {
+    /*public double calculateCompositeScore(Long noteId) {
         long clickCount = clickRepository.findByNoteId(noteId).size();
         long viewCount = viewRepository.findByNoteId(noteId).size();
         long likeCount = likeRepository.findByNoteId(noteId).size();
@@ -304,7 +323,7 @@ public class NoteService {
 
     private Long findNoteId(int index) {
         return indexNoteMap.get(index);
-    }
+    }*/
     
 
      public Note updateNote(Long noteId, NoteDTO noteDto) {
@@ -349,13 +368,14 @@ public class NoteService {
     }
 
     public boolean hasUserLiked(Long noteId, Long userId) {
-        Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
         
-                Optional<NoteLike> like = likeRepository.findByNoteIdAndUserId(noteId, userId);
-                return like.isPresent();
-            }
-    
+        return likeRepository.existsByNoteIdAndUserIdAndIsActive(noteId, userId);
+    }
+
+    public boolean hasUserSaved(Long noteId, Long userId) {
+       
+        return saveRepository.existsByNoteIdAndUserIdAndIsActive(noteId, userId);
+    }
     
         
     @Cacheable("notes")
@@ -364,8 +384,8 @@ public class NoteService {
         return convertToDTO(note);
     }
 
-    public List<NoteDTO> getNotesByUser(User user) {
-        return noteRepository.findByUser(user).stream().map(this::convertToDTO).collect(Collectors.toList());
+    public List<NoteDTO> getNotesByUser(Long userId) {
+        return noteRepository.findByUserId(userId);
     }
 
     public List<NoteDTO> getNotesByCourse(Course course) {
@@ -409,13 +429,37 @@ public class NoteService {
     }
 
     
-
-    public void deleteNoteById(Long id) {
-        noteRepository.deleteById(id);
+    // NEEDS FIXING
+    @Transactional
+    public void softDeleteNoteById(Long noteId) {
+    
+    Note note = noteRepository.findById(noteId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid note ID"));
+    note.setDeleted(true);
+    noteRepository.save(note);
+}
+    public Page<NoteDTO> getPublicNotes(int page, int size, String sortBy, String sortDir) {
+        
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");            
+        validSortFields.put("createdAt", "createdAt");    
+        validSortFields.put("title", "title");            
+    
+        
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
+                    ? Sort.by(sortField).ascending() 
+                    : Sort.by(sortField).descending();
+    
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        
+        return noteRepository.findPublicNotes(pageable);
     }
-    public List<NoteDTO> getPublicNotes() {
-        return noteRepository.findPublicNotes().stream().map(this::convertToDTO).collect(Collectors.toList());
-    }
+    
     public List<NoteDTO> getPublicNotesByUserAndUniversity(User user, University university) {
         return noteRepository.findPublicNotesByUserAndUniversity(user, university).stream().map(this::convertToDTO).collect(Collectors.toList());
     }
@@ -432,35 +476,147 @@ public class NoteService {
     }
 
 
-    public List<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester) {
-        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester).stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester, pageable);
     }
-    public List<NoteDTO> getPublicNotesByDepartment(Department department) {
-        return noteRepository.findPublicNotesByDepartment(department).stream().map(this::convertToDTO).collect(Collectors.toList());
+    
+    public Page<NoteDTO> getPublicNotesByDepartment(Department department, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartment(department, pageable);
     }
+    
 
 
-    public List<NoteDTO> getPublicNotesByCourse(Course course) {
-        return noteRepository.findPublicNotesByCourse(course).stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotesByCourse(Course course, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByCourse(course, pageable);
     }
+    
 
-    public List<NoteDTO> getPublicNotesByUniversity(University university) {
-        return noteRepository.findPublicNotesByUniversity(university).stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NoteDTO> getPublicNotesByUniversity(University university, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByUniversity(university, pageable);
     }
+    
 
     private NoteDTO convertToDTO(Note note) {
-        return new NoteDTO(
-                note.getId(),
-                note.getCourse().getId(),
-                note.getUser().getId(),
-                note.getTitle(),
-                note.getDescription(),
-                note.getPdfUrl(),
-                note.getFilename(),
-                note.getIsPublic()
+        NoteDTO dto = new NoteDTO(
+            note.getId(),
+            note.getCourse().getId(),
+            note.getUser().getId(),
+            note.getTitle(),
+            note.getDescription(),
+            note.getPdfUrl(),
+            note.getFilename(),
+            note.getIsPublic()
         );
+        
+        dto.setTotalLikes(note.getLikes());
+        String englishCourseName = note.getCourse().getCourseNames().stream()
+            .filter(courseName -> "EN".equals(courseName.getLanguage().getCode()))
+            .map(CourseName::getName)
+            .findFirst()
+            .orElse("Unknown Course Name");  
+
+        dto.setCourseName(englishCourseName);   
+        String englishDepartmentName = note.getCourse().getDepartment().getDepartmentNames().stream()
+            .filter(departmentName -> "EN".equals(departmentName.getLanguage().getCode()))
+            .map(DepartmentName::getName)
+            .findFirst()
+            .orElse("Unknown Department Name"); 
+        dto.setDepartmentName(englishDepartmentName);     
+
+        String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
+            .filter(universityName -> "EN".equals(universityName.getLanguage().getCode()))
+            .map(UniversityName::getName)
+            .findFirst()
+            .orElse("Unknown University Name");  
+        dto.setUniversityName(englishUniversityName);
+        dto.setCreatedAt(note.getCreatedAt());
+        return dto;
     }
 
+
+    public Page<NoteDTO> searchNotes(String keyword, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return noteRepository.searchNotes(keyword, pageable);
+    }
+
+    public Page<NoteDTO> searchUserNotes(String keyword,Long userId, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return noteRepository.searchUserNotes(keyword,userId, pageable);
+    }
     
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
@@ -478,15 +634,25 @@ public class NoteService {
         note.setIsPublic(noteDto.getIsPublic());
 
         Note savedNote = noteRepository.save(note);
-        long noteCount = noteRepository.countByUserId(user.getId());
-        if (noteCount == 1) {
-            userService.updateUniScore(user, 22L); // Assign a higher UniScore for the first note upload
-        } else {
-            userService.updateUniScore(user, 23L); // Regular UniScore for subsequent note uploads
-        }
+        boolean hasReceivedFirstLog = uniscoreIncreaseLogsRepository.existsByUserIdAndIncreaseTypeId(user.getId(), 22L);
+
+            if (!hasReceivedFirstLog) {
+                
+                userService.updateUniScore(user, 22L); 
+            } else {
+                
+                userService.updateUniScore(user, 23L); 
+            }
         badgeService.checkBadgesForUser(user.getId()); 
         return savedNote;
     }
 
-    
+    public List<NoteDTO> getPublicSavedNotesByUser(Long userId) {
+        return noteRepository.findPublicSavedNotesByUserId(userId);   
+    }
+
+    public List<NoteProjection> getTopPublicNotesByUser(Long userId, int limit) {
+
+        return noteRepository.findTopPublicNotesByUser(userId,limit);
+    }
 }

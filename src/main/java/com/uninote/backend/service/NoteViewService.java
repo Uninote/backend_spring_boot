@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 
 @Service
@@ -37,23 +38,32 @@ public class NoteViewService {
 
     @Autowired
     private UniscoreIncreaseTypeRepository uniscoreIncreaseTypeRepository;
-    public NoteView trackView(Long noteId, Long userId) {
-        Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new IllegalArgumentException("Note not found"));
+    public  CompletableFuture<NoteView> trackView(Long noteId, Long userId) {
+        return CompletableFuture.supplyAsync(() -> {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        User noteCreator = note.getUser();
-        NoteView noteView;
+            Note note = noteRepository.findById(noteId)
+                    .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 
-            noteView = new NoteView();
-            noteView.setNoteId(noteId);
-            noteView.setUserId(userId);
-            noteView.setCreatedAt(LocalDateTime.now());; 
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            User noteCreator = note.getUser();
+            NoteView noteView;
+
+                noteView = new NoteView();
+                noteView.setNoteId(noteId);
+                noteView.setUserId(userId);
+                noteView.setCreatedAt(LocalDateTime.now());; 
+            
+                userService.updateUniScore(note.getUser(), 3L);
         
+             return noteViewRepository.save(noteView);
 
-       
-        return noteViewRepository.save(noteView);
+
+        }).exceptionally(ex -> {
+            System.err.println("Error occurred in trackView: " + ex.getMessage());
+            throw new RuntimeException("Failed to track view", ex);
+        });
     }
 }

@@ -1,5 +1,7 @@
 package com.uninote.backend.dto;
 
+import java.time.LocalDateTime;
+
 public class NoteDTO {
     private Long noteId;
     private Long courseId;
@@ -9,7 +11,50 @@ public class NoteDTO {
     private String pdfUrl;
     private String filename;
     private Boolean isPublic;
-        
+    private String courseName;
+    private String universityName;
+    private String departmentName;
+    private Long totalLikes;
+    private String username;
+    private String profileImageUrl;
+    private LocalDateTime createdAt;
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;
+        this.departmentName = departmentName;
+        this.totalLikes = totalLikes;
+        this.createdAt = createdAt;
+    }
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+                    
+    }
 
     
     public NoteDTO(Long noteId,Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic) {
@@ -88,4 +133,61 @@ public class NoteDTO {
     public Long getNoteId(){
         return noteId;
     }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public String getUniversityName() {
+        return universityName;
+    }
+
+    public void setUniversityName(String universityName) {
+        this.universityName = universityName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
+
+    public void setTotalLikes(Long totalLikes) {
+        this.totalLikes = totalLikes;
+    }
+
+    public Long getTotalLikes() {
+        return totalLikes;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setProfileImageUrl(String profileUrl) {
+        this.profileImageUrl = profileUrl;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
 }

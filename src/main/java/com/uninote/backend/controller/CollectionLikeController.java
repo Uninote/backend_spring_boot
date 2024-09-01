@@ -32,4 +32,10 @@ public class CollectionLikeController {
         collectionLikeService.unlikeCollection(collectionId, userId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{collectionId}/likes/count")
+    public ResponseEntity<Long> getTotalActiveLikes(@PathVariable Long collectionId) {
+        Long totalLikes = collectionLikeService.getTotalActiveLikesForCollection(collectionId);
+        return ResponseEntity.ok(totalLikes);
+    }
 }

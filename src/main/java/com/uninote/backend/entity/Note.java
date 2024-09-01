@@ -1,6 +1,10 @@
 package com.uninote.backend.entity;
 
 import javax.persistence.*;
+
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,11 +17,13 @@ public class Note {
     @Column(name = "note_id", nullable = false, updatable = false)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.JOIN)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.JOIN)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -40,6 +46,21 @@ public class Note {
     @Column(name = "isPublic", nullable = false)
     private boolean isPublic;
 
+    @Column(name = "like_count")
+    private Long likes;
+
+
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
+
     @Column()  
     private String filename;
     
@@ -47,6 +68,7 @@ public class Note {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.likes = 0L;
     }
 
     @PreUpdate
@@ -132,5 +154,13 @@ public class Note {
 
     public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    public Long getLikes(){
+        return likes;
+    }
+
+    public void setLikes(Long likes) {
+        this.likes = likes;
     }
 }

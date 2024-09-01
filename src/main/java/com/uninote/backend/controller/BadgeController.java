@@ -4,9 +4,11 @@ import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
 import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.BadgeProjection;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.BadgeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,7 +56,18 @@ public class BadgeController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<UserHasBadgeDTO> getUserBadges(@PathVariable Long userId) {
+    public List<BadgeProjection> getUserBadges(@PathVariable Long userId) {
         return badgeService.getAllBagdesByUser(userId);
+    }
+
+    @GetMapping("/deliver-notifications/{userId}")
+    public ResponseEntity<Void> deliverPendingNotifications(@PathVariable Long userId) {
+        badgeService.deliverPendingNotifications(userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/users/{userId}/top")
+    public List<BadgeProjection> getTopBadgesPerCategory(@PathVariable Long userId) {
+        return badgeService.getTopBadgesPerCategory(userId);
     }
 }   

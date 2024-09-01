@@ -3,6 +3,9 @@ package com.uninote.backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import com.uninote.backend.payload.BadgeNotificationPayload;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +21,9 @@ public class BadgeWebSocketController {
         this.template = template;
     }
 
-    public void sendBadgeNotification(String userId, Long badge) {
-        logger.debug("Sending badge notification to userId: {} with badgeId: {}", userId, badge);
+    public void sendBadgeNotification(Long userId, Long notificationId, Long badgeId) {
         String destination = "/topic/badges/" + userId;
-        this.template.convertAndSend(destination, badge);
-        logger.debug("Notification sent to destination: {}", destination);
+        BadgeNotificationPayload payload = new BadgeNotificationPayload(notificationId, badgeId);
+        this.template.convertAndSend(destination, payload);
     }
 }
