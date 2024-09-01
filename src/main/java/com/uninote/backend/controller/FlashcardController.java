@@ -23,8 +23,9 @@ public class FlashcardController {
         return ResponseEntity.ok(createdFlashcard);
     }
 
+    
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<List<FlashcardProjection>> getFlashcardsByCourseId(@PathVariable Long courseId, @RequestParam("limit") int limit) {
+    public ResponseEntity<List<FlashcardProjection>> getFlashcardsByCourseId(@PathVariable Long courseId, @RequestParam(value = "limit", defaultValue = "10") int limit) {
         return ResponseEntity.ok(questionService.getRandomFlashcardsByCourseId(courseId, limit));
     }
 }
