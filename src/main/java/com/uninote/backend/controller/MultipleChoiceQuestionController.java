@@ -49,9 +49,8 @@ public class MultipleChoiceQuestionController {
     }
 
     @GetMapping("/multiple_choice/course/{courseId}")
-    public ResponseEntity<List<MultipleChoiceQuestionDTO>> getMultipleChoiceQuestionsByCourseId(@PathVariable Long courseId) {
-        List<MultipleChoiceQuestionDTO> multipleChoiceQuestions = questionService.getMultipleChoiceQuestionsByCourseId(courseId);
-        return ResponseEntity.ok(multipleChoiceQuestions);
+    public ResponseEntity<List<MultipleChoiceQuestionDTO>> getMultipleChoiceQuestionsByCourseId(@PathVariable Long courseId,  @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        return ResponseEntity.ok(questionService.getRandomMultipleChoiceQuestions(courseId, limit));
     }
 
     @DeleteMapping("/{id}")

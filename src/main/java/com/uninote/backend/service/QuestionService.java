@@ -13,6 +13,8 @@ import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Question;
 import com.uninote.backend.entity.QuestionType;
 import com.uninote.backend.entity.TrueFalseQuestion;
+import com.uninote.backend.interfaceProjection.FlashcardProjection;
+import com.uninote.backend.interfaceProjection.TrueFalseQuestionProjection;
 import com.uninote.backend.repository.ChoiceRepository;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.FlashcardRepository;
@@ -31,8 +33,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -214,20 +221,6 @@ public class QuestionService {
     }
 
     @Transactional
-    public List<FlashcardDTO> getFlashcardsByCourseId(Long courseId) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
-        List<Flashcard> flashcards = flashcardRepository.findByQuestionCourse(course);
-        return flashcards.stream().map(EntityToDTOConverter::convertFlashcardToDTO).collect(Collectors.toList());
-    }
-
-    @Transactional
-    public List<TrueFalseQuestionDTO> getTrueFalseQuestionsByCourseId(Long courseId) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
-        List<TrueFalseQuestion> trueFalseQuestions = tfqRepository.findByQuestionCourse(course);
-        return trueFalseQuestions.stream().map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
-    }
-
-
     public List<QuestionDTO> getRandomQuestionsByCourse(Long courseId, int count) {
         Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
         List<Question> questions = questionRepository.findByCourse(course);
@@ -235,18 +228,16 @@ public class QuestionService {
         return questions.stream().limit(count).map(EntityToDTOConverter::convertQuestionToDTO).collect(Collectors.toList());
     }
 
-    public List<FlashcardDTO> getRandomFlashcardsByCourse(Long courseId, int count) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
-        List<Flashcard> flashcards = flashcardRepository.findByCourse(course);
-        Collections.shuffle(flashcards); 
-        return flashcards.stream().limit(count).map(EntityToDTOConverter::convertFlashcardToDTO).collect(Collectors.toList());
+
+    @Transactional
+    public List<FlashcardProjection> getRandomFlashcardsByCourseId(Long courseId, int limit) {
+        return flashcardRepository.findRandomFlashcardsByCourseId(courseId, limit);
     }
 
-    public List<TrueFalseQuestionDTO> getRandomTrueFalseQuestionsByCourse(Long courseId, int count) {
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not Found"));
-        List<TrueFalseQuestion> trueFalseQuestions = trueFalseQuestionRepository.findByCourse(course);
-        Collections.shuffle(trueFalseQuestions); 
-        return trueFalseQuestions.stream().limit(count).map(EntityToDTOConverter::convertTrueFalseQuestionToDTO).collect(Collectors.toList());
+
+    @Transactional
+    public List<TrueFalseQuestionProjection> getRandomTrueFalseQuestionsByCourseId(Long courseId, int limit) {
+        return tfqRepository.findRandomTrueFalseQuestionsByCourseId(courseId, limit);
     }
 
     public List<MultipleChoiceQuestionDTO> getMultipleChoiceQuestionsByCourseId(Long courseId) {
@@ -257,8 +248,42 @@ public class QuestionService {
     }
 
 
+        @Transactional
+        public List<MultipleChoiceQuestionDTO> getRandomMultipleChoiceQuestions(Long courseId, int limit) {
+            List<Object[]> rawResults = multipleChoiceQuestionRepository.findRandomMultipleChoiceQuestionsWithChoicesByCourseId(courseId, limit);
+    
+    Map<Long, MultipleChoiceQuestionDTO> questionMap = new LinkedHashMap<>();
+
+    for (Object[] result : rawResults) {
+        Long questionId = ((BigDecimal) result[0]).longValue();
+        MultipleChoiceQuestionDTO questionDTO = questionMap.computeIfAbsent(questionId, id -> {
+            MultipleChoiceQuestionDTO dto = new MultipleChoiceQuestionDTO();
+            dto.setId(id);
+            dto.setQuestionId(((BigDecimal) result[1]).longValue());
+            dto.setQuestionTypeId(((BigDecimal) result[2]).longValue());
+            dto.setQuestionText((String) result[3]);
+            dto.setIsDifficult(((BigDecimal) result[4]).intValue() == 1);
+            dto.setCorrectChoiceLabel(((BigDecimal) result[5]).intValue());
+            dto.setImageUrl((String) result[9]);
+            return dto;
+        });
+
+        ChoiceDTO choiceDTO = new ChoiceDTO();
+        choiceDTO.setId(((BigDecimal) result[6]).longValue());
+        choiceDTO.setChoiceText((String) result[7]);
+        choiceDTO.setChoiceLabel(((BigDecimal) result[8]).intValue());
+
+        questionDTO.getChoices().add(choiceDTO);
+    }
+
+        return new ArrayList<MultipleChoiceQuestionDTO>(questionMap.values());
+        }
+
+
     public List<MultipleChoiceQuestionDTO> getRandomMultipleChoiceQuestionsByCourse(Long courseId, int count) {
         List<MultipleChoiceQuestion> multipleChoiceQuestions = multipleChoiceQuestionRepository.findByCourseId(courseId);
         return multipleChoiceQuestions.stream().limit(count).map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO).collect(Collectors.toList());
     }
+
+    
 }
