@@ -4,8 +4,10 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.UniversityDTO;
 import com.uninote.backend.dto.UniversityNameDTO;
 import com.uninote.backend.entity.Department;
+import com.uninote.backend.entity.Language;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
+import com.uninote.backend.entity.UniversityNameId;
 import com.uninote.backend.interfaceProjection.UniversityDetailsProjection;
 import com.uninote.backend.repository.UniversityRepository;
 
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,6 +84,15 @@ public class UniversityService {
 }
  public List<UniversityDetailsProjection> getUniversitiesWithQuestionsInLanguage(String language) {
         return universityRepository.findUniversitiesWithQuestionsInLanguage(language);
+    }
+
+
+
+    public University createUniversity(UniversityDTO universityDTO) {
+        University university = new University();
+        university.setLocation(universityDTO.getLocation());
+
+        return universityRepository.saveAndFlush(university);
     }
 
     

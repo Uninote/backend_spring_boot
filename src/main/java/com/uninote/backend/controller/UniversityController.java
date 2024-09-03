@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.UniversityDTO;
+import com.uninote.backend.entity.University;
 import com.uninote.backend.interfaceProjection.UniversityDetailsProjection;
 import com.uninote.backend.service.UniversityService;
 
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,5 +41,11 @@ public class UniversityController {
     @GetMapping("/with-questions")
     public List<UniversityDetailsProjection> getUniversitiesWithQuestions(@RequestParam("language") String language) {
         return universityService.getUniversitiesWithQuestionsInLanguage(language);
+    }
+
+    @PostMapping
+    public ResponseEntity<University> createUniversity(@RequestBody UniversityDTO universityDTO) {
+        University savedUniversity = universityService.createUniversity(universityDTO);
+        return  ResponseEntity.ok(savedUniversity);
     }
 }

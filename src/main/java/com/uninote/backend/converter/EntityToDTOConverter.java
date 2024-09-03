@@ -89,7 +89,7 @@ public class EntityToDTOConverter {
     public static UniversityNameDTO convertUniversityNameToDTO(UniversityName universityName) {
         return new UniversityNameDTO(
             universityName.getUniversity().getId(),
-            universityName.getLanguage().getCode(),
+            universityName.getLanguage().getId(),
             universityName.getName(),
             universityName.getFullName()
         );

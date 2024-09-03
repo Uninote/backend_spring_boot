@@ -381,7 +381,10 @@ public class NoteService {
     @Cacheable("notes")
     public NoteDTO getNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
-        return convertToDTO(note);
+        NoteDTO dto =  convertToDTO(note);
+        dto.setUsername(note.getUser().getUsername());
+        dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
+        return dto;
     }
 
     public List<NoteDTO> getNotesByUser(Long userId) {
