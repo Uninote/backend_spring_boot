@@ -369,5 +369,19 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         
         return ResponseEntity.ok(topNotes);
     }
+
+
+    @GetMapping("/uuid/{uuid}/id")
+    public ResponseEntity<Long> getNoteIdByUuid(@PathVariable String uuid) {
+        Optional<Long> noteId = noteService.findNoteIdByUuid(uuid);
+        return noteId.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    
+    @GetMapping("/{noteId}/uuid")
+    public ResponseEntity<String> getUuidByNoteId(@PathVariable Long noteId) {
+        Optional<String> uuid = noteService.findUuidByNoteId(noteId);
+        return uuid.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
     
 }

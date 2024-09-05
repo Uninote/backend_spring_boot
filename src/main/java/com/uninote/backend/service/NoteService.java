@@ -658,4 +658,14 @@ public class NoteService {
 
         return noteRepository.findTopPublicNotesByUser(userId,limit);
     }
+
+
+    public Optional<Long> findNoteIdByUuid(String uuid) {
+        return noteRepository.findIdByUuid(uuid);
+    }
+
+    
+    public Optional<String> findUuidByNoteId(Long id) {
+        return noteRepository.findUuidById(id);
+    }
 }

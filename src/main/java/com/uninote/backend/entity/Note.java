@@ -53,6 +53,11 @@ public class Note {
     @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
+
+    @Column(name = "uuid", unique = true, nullable = false)
+    private String uuid;
+
+
     public Boolean getDeleted() {
         return deleted;
     }
@@ -162,5 +167,14 @@ public class Note {
 
     public void setLikes(Long likes) {
         this.likes = likes;
+    }
+
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }
