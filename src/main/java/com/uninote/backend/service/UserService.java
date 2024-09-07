@@ -12,6 +12,7 @@ import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
+import com.uninote.backend.entity.UserSession;
 import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.CommentLikeRepository;
@@ -28,6 +29,8 @@ import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
+import com.uninote.backend.repository.UserSessionRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
@@ -97,9 +100,15 @@ public class UserService {
     private CommentRepository commentRepository;
 
     @Autowired
+    private UserSessionService userSessionService;
+
+    @Autowired
     private NoteCollectionRepository noteCollectionRepository;
 
-    public Void loginUserAndUpdateStreak(Long userId) {
+    @Autowired
+    private UserSessionRepository userSessionRepository;
+
+    public Long loginUserAndUpdateStreak(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
@@ -141,6 +150,14 @@ public class UserService {
         userLogin.setUser(user);
         userLogin.setLoginTimestamp(LocalDateTime.now());
         userLoginRepository.save(userLogin);
+        Optional<UserSession> activeSession = userSessionRepository.findActiveSessionByUserId(userId);
+        Long sessionId;
+        if (activeSession.isPresent()) {
+        
+            sessionId = activeSession.get().getSessionId();
+        } else {
+            sessionId = userSessionService.startSession(userId);
+        }
 
 
         CompletableFuture<Void> allTasks = CompletableFuture.allOf(notificationFuture,badgeFuture);
@@ -149,7 +166,7 @@ public class UserService {
             return null;
         });
         //allTasks.join();
-        return null;
+        return sessionId;
     }
 
     public User findById(Long userId) {
@@ -433,5 +450,22 @@ public void softDeleteUserById(Long userId) {
     public String getUserEmailByUsername(String username) {
         return userRepository.findUserEmailByUsername(username)
                              .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+
+    public Long logoutUserAndEndSession(Long userId) {
+        Optional<UserSession> activeSessionOpt = userSessionRepository.findLastActiveSessionByUserId(userId);
+
+        if (activeSessionOpt.isEmpty()) {
+            throw new IllegalArgumentException("No active session found for the user.");
+        }
+
+        UserSession session = activeSessionOpt.get();
+
+        session.setLogoutTime(LocalDateTime.now()); 
+        session.setSessionStatus(false);  
+        userSessionRepository.save(session);  
+
+        return session.getSessionId();  
     }
 }

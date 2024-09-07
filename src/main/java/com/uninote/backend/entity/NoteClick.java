@@ -34,6 +34,10 @@ public class NoteClick {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "session_id", referencedColumnName = "session_id", nullable = true)
+    private UserSession session;
+
     
     public Long getId() {
         return id;
@@ -80,5 +84,13 @@ public class NoteClick {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public UserSession getSession() {
+        return session;
+    }
+
+    public void setSession(UserSession session) {
+        this.session = session;
     }
 }
