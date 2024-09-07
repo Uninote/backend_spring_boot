@@ -101,10 +101,10 @@ public class UserController {
         return ResponseEntity.ok(sessionId);
     }
 
-    @PutMapping("/{userId}/logout")
-    public ResponseEntity<Long> logoutUserAndEndSession(@PathVariable Long userId) {
-        Long sessionId = userService.logoutUserAndEndSession(userId);
-        return ResponseEntity.ok(sessionId);
+    @PostMapping("/{userId}/logout")
+    public ResponseEntity<Void> logoutUserAndEndSession(@PathVariable Long userId) {
+        userService.logoutUserAndEndSession(userId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/firebase/{firebaseUid}")

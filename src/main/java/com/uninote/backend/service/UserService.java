@@ -32,6 +32,7 @@ import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSessionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
@@ -453,6 +454,7 @@ public void softDeleteUserById(Long userId) {
     }
 
 
+    @Async
     public Long logoutUserAndEndSession(Long userId) {
         Optional<UserSession> activeSessionOpt = userSessionRepository.findLastActiveSessionByUserId(userId);
 
