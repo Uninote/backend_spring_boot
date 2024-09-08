@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import com.uninote.backend.entity.CreatedTest;
 import com.uninote.backend.repository.CreatedTestRepository;
 import com.uninote.backend.service.CreatedTestService;
+import com.uninote.backend.service.UserSessionService;
 
 @RestController
 @RequestMapping("/tests")
@@ -29,10 +30,26 @@ public class CreatedTestController {
     @Autowired
     private CreatedTestService createdTestService;
 
+    @Autowired
+    private UserSessionService userSessionService;
+
     @PostMapping("/create")
-    public ResponseEntity<CreatedTest> createTest(@RequestBody CreatedTest createdTest) {
+    public ResponseEntity<?> createTest(@RequestBody CreatedTest createdTest, @RequestParam(required = false) Long sessionId) {
+        
+        if (sessionId == null || !userSessionService.isSessionValid(sessionId)) {
+            
+            sessionId = userSessionService.findLastSessionForUser(createdTest.getUserId());
+            if (sessionId == null) {
+                
+                return ResponseEntity.badRequest().body("No active session found for the user.");
+            }
+        }
+        
+        createdTest.setSessionId(sessionId);
+    
         CreatedTest savedTest = createdTestRepository.save(createdTest);
-        return new ResponseEntity<>(savedTest, HttpStatus.CREATED);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedTest.getTestId());
     }
 
      @GetMapping("/count")
@@ -41,7 +58,7 @@ public class CreatedTestController {
         return ResponseEntity.ok(count);
     }
 
-    // Endpoint to get the number of tests created by a specific user
+    
     @GetMapping("/count/user/{userId}")
     public ResponseEntity<Long> getTestsCountByUser(@PathVariable Long userId) {
         Long count = createdTestService.getTestsCountByUser(userId);
@@ -74,5 +91,16 @@ public class CreatedTestController {
     public ResponseEntity<Long> getMostCommonTestType() {
         Long mostCommonType = createdTestService.getMostCommonTestType();
         return ResponseEntity.ok(mostCommonType);
+    }
+
+
+    @PostMapping("/{testId}/close")
+    public ResponseEntity<String> closeTest(@PathVariable Long testId) {
+        try {
+            Long closedTestId = createdTestService.closeTest(testId);
+            return ResponseEntity.ok("Test with ID " + closedTestId + " has been closed successfully.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

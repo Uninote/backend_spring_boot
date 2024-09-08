@@ -1,6 +1,9 @@
 package com.uninote.backend.entity;
 
 import javax.persistence.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -16,11 +19,21 @@ public class CreatedTest {
     private Long userId;
 
     @Column(name = "CREATION_DATE", nullable = false)
-    @Temporal(TemporalType.DATE)
-    private Date creationDate;
+    private LocalDateTime creationDate;
 
+
+    @Column(name = "CLOSING_TIME", nullable = true)  
+    private LocalDateTime closingTime;
+
+    
+    @Column(name = "SESSION_ID", nullable = true)
+    private Long sessionId;
     @Column(name = "TYPE_ID", nullable = false)
     private Long typeId;
+
+    
+    @Column(name = "COURSE_ID", nullable = true)  
+    private Long courseId;
 
     public CreatedTest() {
         
@@ -29,7 +42,7 @@ public class CreatedTest {
     
     @PrePersist
     protected void onCreate() {
-        this.creationDate = new Date(); 
+        this.creationDate = LocalDateTime.now(); 
     }
 
     public Long getTestId() {
@@ -48,11 +61,11 @@ public class CreatedTest {
         this.userId = userId;
     }
 
-    public Date getCreationDate() {
+    public LocalDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(Date creationDate) {
+    public void setCreationDate(LocalDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
@@ -62,5 +75,29 @@ public class CreatedTest {
 
     public void setTypeId(Long typeId) {
         this.typeId = typeId;
+    }
+
+    public Long getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Long course) {
+        this.courseId = course;
+    }
+
+    public LocalDateTime getClosingTime() {
+        return closingTime;
+    }
+
+    public void setClosingTime(LocalDateTime closingTime) {
+        this.closingTime = closingTime;
+    }
+
+    public Long getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
     }
 }
