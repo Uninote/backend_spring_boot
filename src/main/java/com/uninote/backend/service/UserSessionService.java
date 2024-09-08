@@ -39,4 +39,6 @@ public Long findLastSessionForUser(Long userId) {
 public boolean isSessionValid(Long sessionId) {
     return userSessionRepository.existsById(sessionId);
 }
+
+
 }

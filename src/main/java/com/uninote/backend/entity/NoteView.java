@@ -23,6 +23,13 @@ public class NoteView {
     private LocalDateTime createdAt;
 
 
+    @Column(name = "view_end_time")
+    private LocalDateTime viewEndTime;
+
+    @Column(name = "session_id", nullable = true)
+    private Long sessionId;
+
+
     @ManyToOne
     @MapsId("noteId")
     @JoinColumn(name = "note_id", nullable = false)
@@ -66,6 +73,14 @@ public class NoteView {
         this.createdAt = createdAt;
     }
 
+    public LocalDateTime getViewEndTime() {
+        return viewEndTime;
+    }
+
+    public void setViewEndTime(LocalDateTime viewEndTime) {
+        this.viewEndTime = viewEndTime;
+    }
+
     public Note getNote() {
         return note;
     }
@@ -80,5 +95,13 @@ public class NoteView {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Long getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
     }
 }
