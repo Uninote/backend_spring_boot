@@ -5,6 +5,7 @@ import com.uninote.backend.dto.ChoiceDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
 import com.uninote.backend.dto.QuestionDTO;
+import com.uninote.backend.dto.QuestionTypeDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.entity.Choice;
 import com.uninote.backend.entity.Course;
@@ -293,6 +294,15 @@ public class QuestionService {
     public List<MultipleChoiceQuestionDTO> getRandomMultipleChoiceQuestionsByCourse(Long courseId, int count) {
         List<MultipleChoiceQuestion> multipleChoiceQuestions = multipleChoiceQuestionRepository.findByCourseId(courseId);
         return multipleChoiceQuestions.stream().limit(count).map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO).collect(Collectors.toList());
+    }
+
+    public List<QuestionTypeDTO> getDistinctQuestionTypesByCourseId(Long courseId) {
+        List<Object[]> results = questionRepository.findDistinctQuestionTypeIdsAndNamesByCourseId(courseId);
+
+        
+        return results.stream()
+                .map(result -> new QuestionTypeDTO((Long) result[0], (String) result[1]))
+                .collect(Collectors.toList());
     }
 
     

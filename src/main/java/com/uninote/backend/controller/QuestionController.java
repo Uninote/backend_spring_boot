@@ -6,6 +6,7 @@ import com.uninote.backend.dto.CorrectChoiceRequestDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
 import com.uninote.backend.dto.QuestionDTO;
+import com.uninote.backend.dto.QuestionTypeDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.MultipleChoiceQuestion;
@@ -91,6 +92,13 @@ public ResponseEntity<MultipleChoiceQuestion> createFullMultipleChoiceQuestion(@
     
     return ResponseEntity.ok(createdMultipleChoiceQuestion);
 }
+
+
+@GetMapping("/course/{courseId}/types")
+    public ResponseEntity<List<QuestionTypeDTO>> getDistinctQuestionTypesByCourseId(@PathVariable Long courseId) {
+        List<QuestionTypeDTO> questionTypes = questionService.getDistinctQuestionTypesByCourseId(courseId);
+        return ResponseEntity.ok(questionTypes);
+    }
 
 
     
