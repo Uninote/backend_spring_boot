@@ -105,7 +105,9 @@ public class NoteSaveService {
             noteSave = new NoteSave(noteId, userId);
             noteSave.setIsActive(true);
             noteSaveRepository.save(noteSave);
-            userService.updateUniScore(noteCreator, 2l);
+            if (noteCreator.getId() != userId) {
+                userService.updateUniScore(noteCreator, 2l);
+            }
             saveHistoryService.saveSaveHistory(userId, noteId, 1, sessionId);  
         } else if (noteSave.getIsActive()) {
             noteSave.setIsActive(false);

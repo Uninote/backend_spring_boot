@@ -108,9 +108,9 @@ public class NoteLikeService {
 
         note.setLikes(note.getLikes() + 1);
         noteRepository.save(note);
-
-        userService.updateUniScore(noteCreator, 1L);
-
+        if (noteCreator.getId() != userId) {
+            userService.updateUniScore(noteCreator, 1L);
+        }
         likeHistoryService.saveLikeHistory(userId, noteId, 1, sessionId);  
         
     } else if (noteLike.isActive()) {
