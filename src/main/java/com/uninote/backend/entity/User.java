@@ -39,7 +39,7 @@ public class User {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column(name = "last_login", nullable = true)
-    private LocalDateTime lastLogin = LocalDateTime.now();
+    private LocalDateTime lastLogin ;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -1,3 +1,4 @@
 # Exclude Oracle Wallet
 Wallet_UniNoteMain
 
+target/

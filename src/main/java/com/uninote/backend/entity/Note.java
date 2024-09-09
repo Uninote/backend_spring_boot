@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-
+import java.util.UUID;
 import java.time.LocalDateTime;
 
 @Entity
@@ -53,6 +53,11 @@ public class Note {
     @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
+
+    @Column(name = "uuid", unique = true, nullable = false)
+    private String uuid;
+
+
     public Boolean getDeleted() {
         return deleted;
     }
@@ -69,6 +74,9 @@ public class Note {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.likes = 0L;
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID().toString();
+        }
     }
 
     @PreUpdate
@@ -162,5 +170,14 @@ public class Note {
 
     public void setLikes(Long likes) {
         this.likes = likes;
+    }
+
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

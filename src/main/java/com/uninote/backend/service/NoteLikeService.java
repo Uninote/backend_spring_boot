@@ -30,6 +30,9 @@ public class NoteLikeService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private LikeHistoryService likeHistoryService;
+
     @Transactional
     public void likeNote(Long noteId, Long userId) {
         Note note = noteRepository.findById(noteId)
@@ -50,6 +53,7 @@ public class NoteLikeService {
             note.setLikes(note.getLikes() + 1);
             noteRepository.save(note);
             userService.updateUniScore(noteCreator, 1L);
+            
             
         } else if (!noteLike.isActive()) {
             
@@ -80,4 +84,50 @@ public class NoteLikeService {
             
         }
     }
+
+
+    @Transactional
+    public void toggleLike(Long noteId, Long userId, Long sessionId) {
+    Note note = noteRepository.findById(noteId)
+            .orElseThrow(() -> new IllegalArgumentException("Note not found"));
+
+    
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+    User noteCreator = note.getUser();
+
+    Optional<NoteLike> checkNoteLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);
+    NoteLike noteLike = checkNoteLike.orElse(null);
+
+    if (noteLike == null) {
+        NoteLikeId noteLikeId = new NoteLikeId(noteId, userId);
+        noteLike = new NoteLike(noteLikeId, note, user);
+        noteLike.setActive(true);
+        noteLikeRepository.save(noteLike);
+
+        note.setLikes(note.getLikes() + 1);
+        noteRepository.save(note);
+
+        userService.updateUniScore(noteCreator, 1L);
+
+        likeHistoryService.saveLikeHistory(userId, noteId, 1, sessionId);  
+        
+    } else if (noteLike.isActive()) {
+        noteLike.setActive(false);
+        note.setLikes(note.getLikes() - 1);
+        noteRepository.save(note);
+
+        
+        likeHistoryService.saveLikeHistory(userId, noteId, 0, sessionId);  
+        
+    } else {
+        noteLike.setActive(true);
+        note.setLikes(note.getLikes() + 1);
+        noteRepository.save(note);
+
+        likeHistoryService.saveLikeHistory(userId, noteId, 1, sessionId); 
+    }
+}
+
 }

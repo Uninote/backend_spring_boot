@@ -64,5 +64,13 @@ public class CourseController {
         return ResponseEntity.ok(createdName);
     }
 
+
+    @GetMapping("/with-questions")
+    public List<CourseProjection> getCoursesWithQuestions(
+            @RequestParam("departmentId") Long departmentId, 
+            @RequestParam("semester") int semester,
+            @RequestParam("language") String language) {
+        return courseService.getCoursesWithQuestionsByDepartmentSemesterAndLanguage(departmentId, semester, language);
+    }
     
 }

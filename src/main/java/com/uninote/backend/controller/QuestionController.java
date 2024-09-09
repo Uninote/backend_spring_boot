@@ -93,19 +93,5 @@ public ResponseEntity<MultipleChoiceQuestion> createFullMultipleChoiceQuestion(@
 }
 
 
-    @GetMapping("/random_test")
-    public ResponseEntity<?> getRandomTest(@RequestParam Long courseId, @RequestParam String type, @RequestParam int count) {
-        if (type.equalsIgnoreCase("flashcard")) {
-            List<FlashcardDTO> flashcards = questionService.getRandomFlashcardsByCourse(courseId, count);
-            return ResponseEntity.ok(flashcards);
-        } else if (type.equalsIgnoreCase("true_false")) {
-            List<TrueFalseQuestionDTO> trueFalseQuestions = questionService.getRandomTrueFalseQuestionsByCourse(courseId, count);
-            return ResponseEntity.ok(trueFalseQuestions);
-        } else if (type.equalsIgnoreCase("multiple_choice")) {
-            List<MultipleChoiceQuestionDTO> multipleChoiceQuestions = questionService.getRandomMultipleChoiceQuestionsByCourse(courseId, count);
-            return ResponseEntity.ok(multipleChoiceQuestions);
-        } else {
-            return ResponseEntity.badRequest().body("Invalid test type specified");
-        }
-    }
+    
 }

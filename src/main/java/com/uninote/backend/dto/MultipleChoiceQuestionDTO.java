@@ -1,5 +1,6 @@
 package com.uninote.backend.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MultipleChoiceQuestionDTO extends QuestionDTO{
@@ -7,7 +8,7 @@ public class MultipleChoiceQuestionDTO extends QuestionDTO{
     private Long id;
     private Long questionId;
     private int correctChoiceLabel;
-    private List<ChoiceDTO> choices;
+    private List<ChoiceDTO> choices = new ArrayList<>();
     private String imageUrl;
    
     public Long getId() {

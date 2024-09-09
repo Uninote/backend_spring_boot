@@ -1,9 +1,15 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.UniversityDTO;
 import com.uninote.backend.dto.UniversityNameDTO;
+import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityNameId;
 import com.uninote.backend.service.UniversityNameService;
+import com.uninote.backend.service.UniversityService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +21,9 @@ public class UniversityNameController {
 
     @Autowired
     private UniversityNameService universityNameService;
+
+    @Autowired
+    private UniversityService universityService;
 
     @GetMapping
     public List<UniversityNameDTO> getAllUniversityNames() {
@@ -28,8 +37,10 @@ public class UniversityNameController {
     }
 
     @PostMapping
-    public ResponseEntity<UniversityNameDTO> createUniversityName(@RequestBody UniversityNameDTO universityNameDTO) {
-        return ResponseEntity.ok(universityNameService.createUniversityName(universityNameDTO));
+    public ResponseEntity<UniversityDTO> createUniversityName(@RequestBody UniversityNameDTO universityNameDTO) {
+         University updatedUniversity = universityNameService.addUniversityName(universityNameDTO);
+        UniversityDTO updatedUniversityDTO = EntityToDTOConverter.convertUniversityToDTO(updatedUniversity);
+        return  ResponseEntity.ok(updatedUniversityDTO);
     }
 
     @PutMapping("/{universityId}/{languageId}")

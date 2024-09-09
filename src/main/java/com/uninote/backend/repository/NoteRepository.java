@@ -294,5 +294,15 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
    void softDeleteByUserId(@Param("userId") Long userId);
 
 
+
+
+   @Query("SELECT n.id FROM Note n WHERE n.uuid = :uuid")
+    Optional<Long> findIdByUuid(@Param("uuid") String uuid);
+
+    
+    @Query("SELECT n.uuid FROM Note n WHERE n.id = :id")
+    Optional<String> findUuidById(@Param("id") Long id);
+
+
 }
 

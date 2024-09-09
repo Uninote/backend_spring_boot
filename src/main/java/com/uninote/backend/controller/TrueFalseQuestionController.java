@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.entity.TrueFalseQuestion;
+import com.uninote.backend.interfaceProjection.TrueFalseQuestionProjection;
 import com.uninote.backend.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,8 @@ public class TrueFalseQuestionController {
     }
 
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<List<TrueFalseQuestionDTO>> getTrueFalseQuestionsByCourseId(@PathVariable Long courseId) {
-        List<TrueFalseQuestionDTO> trueFalseQuestions = questionService.getTrueFalseQuestionsByCourseId(courseId);
-        return ResponseEntity.ok(trueFalseQuestions);
+    public ResponseEntity<List<TrueFalseQuestionProjection>> getTrueFalseQuestionsByCourseId(@PathVariable Long courseId, @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        return ResponseEntity.ok(questionService.getRandomTrueFalseQuestionsByCourseId(courseId, limit));
     }
 }
 

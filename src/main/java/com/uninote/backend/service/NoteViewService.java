@@ -38,8 +38,9 @@ public class NoteViewService {
 
     @Autowired
     private UniscoreIncreaseTypeRepository uniscoreIncreaseTypeRepository;
-    public  CompletableFuture<NoteView> trackView(Long noteId, Long userId) {
-        return CompletableFuture.supplyAsync(() -> {
+
+    public  Long trackView(Long noteId, Long userId, Long sessionId) {
+        
 
 
             Note note = noteRepository.findById(noteId)
@@ -54,16 +55,35 @@ public class NoteViewService {
                 noteView = new NoteView();
                 noteView.setNoteId(noteId);
                 noteView.setUserId(userId);
+                noteView.setSessionId(sessionId);
                 noteView.setCreatedAt(LocalDateTime.now());; 
             
-                userService.updateUniScore(note.getUser(), 3L);
+            CompletableFuture.runAsync(() -> {
+                        if (noteCreator.getId() != userId) {
+                                userService.updateUniScore(note.getUser(), 3L);
+                        }
+                });        
+             NoteView nv =  noteViewRepository.save(noteView);
+             return nv.getId();
+
+
         
-             return noteViewRepository.save(noteView);
-
-
-        }).exceptionally(ex -> {
-            System.err.println("Error occurred in trackView: " + ex.getMessage());
-            throw new RuntimeException("Failed to track view", ex);
-        });
     }
+
+
+    public Long trackViewEnd(Long noteViewId) {
+        
+        NoteView noteView = noteViewRepository.findById(noteViewId)
+                .orElseThrow(() -> new IllegalArgumentException("NoteView not found"));
+    
+        
+        noteView.setViewEndTime(LocalDateTime.now());
+    
+        
+        NoteView updatedNoteView = noteViewRepository.save(noteView);
+    
+        
+        return updatedNoteView.getId();
+    }
+    
 }

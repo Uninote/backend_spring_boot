@@ -18,6 +18,8 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +105,15 @@ public class DepartmentService {
         } else {
             throw new IllegalArgumentException("Department not found");
         }
+    }
+
+    public List<DepartmentProjection> getDepartmentsWithQuestionsByUniversityAndLanguage(Long universityId, String language) {
+        return departmentRepository.findDepartmentsWithQuestionsByUniversityAndLanguage(universityId, language);
+    }
+
+    public List<String> getSemestersWithQuestionsByDepartment(Long departmentId) {
+        String semesters = departmentRepository.findSemestersWithQuestionsByDepartment(departmentId);
+        return semesters != null ? Arrays.asList(semesters.split(",")) : new ArrayList<>();
     }
 
     

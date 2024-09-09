@@ -13,13 +13,17 @@ import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteService;
 import com.uninote.backend.service.UserService;
+import com.uninote.backend.utils.EncryptionUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/notes")
@@ -40,7 +44,27 @@ public class NoteController {
     @Autowired
     private UniversityRepository universityRepository;
 
+    @PostMapping("/encode/{noteId}")
+    public ResponseEntity<String> generateToken(@PathVariable Long noteId) {
+        try {
+            String token = EncryptionUtil.encrypt(noteId);
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error generating token");
+        }
+    }
 
+    
+    @GetMapping("/decode/{token}")
+    public ResponseEntity<Long> viewNoteByToken(@PathVariable String token) {
+        try {
+            Long noteId = EncryptionUtil.decrypt(token);
+            
+            return ResponseEntity.ok(noteId);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
     @GetMapping("/{noteId}/likes/count")
     public ResponseEntity<Long> getTotalLikes(@PathVariable Long noteId) {
         long totalLikes = noteService.getTotalLikes(noteId);
@@ -344,6 +368,20 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         }
         
         return ResponseEntity.ok(topNotes);
+    }
+
+
+    @GetMapping("/uuid/{uuid}/id")
+    public ResponseEntity<Long> getNoteIdByUuid(@PathVariable String uuid) {
+        Optional<Long> noteId = noteService.findNoteIdByUuid(uuid);
+        return noteId.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    
+    @GetMapping("/{noteId}/uuid")
+    public ResponseEntity<String> getUuidByNoteId(@PathVariable Long noteId) {
+        Optional<String> uuid = noteService.findUuidByNoteId(noteId);
+        return uuid.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
     
 }

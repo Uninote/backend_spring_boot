@@ -96,9 +96,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}/login")
-    public ResponseEntity<Void> loginUserAndUpdateStreak(@PathVariable Long id) {
-        userService.loginUserAndUpdateStreak(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Long> loginUserAndUpdateStreak(@PathVariable Long id) {
+        Long sessionId = userService.loginUserAndUpdateStreak(id);
+        return ResponseEntity.ok(sessionId);
+    }
+
+    @PostMapping("/{userId}/logout")
+    public ResponseEntity<Void> logoutUserAndEndSession(@PathVariable Long userId) {
+        userService.logoutUserAndEndSession(userId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/firebase/{firebaseUid}")

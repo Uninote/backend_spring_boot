@@ -94,4 +94,8 @@ public class CourseService {
         return courseProjections;
     }
 
+    public List<CourseProjection> getCoursesWithQuestionsByDepartmentSemesterAndLanguage(Long departmentId, int semester, String language) {
+        return courseRepository.findCoursesWithQuestionsByDepartmentSemesterAndLanguage(departmentId, semester, language);
+    }
+
 }

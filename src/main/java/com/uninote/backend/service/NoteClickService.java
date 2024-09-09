@@ -1,8 +1,12 @@
 package com.uninote.backend.service;
 
 import com.uninote.backend.entity.NoteClick;
+import com.uninote.backend.entity.UserSession;
 import com.uninote.backend.repository.NoteClickRepository;
+import com.uninote.backend.repository.UserSessionRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,13 +17,20 @@ public class NoteClickService {
     @Autowired
     private NoteClickRepository noteClickRepository;
 
-    public NoteClick trackClick(Long noteId, Long userId) {
+    @Autowired
+    private UserSessionRepository userSessionRepository;
+
+    
+    @Async
+    public void trackClick(Long noteId, Long userId, Long sessionId) {
         NoteClick noteClick;
             noteClick = new NoteClick();
             noteClick.setNoteId(noteId);
             noteClick.setUserId(userId);
+            noteClick.setSession(userSessionRepository.findById(sessionId).orElse(null));
             noteClick.setCreatedAt(LocalDateTime.now()); 
         
-        return noteClickRepository.save(noteClick);
+        noteClickRepository.save(noteClick);
+            
     }
 }

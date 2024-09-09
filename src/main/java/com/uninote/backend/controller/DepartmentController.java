@@ -78,4 +78,15 @@ public class DepartmentController {
         List<DepartmentNameDTO> departmentNames = departmentService.getDepartmentNames(departmentId);
         return ResponseEntity.ok(departmentNames);
     }
+
+
+    @GetMapping("/with-questions")
+    public List<DepartmentProjection> getDepartmentsWithQuestions(@RequestParam("universityId") Long universityId, @RequestParam("language") String language) {
+        return departmentService.getDepartmentsWithQuestionsByUniversityAndLanguage(universityId, language);
+    }
+
+    @GetMapping("/{departmentId}/semesters-with-questions")
+    public List<String> getSemestersWithQuestions(@PathVariable("departmentId") Long departmentId) {
+        return departmentService.getSemestersWithQuestionsByDepartment(departmentId);
+    }
     }
