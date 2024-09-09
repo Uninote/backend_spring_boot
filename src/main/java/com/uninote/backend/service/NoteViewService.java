@@ -59,7 +59,9 @@ public class NoteViewService {
                 noteView.setCreatedAt(LocalDateTime.now());; 
             
             CompletableFuture.runAsync(() -> {
-                    userService.updateUniScore(note.getUser(), 3L);
+                        if (noteCreator.getId() != userId) {
+                                userService.updateUniScore(note.getUser(), 3L);
+                        }
                 });        
              NoteView nv =  noteViewRepository.save(noteView);
              return nv.getId();
