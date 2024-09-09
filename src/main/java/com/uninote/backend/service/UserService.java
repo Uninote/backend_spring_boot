@@ -104,7 +104,7 @@ public class UserService {
     private UserSessionService userSessionService;
 
     @Autowired
-    private NoteCollectionRepository noteCollectionRepository;
+    private NoteCollectionRepository noteCollectionRepository;  
 
     @Autowired
     private UserSessionRepository userSessionRepository;
