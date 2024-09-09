@@ -8,6 +8,8 @@ import com.uninote.backend.repository.UserLoginRepository;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class UserLoginService {
@@ -34,5 +36,20 @@ public class UserLoginService {
 
     public List<Long> getUsersLoggedInConsecutively(LocalDateTime start, LocalDateTime end) {
         return userLoginRepository.findUsersLoggedInConsecutively(start, end);
+    }
+
+
+    public Map<Integer, Long> getUserDistinctLoginDays(LocalDateTime startDate, LocalDateTime endDate) {
+        
+        List<Object[]> userDistinctLoginDays = userLoginRepository.findUserDistinctLoginDaysBetweenDates(startDate, endDate);
+
+        
+        Map<Integer, Long> loginDayCountMap = userDistinctLoginDays.stream()
+            .collect(Collectors.groupingBy(
+                row -> ((Number) row[1]).intValue(),  
+                Collectors.counting()                 
+            ));
+
+        return loginDayCountMap;
     }
 }
