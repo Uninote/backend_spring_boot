@@ -226,11 +226,11 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "WHERE n.isPublic = true AND n.deleted = false " +
        "AND l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
        "AND (" +
-       "LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(n.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(cn.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(un.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(dn.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+       "LOWER(REPLACE(REPLACE(n.title, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(n.description, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(cn.name, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(un.name, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(dn.name, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', ''))" +
        ") " +
        "ORDER BY n.likes DESC, n.createdAt DESC")
     Page<NoteDTO> searchNotes(@Param("keyword") String keyword, Pageable pageable);
@@ -252,11 +252,11 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "WHERE n.user.id = :userId AND  n.deleted = false " +
        "AND l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
        "AND (" +
-       "LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(n.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(cn.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(un.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-       "LOWER(dn.name) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+       "LOWER(REPLACE(REPLACE(n.title, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(n.description, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(cn.name, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(un.name, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', '')) OR " +
+       "LOWER(REPLACE(REPLACE(dn.name, ' ', ''), '-', '')) LIKE LOWER(REPLACE(REPLACE(CONCAT('%', :keyword, '%'), ' ', ''), '-', ''))" +
        ") " +
        "ORDER BY n.likes DESC, n.createdAt DESC")
     Page<NoteDTO> searchUserNotes(@Param("keyword") String keyword,@Param("userId") Long userId, Pageable pageable);
