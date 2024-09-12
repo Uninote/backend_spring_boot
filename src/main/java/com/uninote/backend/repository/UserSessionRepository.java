@@ -26,7 +26,7 @@ public interface UserSessionRepository  extends JpaRepository<UserSession, Long>
     @Query("SELECT us FROM UserSession us WHERE us.userId = :userId AND us.sessionStatus = 1")
     Optional<UserSession> findActiveSessionByUserId(@Param("userId") Long userId);
     
-    @Query(value = "SELECT * FROM (SELECT us.* FROM user_session us WHERE us.user_id = :userId AND us.session_status = 1 ORDER BY us.login_time DESC) WHERE ROWNUM = 1", nativeQuery = true)
+    @Query(value = "SELECT * FROM (SELECT us.* FROM user_sessions us WHERE us.user_id = :userId AND us.session_status = 1 ORDER BY us.login_time DESC) WHERE ROWNUM = 1", nativeQuery = true)
     Optional<UserSession> findLastActiveSessionByUserId(@Param("userId") Long userId);
 
 }
