@@ -203,7 +203,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "JOIN courses c ON n.course_id = c.course_id " +
                "JOIN departments d ON c.department_id = d.department_id " +
                "JOIN users u ON n.user_id = u.user_id " +
-               "WHERE n.is_public = 1 AND u.user_id = :userId " +
+               "WHERE n.is_public = 1 AND u.user_id = :userId AND n.deleted = 0 " +
                "ORDER BY n.like_count DESC, n.created_at DESC " +
                "FETCH FIRST :limit ROWS ONLY", nativeQuery = true)
     List<NoteProjection> findTopPublicNotesByUser(@Param("userId") Long userId, @Param("limit") int limit);
