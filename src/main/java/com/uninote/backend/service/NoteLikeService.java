@@ -109,7 +109,7 @@ public class NoteLikeService {
 
         note.setLikes(note.getLikes() + 1);
         noteRepository.save(note);
-        if (noteCreator.getId() != userId) {
+        if (!noteCreator.getId().equals(userId)) {
             userService.updateUniScore(noteCreator, 1L);
         }
         likeHistoryService.saveLikeHistory(userId, noteId, 1, sessionId);  

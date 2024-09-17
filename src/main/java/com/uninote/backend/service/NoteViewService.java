@@ -59,7 +59,7 @@ public class NoteViewService {
                 noteView.setCreatedAt(LocalDateTime.now());; 
             
             CompletableFuture.runAsync(() -> {
-                        if (noteCreator.getId() != userId) {
+                        if (!noteCreator.getId().equals(userId)) {
                                 userService.updateUniScore(note.getUser(), 3L);
                         }
                 });        
