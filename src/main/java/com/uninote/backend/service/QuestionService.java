@@ -305,5 +305,10 @@ public class QuestionService {
                 .collect(Collectors.toList());
     }
 
+
+    public List<QuestionDTO> getDistinctReportedQuestionDTOs() {
+        return questionRepository.findDistinctReportedQuestionDTOs();
+    }
+
     
 }

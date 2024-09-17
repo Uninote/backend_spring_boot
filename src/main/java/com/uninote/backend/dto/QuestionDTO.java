@@ -7,6 +7,17 @@ public class QuestionDTO {
     private String questionText;
     private Boolean isDifficult;
 
+
+    public QuestionDTO(Long id, Long courseId, Long questionTypeId, String questionText, Boolean isDifficult) {
+        this.id = id;
+        this.courseId = courseId;
+        this.questionTypeId = questionTypeId;
+        this.questionText = questionText;
+        this.isDifficult = isDifficult;
+    }
+
+    public QuestionDTO(){}
+
    public Boolean getIsDifficult(){
     return isDifficult;
    }

@@ -52,8 +52,9 @@ public class NoteLikeService {
             noteLikeRepository.save(noteLike); 
             note.setLikes(note.getLikes() + 1);
             noteRepository.save(note);
-            userService.updateUniScore(noteCreator, 1L);
-            
+            if (noteCreator.getId() != userId) {   
+                userService.updateUniScore(noteCreator, 1L);
+            }
             
         } else if (!noteLike.isActive()) {
             
