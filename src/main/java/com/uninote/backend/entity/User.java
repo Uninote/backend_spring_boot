@@ -10,7 +10,7 @@ import java.util.Set;
     @UniqueConstraint(columnNames = "username"),
     @UniqueConstraint(columnNames = "email"),
     @UniqueConstraint(columnNames = "firebase_uid")
-})
+}, schema = "ADMIN")
 public class User {
 
     private static final String DEFAULT_PROFILE_URL = "https://firebasestorage.googleapis.com/v0/b/uninote-app.appspot.com/o/images%2Fdefault-images%2Fdefault-woman-pfp.png?alt=media&token=d148c633-ef3f-4161-bf97-413c74415c3d";

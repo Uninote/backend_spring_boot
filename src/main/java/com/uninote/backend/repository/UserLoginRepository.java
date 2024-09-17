@@ -18,7 +18,7 @@ public interface UserLoginRepository extends JpaRepository<UserLogin, Long> {
 
 
     @Query(value = "SELECT ul.USER_ID, COUNT(DISTINCT TRUNC(ul.LOGIN_TIMESTAMP)) " +
-                   "FROM USER_LOGINS ul " +
+                   "FROM admin.USER_LOGINS ul " +
                    "WHERE ul.LOGIN_TIMESTAMP BETWEEN :startDate AND :endDate " +
                    "GROUP BY ul.USER_ID", 
            nativeQuery = true)

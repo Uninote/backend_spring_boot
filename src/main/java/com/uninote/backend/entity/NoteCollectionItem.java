@@ -3,7 +3,7 @@ package com.uninote.backend.entity;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "note_collection_items")
+@Table(name = "note_collection_items", schema = "admin")
 public class NoteCollectionItem {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_collection_items_seq")

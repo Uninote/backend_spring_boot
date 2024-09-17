@@ -20,8 +20,8 @@ public interface TrueFalseQuestionRepository extends JpaRepository<TrueFalseQues
     List<TrueFalseQuestion> findByCourse(@Param("course") Course course);
 
      @Query(value = "SELECT t.question_id AS id, q.course_id AS courseId, q.question_type_id AS questionTypeId, DBMS_LOB.SUBSTR(q.question_text, 4000, 1) AS questionText, q.is_difficult AS isDifficult, t.correct_answer AS correctAnswerRaw, t.image_url AS imageUrl " +
-                   "FROM true_false_questions t " +
-                   "JOIN questions q ON t.question_id = q.question_id " +
+                   "FROM admin.true_false_questions t " +
+                   "JOIN admin.questions q ON t.question_id = q.question_id " +
                    "WHERE q.course_id = :courseId " +
                    "ORDER BY DBMS_RANDOM.VALUE " +
                    "FETCH FIRST :limit ROWS ONLY",

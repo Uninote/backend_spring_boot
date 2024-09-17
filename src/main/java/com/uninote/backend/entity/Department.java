@@ -5,7 +5,7 @@
     import java.util.Set;
 
     @Entity
-    @Table(name = "departments")
+    @Table(name = "departments", schema = "ADMIN")
     public class Department {
 
         @Id

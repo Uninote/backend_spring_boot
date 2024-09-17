@@ -189,20 +189,20 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
    @Query(value = "SELECT n.note_id AS id, c.course_id AS courseId, u.user_id AS userId, n.title AS title, " +
                "DBMS_LOB.SUBSTR(n.description, 4000, 1) AS description, n.pdf_url AS pdfUrl, n.filename AS filename, " +
-               "(SELECT cn.course_name FROM course_names cn " +
-               "JOIN languages l ON cn.language_id = l.language_id " +
+               "(SELECT cn.course_name FROM admin.course_names cn " +
+               "JOIN admin.languages l ON cn.language_id = l.language_id " +
                "WHERE cn.course_id = c.course_id AND l.language_code = 'EN') AS courseName, " +
-               "(SELECT un.university_name FROM university_names un " +
-               "JOIN languages l ON un.language_id = l.language_id " +
+               "(SELECT un.university_name FROM admin.university_names un " +
+               "JOIN admin.languages l ON un.language_id = l.language_id " +
                "WHERE un.university_id = d.university_id AND l.language_code = 'EN') AS universityName, " +
-               "(SELECT dn.department_name FROM department_names dn " +
-               "JOIN languages l ON dn.language_id = l.language_id " +
+               "(SELECT dn.department_name FROM admin.department_names dn " +
+               "JOIN admin.languages l ON dn.language_id = l.language_id " +
                "WHERE dn.department_id = d.department_id AND l.language_code = 'EN') AS departmentName, " +
                "n.like_count AS likes, u.username AS username, u.profile_image_url AS profileImageUrl, n.created_at AS createdAt " +
-               "FROM notes n " +
-               "JOIN courses c ON n.course_id = c.course_id " +
-               "JOIN departments d ON c.department_id = d.department_id " +
-               "JOIN users u ON n.user_id = u.user_id " +
+               "FROM admin.notes n " +
+               "JOIN admin.courses c ON n.course_id = c.course_id " +
+               "JOIN admin.departments d ON c.department_id = d.department_id " +
+               "JOIN admin.users u ON n.user_id = u.user_id " +
                "WHERE n.is_public = 1 AND u.user_id = :userId AND n.deleted = 0 " +
                "ORDER BY n.like_count DESC, n.created_at DESC " +
                "FETCH FIRST :limit ROWS ONLY", nativeQuery = true)
@@ -265,21 +265,21 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
     @Query(value = "SELECT n.note_id AS id, c.course_id AS courseId, u.user_id AS userId, n.title AS title, " +
                "DBMS_LOB.SUBSTR(n.description, 4000, 1) AS description, n.pdf_url AS pdfUrl, n.filename AS filename, " +
-               "(SELECT cn.course_name FROM course_names cn " +
-               "JOIN languages l ON cn.language_id = l.language_id " +
+               "(SELECT cn.course_name FROM admin.course_names cn " +
+               "JOIN admin.languages l ON cn.language_id = l.language_id " +
                "WHERE cn.course_id = c.course_id AND l.language_code = 'EN') AS courseName, " +
-               "(SELECT un.university_name FROM university_names un " +
-               "JOIN languages l ON un.language_id = l.language_id " +
+               "(SELECT un.university_name FROM admin.university_names un " +
+               "JOIN admin.languages l ON un.language_id = l.language_id " +
                "WHERE un.university_id = d.university_id AND l.language_code = 'EN') AS universityName, " +
-               "(SELECT dn.department_name FROM department_names dn " +
-               "JOIN languages l ON dn.language_id = l.language_id " +
+               "(SELECT dn.department_name FROM admin.department_names dn " +
+               "JOIN admin.languages l ON dn.language_id = l.language_id " +
                "WHERE dn.department_id = d.department_id AND l.language_code = 'EN') AS departmentName, " +
                "n.like_count AS likes, u.username AS username, u.profile_image_url AS profileImageUrl, n.created_at AS createdAt " +
-               "FROM notes n " +
-               "JOIN note_collection_items ci ON n.note_id = ci.note_id " +  
-               "JOIN courses c ON n.course_id = c.course_id " +
-               "JOIN departments d ON c.department_id = d.department_id " +
-               "JOIN users u ON n.user_id = u.user_id " +
+               "FROM admin.notes n " +
+               "JOIN admin.note_collection_items ci ON n.note_id = ci.note_id " +  
+               "JOIN admin.courses c ON n.course_id = c.course_id " +
+               "JOIN admin.departments d ON c.department_id = d.department_id " +
+               "JOIN admin.users u ON n.user_id = u.user_id " +
                "WHERE ci.collection_id = :collectionId " +  
                "ORDER BY n.created_at ASC " +  
                "FETCH FIRST 1 ROWS ONLY", nativeQuery = true)

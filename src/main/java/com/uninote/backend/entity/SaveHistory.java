@@ -5,7 +5,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "save_history")
+@Table(name = "save_history", schema = "ADMIN")
 public class SaveHistory {
 
     @Id

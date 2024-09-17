@@ -3,7 +3,7 @@ package com.uninote.backend.entity;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "university_names")
+@Table(name = "university_names", schema = "ADMIN")
 public class UniversityName {
 
     @EmbeddedId

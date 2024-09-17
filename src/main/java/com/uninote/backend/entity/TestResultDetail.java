@@ -3,7 +3,7 @@ package com.uninote.backend.entity;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "test_result_details")
+@Table(name = "test_result_details", schema = "ADMIN")
 public class TestResultDetail {
 
     @Id

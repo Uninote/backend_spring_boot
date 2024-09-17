@@ -30,10 +30,10 @@ List<CourseProjection> findCoursesByDepartmentAndSemesterAndLanguage(
 
 
     @Query(value = "SELECT DISTINCT c.course_id AS id, cn.course_name AS name " +
-               "FROM courses c " +
-               "JOIN course_names cn ON c.course_id = cn.course_id " +
-               "JOIN questions q ON c.course_id = q.course_id " +
-               "JOIN languages l ON cn.language_id = l.language_id " +
+               "FROM admin.courses c " +
+               "JOIN admin.course_names cn ON c.course_id = cn.course_id " +
+               "JOIN admin.questions q ON c.course_id = q.course_id " +
+               "JOIN admin.languages l ON cn.language_id = l.language_id " +
                "WHERE l.language_code = :language " +
                "AND c.department_id = :departmentId " +
                "AND c.semester = :semester " +

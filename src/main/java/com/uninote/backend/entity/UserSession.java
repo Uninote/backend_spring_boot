@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_sessions")
+@Table(name = "user_sessions", schema = "ADMIN")
 public class UserSession {
 
     @Id

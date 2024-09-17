@@ -21,8 +21,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
-               "FROM users u " +
-               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "FROM admin.users u " +
+               "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) " +
                "ORDER BY u.uniscore DESC " +
                "FETCH FIRST 100 ROWS ONLY", 
@@ -31,8 +31,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
-               "FROM users u " +
-               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "FROM admin.users u " +
+               "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
@@ -42,8 +42,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
-               "FROM users u " +
-               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "FROM admin.users u " +
+               "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
@@ -97,7 +97,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.department_id ORDER BY u.uniscore DESC) AS rank " +
-               "  FROM users u " +
+               "  FROM admin.users u " +
                "  WHERE u.role_id IN (1, 2)" +
                ") ranked_users WHERE ranked_users.user_id = :userId", 
        nativeQuery = true)
@@ -106,7 +106,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.university_id ORDER BY u.uniscore DESC) AS rank " +
-               "  FROM users u " +
+               "  FROM admin.users u " +
                "  WHERE u.role_id IN (1, 2)" +
                ") ranked_users WHERE ranked_users.user_id = :userId", 
        nativeQuery = true)
@@ -116,7 +116,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (ORDER BY u.uniscore DESC) AS rank " +
-               "  FROM users u " +
+               "  FROM admin.users u " +
                "  WHERE u.role_id IN (1, 2)" +
                ") ranked_users WHERE ranked_users.user_id = :userId", 
        nativeQuery = true)

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "note_views")
+@Table(name = "note_views", schema = "ADMIN")
 public class NoteView {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_view_seq")

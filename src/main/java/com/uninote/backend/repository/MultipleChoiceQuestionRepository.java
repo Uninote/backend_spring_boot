@@ -28,15 +28,15 @@ public interface MultipleChoiceQuestionRepository extends JpaRepository<Multiple
                "DBMS_LOB.SUBSTR(c.choice_text, 4000, 1) AS choiceText, " +
                "c.choice_label AS choiceLabel, " +
                "mc.image_url AS imageUrl " +
-               "FROM multiple_choice_questions mc " +
-               "JOIN questions q ON mc.question_id = q.question_id " +
-               "JOIN choices c ON mc.multiple_choice_id = c.multiple_choice_id " +
+               "FROM admin.multiple_choice_questions mc " +
+               "JOIN admin.questions q ON mc.question_id = q.question_id " +
+               "JOIN admin.choices c ON mc.multiple_choice_id = c.multiple_choice_id " +
                "WHERE q.course_id = :courseId " +
                "AND q.question_type_id = 3 " +
                "AND mc.question_id IN ( " +
                "    SELECT mc1.question_id " +
-               "    FROM multiple_choice_questions mc1 " +
-               "    JOIN questions q1 ON mc1.question_id = q1.question_id " +
+               "    FROM admin.multiple_choice_questions mc1 " +
+               "    JOIN admin.questions q1 ON mc1.question_id = q1.question_id " +
                "    WHERE q1.course_id = :courseId " +
                "    AND q1.question_type_id = 3 " +
                "    ORDER BY DBMS_RANDOM.VALUE " +

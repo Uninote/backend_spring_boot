@@ -24,7 +24,7 @@ public interface ChoiceRepository extends JpaRepository<Choice, Long> {
     
     @Modifying
     @Transactional
-    @Query(nativeQuery = true, value = "INSERT INTO choices (choice_label, choice_text, multiple_choice_id) VALUES (?1, ?2, ?3)")
+    @Query(nativeQuery = true, value = "INSERT INTO admin.choices (choice_label, choice_text, multiple_choice_id) VALUES (?1, ?2, ?3)")
     int batchInsertChoices(int choiceLabel, String choiceText, Long multipleChoiceId);
 
 }
