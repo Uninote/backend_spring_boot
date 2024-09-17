@@ -53,7 +53,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     //Optional<User> findByFirebaseUid(String firebaseUid);
 
-    @Query(value = "SELECT user_id FROM users  WHERE firebase_uid = :firebaseUid", nativeQuery = true)
+    @Query(value = "SELECT user_id FROM admin.users  WHERE firebase_uid = :firebaseUid", nativeQuery = true)
     Optional<Long> findUserIdByFirebaseUid(@Param("firebaseUid") String firebaseUid);
 
     @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
