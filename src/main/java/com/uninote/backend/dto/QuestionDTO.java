@@ -16,6 +16,14 @@ public class QuestionDTO {
         this.isDifficult = isDifficult;
     }
 
+    public QuestionDTO(Long questionId, Long courseId, Long questionTypeId, String questionText, Integer isDifficult) {
+        this.id = questionId;
+        this.courseId = courseId;
+        this.questionTypeId = questionTypeId;
+        this.questionText = questionText;
+        this.isDifficult = (isDifficult != null && isDifficult == 1);
+    }
+
     public QuestionDTO(){}
 
    public Boolean getIsDifficult(){

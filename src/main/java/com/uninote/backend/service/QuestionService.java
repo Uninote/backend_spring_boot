@@ -306,8 +306,29 @@ public class QuestionService {
     }
 
 
-    public List<QuestionDTO> getDistinctReportedQuestionDTOs() {
-        return questionRepository.findDistinctReportedQuestionDTOs();
+    public List<QuestionDTO> findDistinctReportedQuestionDTOs() {
+        
+        List<Object[]> results = questionRepository.findDistinctReportedQuestions();
+
+       
+        List<QuestionDTO> questionDTOs = new ArrayList<>();
+
+        
+        for (Object[] row : results) {
+            Long questionId = ((BigDecimal) row[0]).longValue();  
+            Long courseId = ((BigDecimal) row[1]).longValue();     
+            Long questionTypeId = ((BigDecimal) row[2]).longValue();
+            String questionText = (String) row[3];
+            Boolean isDifficult = ((BigDecimal) row[4]).intValue() == 1;  
+
+            
+            QuestionDTO dto = new QuestionDTO(questionId, courseId, questionTypeId, questionText, isDifficult);
+
+            
+            questionDTOs.add(dto);
+        }
+
+        return questionDTOs;
     }
 
     
