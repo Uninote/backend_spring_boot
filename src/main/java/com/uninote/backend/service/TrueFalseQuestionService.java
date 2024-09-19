@@ -7,6 +7,7 @@ import com.uninote.backend.repository.QuestionRepository;
 import com.uninote.backend.repository.TrueFalseQuestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -49,5 +50,31 @@ public class TrueFalseQuestionService {
         }
 
         return reportedQuestions;
+    }
+
+    @Transactional
+    public TrueFalseQuestionDTO updateTrueFalseQuestion(Long questionId, TrueFalseQuestionDTO updatedQuestionDTO) {
+        TrueFalseQuestion existingQuestion = trueFalseQuestionRepository.findById(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("True/False Question not found"));
+
+        if (updatedQuestionDTO.getQuestionText() != null) {
+            existingQuestion.getQuestion().setQuestionText(updatedQuestionDTO.getQuestionText());
+        }
+
+        
+        if (updatedQuestionDTO.getCorrectAnswer() != null) {
+            existingQuestion.setCorrectAnswer(updatedQuestionDTO.getCorrectAnswer());
+        }
+
+        
+        if (updatedQuestionDTO.getIsDifficult() != null) {
+            existingQuestion.getQuestion().setIsDifficult(updatedQuestionDTO.getIsDifficult());
+        }
+
+        
+        trueFalseQuestionRepository.save(existingQuestion);
+
+        
+        return updatedQuestionDTO;
     }
 }

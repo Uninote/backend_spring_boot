@@ -8,6 +8,7 @@ import com.uninote.backend.repository.QuestionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -53,5 +54,26 @@ public class FlashcardService {
         }
 
         return reportedQuestions;
+    }
+
+
+    @Transactional
+    public FlashcardDTO updateFlashcard(Long questionId, FlashcardDTO updatedFlashcardDTO) {
+        Flashcard existingFlashcard = flashcardRepository.findById(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("Flashcard not found"));
+
+        
+        if (updatedFlashcardDTO.getQuestionText() != null) {
+            existingFlashcard.getQuestion().setQuestionText(updatedFlashcardDTO.getQuestionText());
+        }
+        if (updatedFlashcardDTO.getAnswer() != null) {
+            existingFlashcard.setAnswer(updatedFlashcardDTO.getAnswer());
+        }
+
+        
+        flashcardRepository.save(existingFlashcard);
+
+        
+        return updatedFlashcardDTO;
     }
 }
