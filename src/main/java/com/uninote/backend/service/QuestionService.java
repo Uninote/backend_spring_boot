@@ -12,6 +12,7 @@ import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Question;
+import com.uninote.backend.entity.QuestionReport;
 import com.uninote.backend.entity.QuestionType;
 import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.interfaceProjection.FlashcardProjection;
@@ -20,6 +21,7 @@ import com.uninote.backend.repository.ChoiceRepository;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.FlashcardRepository;
 import com.uninote.backend.repository.MultipleChoiceQuestionRepository;
+import com.uninote.backend.repository.QuestionReportRepository;
 import com.uninote.backend.repository.QuestionRepository;
 import com.uninote.backend.repository.QuestionTypeRepository;
 import com.uninote.backend.repository.TrueFalseQuestionRepository;
@@ -78,6 +80,9 @@ public class QuestionService {
 
     @Autowired
     private ChoiceRepository choiceRepository;
+
+    @Autowired
+    private QuestionReportRepository reportRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(QuestionService.class);
 
@@ -329,6 +334,18 @@ public class QuestionService {
         }
 
         return questionDTOs;
+    }
+
+    public boolean updateAllReportsStatusByQuestionId(Long noteId) {
+        List<QuestionReport> reports = reportRepository.findByQuestionId(noteId);
+        
+        if (!reports.isEmpty()) {
+            reports.forEach(report -> report.setStatus(1)); 
+            reportRepository.saveAll(reports);
+            return true;
+        }
+        
+        return false; 
     }
 
     

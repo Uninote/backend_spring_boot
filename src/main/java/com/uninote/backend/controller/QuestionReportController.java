@@ -31,6 +31,8 @@ public class QuestionReportController {
     @Autowired
     private QuestionService questionService;
 
+    
+
     @Autowired
     private FlashcardService flashcardService;
 
@@ -67,5 +69,18 @@ public class QuestionReportController {
     public ResponseEntity<List<MultipleChoiceQuestionDTO>> getAllReportedMultipleChoiceQuestions() {
         List<MultipleChoiceQuestionDTO> reportedQuestions = multipleChoiceQuestionService.findReportedMultipleChoiceQuestions();
         return ResponseEntity.ok(reportedQuestions);
+    }
+
+    @PutMapping("/{questionId}/change-status")
+    public ResponseEntity<String> updateAllReportsStatusByQuestion(
+            @PathVariable Long questionId) {
+
+        boolean isUpdated = questionService.updateAllReportsStatusByQuestionId(questionId);
+
+        if (isUpdated) {
+            return ResponseEntity.ok("All report statuses for the note updated successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No reports found for the note or update failed.");
+        }
     }
 }
