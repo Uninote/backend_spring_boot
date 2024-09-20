@@ -2,8 +2,10 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.dto.ChoiceDTO;
 import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
+import com.uninote.backend.entity.Choice;
 import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Question;
+import com.uninote.backend.repository.ChoiceRepository;
 import com.uninote.backend.repository.MultipleChoiceQuestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,9 @@ public class MultipleChoiceQuestionService {
 
     @Autowired
     private MultipleChoiceQuestionRepository multipleChoiceQuestionRepository;
+
+    @Autowired
+    private ChoiceRepository choiceRepository;
 
     public List<MultipleChoiceQuestion> getAllMultipleChoiceQuestions() {
         return multipleChoiceQuestionRepository.findAll();
@@ -101,5 +106,66 @@ public class MultipleChoiceQuestionService {
     
         }
         return new ArrayList<>(questionMap.values());
+    }
+
+
+    @Transactional
+    public MultipleChoiceQuestionDTO updateMultipleChoiceQuestion(Long questionId, MultipleChoiceQuestionDTO updatedQuestionDTO) {
+        
+        MultipleChoiceQuestion existingQuestion = multipleChoiceQuestionRepository.findById(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("Multiple Choice Question not found"));
+
+        
+        if (updatedQuestionDTO.getQuestionText() != null) {
+            existingQuestion.getQuestion().setQuestionText(updatedQuestionDTO.getQuestionText());
+        }
+
+        if (updatedQuestionDTO.getIsDifficult() != null) {
+            existingQuestion.getQuestion().setIsDifficult(updatedQuestionDTO.getIsDifficult());
+        }
+
+        if (updatedQuestionDTO.getImageUrl() != null) {
+            existingQuestion.setImageUrl(updatedQuestionDTO.getImageUrl());
+        }
+
+       
+        if (updatedQuestionDTO.getCorrectChoiceLabel() != 0) {
+            
+            for (Choice choice : existingQuestion.getChoices()) {
+                if (choice.getChoiceLabel() == updatedQuestionDTO.getCorrectChoiceLabel()) {
+                    existingQuestion.setCorrectChoice(choice);  
+                    break;
+                }
+            }
+        }
+
+        
+        for (ChoiceDTO choiceDTO : updatedQuestionDTO.getChoices()) {
+            if (choiceDTO.getId() != null) {
+                
+                Choice existingChoice = choiceRepository.findById(choiceDTO.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Choice not found"));
+                if (choiceDTO.getChoiceText() !=null) {
+                    existingChoice.setChoiceText(choiceDTO.getChoiceText());
+                }
+                if (choiceDTO.getChoiceLabel()!=0) {
+                    existingChoice.setChoiceLabel(choiceDTO.getChoiceLabel());
+                }
+                choiceRepository.save(existingChoice);
+            } else {
+                
+                Choice newChoice = new Choice();
+                newChoice.setChoiceText(choiceDTO.getChoiceText());
+                newChoice.setChoiceLabel(choiceDTO.getChoiceLabel());
+                newChoice.setMultipleChoiceQuestion(existingQuestion);
+                choiceRepository.save(newChoice);
+            }
+        }
+
+        
+        multipleChoiceQuestionRepository.save(existingQuestion);
+
+        
+        return updatedQuestionDTO;
     }
 }
