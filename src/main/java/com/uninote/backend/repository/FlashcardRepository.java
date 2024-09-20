@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FlashcardRepository extends JpaRepository<Flashcard, Long> {
 
@@ -33,5 +34,5 @@ public interface FlashcardRepository extends JpaRepository<Flashcard, Long> {
        nativeQuery = true)
 List<FlashcardProjection> findRandomFlashcardsByCourseId(@Param("courseId") Long courseId, @Param("limit") int limit);
 
-    
+Optional<Flashcard> findByQuestion_Id(Long questionId);
 }

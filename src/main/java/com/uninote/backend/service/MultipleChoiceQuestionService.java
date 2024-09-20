@@ -112,8 +112,7 @@ public class MultipleChoiceQuestionService {
     @Transactional
     public MultipleChoiceQuestionDTO updateMultipleChoiceQuestion(Long questionId, MultipleChoiceQuestionDTO updatedQuestionDTO) {
         
-        MultipleChoiceQuestion existingQuestion = multipleChoiceQuestionRepository.findById(questionId)
-            .orElseThrow(() -> new IllegalArgumentException("Multiple Choice Question not found"));
+        MultipleChoiceQuestion existingQuestion = getMultipleChoiceQuestionByQuestionId(questionId);
 
         
         if (updatedQuestionDTO.getQuestionText() != null) {
@@ -167,5 +166,10 @@ public class MultipleChoiceQuestionService {
 
         
         return updatedQuestionDTO;
+    }
+
+    public MultipleChoiceQuestion getMultipleChoiceQuestionByQuestionId(Long questionId) {
+        return multipleChoiceQuestionRepository.findByQuestion_Id(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("Multiple Choice question not found for the given question ID"));
     }
 }

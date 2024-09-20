@@ -56,11 +56,14 @@ public class FlashcardService {
         return reportedQuestions;
     }
 
-
+    public Flashcard getFlashcardByQuestionId(Long questionId) {
+        return flashcardRepository.findByQuestion_Id(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("Flashcard not found for the given question ID"));
+    }
     @Transactional
     public FlashcardDTO updateFlashcard(Long questionId, FlashcardDTO updatedFlashcardDTO) {
-        Flashcard existingFlashcard = flashcardRepository.findById(questionId)
-            .orElseThrow(() -> new IllegalArgumentException("Flashcard not found"));
+        Flashcard existingFlashcard = getFlashcardByQuestionId(questionId);
+            
 
         
         if (updatedFlashcardDTO.getQuestionText() != null) {

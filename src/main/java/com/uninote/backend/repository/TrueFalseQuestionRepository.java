@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TrueFalseQuestionRepository extends JpaRepository<TrueFalseQuestion, Long> {
 
@@ -27,7 +28,8 @@ public interface TrueFalseQuestionRepository extends JpaRepository<TrueFalseQues
                    "FETCH FIRST :limit ROWS ONLY",
            nativeQuery = true)
     List<TrueFalseQuestionProjection> findRandomTrueFalseQuestionsByCourseId(@Param("courseId") Long courseId, @Param("limit") int limit);
-    }
+    Optional<TrueFalseQuestion> findByQuestion_Id(Long questionId);    
+}
 
 
 

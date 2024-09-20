@@ -52,10 +52,14 @@ public class TrueFalseQuestionService {
         return reportedQuestions;
     }
 
+    public TrueFalseQuestion getTrueFalseQuestionByQuestionId(Long questionId) {
+        return trueFalseQuestionRepository.findByQuestion_Id(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("True/False question not found for the given question ID"));
+    }
+
     @Transactional
     public TrueFalseQuestionDTO updateTrueFalseQuestion(Long questionId, TrueFalseQuestionDTO updatedQuestionDTO) {
-        TrueFalseQuestion existingQuestion = trueFalseQuestionRepository.findById(questionId)
-            .orElseThrow(() -> new IllegalArgumentException("True/False Question not found"));
+        TrueFalseQuestion existingQuestion = getTrueFalseQuestionByQuestionId(questionId);
 
         if (updatedQuestionDTO.getQuestionText() != null) {
             existingQuestion.getQuestion().setQuestionText(updatedQuestionDTO.getQuestionText());
