@@ -13,6 +13,7 @@ import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
+import com.uninote.backend.entity.NoteType;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
@@ -23,6 +24,7 @@ import com.uninote.backend.repository.NoteClickRepository;
 import com.uninote.backend.repository.NoteLikeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
+import com.uninote.backend.repository.NoteTypeRepository;
 import com.uninote.backend.repository.NoteViewRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UserRepository;
@@ -91,6 +93,9 @@ public class NoteService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NoteTypeRepository noteTypeRepository;
 
     
 
@@ -355,6 +360,21 @@ public class NoteService {
         if (noteDto.getFilename() != null) {
             note.setFilename(noteDto.getFilename());
         }
+
+        if (noteDto.getProfessor() != null) {
+        note.setProfessor(noteDto.getProfessor());
+    }
+
+    
+    if (noteDto.getAcademicYear() != null) {
+        note.setAcademicYear(noteDto.getAcademicYear());
+    }
+
+    if (noteDto.getNoteTypeId() != null) {
+        NoteType noteType = noteTypeRepository.findById(noteDto.getNoteTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid note type ID: " + noteDto.getNoteTypeId()));
+        note.setNoteType(noteType);
+    }
 
         note.setUpdatedAt(LocalDateTime.now());
 
@@ -635,6 +655,20 @@ public class NoteService {
         note.setPdfUrl(noteDto.getPdfUrl());
         note.setFilename(noteDto.getFilename());
         note.setIsPublic(noteDto.getIsPublic());
+        if (noteDto.getProfessor() != null) {
+            note.setProfessor(noteDto.getProfessor());
+        }
+    
+        
+        if (noteDto.getAcademicYear() != null) {
+            note.setAcademicYear(noteDto.getAcademicYear());
+        }
+    
+        if (noteDto.getNoteTypeId() != null) {
+            NoteType noteType = noteTypeRepository.findById(noteDto.getNoteTypeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid note type ID: " + noteDto.getNoteTypeId()));
+            note.setNoteType(noteType);
+        }
 
         Note savedNote = noteRepository.save(note);
         boolean hasReceivedFirstLog = uniscoreIncreaseLogsRepository.existsByUserIdAndIncreaseTypeId(user.getId(), 22L);

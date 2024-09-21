@@ -57,6 +57,17 @@ public class Note {
     @Column(name = "uuid", unique = true, nullable = false)
     private String uuid;
 
+    @Column(name = "academic_year", length = 10, nullable  = true)
+    private String academicYear;
+
+    @Column(name = "professor", length = 100,nullable = true)
+    private String professor;
+
+    @ManyToOne
+    @JoinColumn(name = "type_id", referencedColumnName = "type_id", nullable = true)
+    private NoteType noteType;
+
+
 
     public Boolean getDeleted() {
         return deleted;
@@ -179,5 +190,30 @@ public class Note {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+
+    public String getAcademicYear() {
+        return academicYear;
+    }
+
+    public void setAcademicYear(String academicYear) {
+        this.academicYear = academicYear;
+    }
+
+    public String getProfessor() {
+        return professor;
+    }
+
+    public void setProfessor(String professor) {
+        this.professor = professor;
+    }
+
+    public NoteType getNoteType() {
+        return noteType;
+    }
+
+    public void setNoteType(NoteType noteType) {
+        this.noteType = noteType;
     }
 }

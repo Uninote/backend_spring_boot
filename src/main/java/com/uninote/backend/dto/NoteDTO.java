@@ -18,6 +18,10 @@ public class NoteDTO {
     private String username;
     private String profileImageUrl;
     private LocalDateTime createdAt;
+    private String professor;
+    private String academicYear;
+    private Long noteTypeId;
+    private String noteType;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -190,4 +194,37 @@ public class NoteDTO {
         this.createdAt = createdAt;
     }
 
+
+    public String getProfessor() {
+        return professor;
+    }
+    
+    public void setProfessor(String professor) {
+        this.professor = professor;
+    }
+    
+    
+    public String getAcademicYear() {
+        return academicYear;
+    }
+    
+    public void setAcademicYear(String academicYear) {
+        this.academicYear = academicYear;
+    }
+    
+    public Long getNoteTypeId() {
+        return noteTypeId;
+    }
+    
+    public void setNoteTypeId(Long noteTypeId) {
+        this.noteTypeId = noteTypeId;
+    }
+    
+    public String getNoteType() {
+        return noteType;
+    }
+    
+    public void setNoteType(String noteType) {
+        this.noteType = noteType;
+    }
 }
