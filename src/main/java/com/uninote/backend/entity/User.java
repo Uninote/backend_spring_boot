@@ -76,6 +76,8 @@ public class User {
     @Column(name = "banner_url")
     private String bannerUrl;
 
+    @Column(name = "instagram_username", nullable = true, length = 100)
+    private String instagramUsername;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -286,4 +288,13 @@ public class User {
     public void setApprovedByUsers(Set<User> approvedByUsers) {
         this.approvedByUsers = approvedByUsers;
     }
+
+    public String getInstagramUsername() {
+        return instagramUsername;
+    }
+
+    public void setInstagramUsername(String instagramUsername) {
+        this.instagramUsername = instagramUsername;
+    }
+
 }

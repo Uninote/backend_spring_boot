@@ -71,7 +71,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.id AS id, u.firebaseUid AS firebaseUid, u.name AS name, " +
        "dn.name AS departmentName, dn.fullName AS departmentFullName, " +
        "un.name AS universityName, un.fullName AS universityFullName, " +
-       "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+       "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, " +
        "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id) AS totalNotes, " +
        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true) AS totalPublicNotes, " +
@@ -86,7 +86,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
 
     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
-      "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+      "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, " +
       "dn.name AS departmentName, " +
       "un.name AS universityName " +
       "FROM User u " +

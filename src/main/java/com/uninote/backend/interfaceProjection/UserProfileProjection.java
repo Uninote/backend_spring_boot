@@ -19,4 +19,5 @@ public interface UserProfileProjection {
     long getTotalNotes();
     long getTotalPublicNotes();
     long getTotalLikes();
+    String getInstagramUsername();
 }

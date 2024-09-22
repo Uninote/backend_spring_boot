@@ -301,6 +301,9 @@ public void softDeleteUserById(Long userId) {
         if(userDto.getBio() !=null) {
             user.setBio(userDto.getBio());
         }
+        if(userDto.getInstagramUsername() != null) {
+            user.setInstagramUsername(userDto.getInstagramUsername());
+        }
 
         user.setUpdatedAt(LocalDateTime.now());
 
