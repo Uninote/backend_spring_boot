@@ -12,9 +12,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000", "https://www.uninote.gr/","https://uninote.gr", "https://uninote-creators-portal-eiz6j2q68-uninotes-projects.vercel.app","https://uninote-creators-portal.vercel.app/","https://*.ngrok-free.app")
+                .allowedOrigins("http://localhost:3000", "https://www.uninote.gr/","https://uninote.gr","https://*.ngrok-free.app")
                 .allowedHeaders("*")
-                .allowedOriginPatterns("https://*.ngrok-free.app")
+                .allowedOriginPatterns("https://*.ngrok-free.app","https://uninote-creators-portal-eiz6j2q68-uninotes-projects.vercel.app","https://uninote-creators-portal.vercel.app/*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD")
                 .allowCredentials(true);
     }
