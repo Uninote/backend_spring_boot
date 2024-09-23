@@ -91,6 +91,8 @@ public class NoteDTO {
         this.userId = userId;
     }
 
+    
+
     public String getTitle() {
         return title;
     }
@@ -130,7 +132,7 @@ public class NoteDTO {
         this.isPublic = isPublic;
     }
 
-    public void setNotesId(Long noteId){
+    public void setNoteId(Long noteId){
         this.noteId = noteId;
     }
 

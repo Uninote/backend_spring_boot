@@ -305,7 +305,7 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "likes") String sortBy,
         @RequestParam(defaultValue = "desc") String sortDir) {
-        return noteService.searchUserNotes(keyword,userId, page, size, sortBy, sortDir);
+        return noteService.searchUserNotes(keyword,userId,page ,size, sortBy, sortDir);
     }
     @GetMapping("/public/user-course/{userId}/{courseId}")
     public ResponseEntity<List<NoteDTO>> getPublicNotesByUserAndCourse(@PathVariable Long userId, @PathVariable Long courseId) {

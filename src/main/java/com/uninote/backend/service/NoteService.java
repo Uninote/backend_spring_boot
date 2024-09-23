@@ -640,6 +640,41 @@ public class NoteService {
         Pageable pageable = PageRequest.of(page, size, sort);
         return noteRepository.searchUserNotes(keyword,userId, pageable);
     }
+
+    public Page<NoteDTO> searchNotesWithEditDistance(String keyword, Long userId, int threshold, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "like_count");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "like_count");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Object[]> result = noteRepository.searchUserNotesWithEditDistance(keyword, userId, threshold, pageable);
+        return result.map(objects -> {
+            NoteDTO noteDTO = new NoteDTO();
+            noteDTO.setNoteId((Long) objects[0]);
+            noteDTO.setCourseId((Long) objects[1]);
+            noteDTO.setUserId((Long) objects[2]);
+            noteDTO.setTitle((String) objects[3]);
+            noteDTO.setDescription((String) objects[4]);
+            noteDTO.setPdfUrl((String) objects[5]);
+            noteDTO.setFilename((String) objects[6]);
+            noteDTO.setIsPublic((Boolean) objects[7]);
+            noteDTO.setCourseName((String) objects[8]);
+            noteDTO.setUniversityName((String) objects[9]); 
+            noteDTO.setDepartmentName((String) objects[10]);
+            noteDTO.setTotalLikes((Long) objects[11]);
+            noteDTO.setUsername((String) objects[12]);
+            noteDTO.setProfileImageUrl((String) objects[13]);
+            noteDTO.setCreatedAt((LocalDateTime) objects[14]);
+            return noteDTO;
+        });
+    }
     
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
