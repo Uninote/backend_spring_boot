@@ -7,6 +7,7 @@ import com.uninote.backend.repository.UserLoginRepository;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,5 +52,15 @@ public class UserLoginService {
             ));
 
         return loginDayCountMap;
+    }
+    public List<Map<String, Object>> getDistinctLoginsPerDay() {
+        List<Object[]> results = userLoginRepository.findDistinctLoginsPerDay();
+
+        return results.stream().map(result -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("login_day", result[0].toString());  
+            map.put("distinct_logins", result[1]);        
+            return map;
+        }).toList();
     }
 }

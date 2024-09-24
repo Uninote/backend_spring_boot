@@ -24,4 +24,10 @@ public interface UserLoginRepository extends JpaRepository<UserLogin, Long> {
            nativeQuery = true)
     List<Object[]> findUserDistinctLoginDaysBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
 
+    @Query(value = "SELECT TRUNC(LOGIN_TIMESTAMP) AS login_day, COUNT(DISTINCT USER_ID) AS distinct_logins " +
+                    "FROM admin.user_logins WHERE LOGIN_TIMESTAMP >= SYSDATE - 30 " +
+                    "GROUP BY TRUNC(LOGIN_TIMESTAMP) " +
+                    "ORDER BY login_day", nativeQuery = true)
+    List<Object[]> findDistinctLoginsPerDay();
+
 }   

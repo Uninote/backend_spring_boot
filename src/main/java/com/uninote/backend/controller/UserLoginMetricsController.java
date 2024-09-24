@@ -71,4 +71,9 @@ public class UserLoginMetricsController {
         return ResponseEntity.ok(loginDayCounts);
     }
 
+    @GetMapping("/logins-last-30-days")
+    public List<Map<String, Object>> getLoginsLast30Days() {
+        return userLoginService.getDistinctLoginsPerDay();
+    }
+
 }
