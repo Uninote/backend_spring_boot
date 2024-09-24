@@ -61,6 +61,6 @@ public class UserLoginService {
             map.put("login_day", result[0].toString());  
             map.put("distinct_logins", result[1]);        
             return map;
-        }).toList();
+        }).collect(Collectors.toList());
     }
 }
