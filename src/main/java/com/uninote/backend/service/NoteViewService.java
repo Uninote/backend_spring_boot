@@ -15,8 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -84,6 +88,19 @@ public class NoteViewService {
     
         
         return updatedNoteView.getId();
+    }
+
+
+    public List<Map<String, Object>> getNoteViewsLast30Days() {
+        List<Object[]> results = noteViewRepository.countLast30daysNoteViews();
+        
+        
+        return results.stream().map(result -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("day", result[0].toString());  
+            map.put("count", result[1]);           
+            return map;
+        }).collect(Collectors.toList());
     }
     
 }

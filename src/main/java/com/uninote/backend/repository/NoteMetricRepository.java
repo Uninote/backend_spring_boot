@@ -38,6 +38,8 @@ List<NoteMetricDTO> findNoteMetrics();
        "GROUP BY c.id, cn.name, c.semester ORDER BY c.semester")
 List<Object[]> getNotesCountAndUniqueCreatorsByDepartment(@Param("departmentId") Long departmentId);
 
+@Query(value =  "SELECT TRUNC(CREATED_AT) AS day, COUNT(*) AS count FROM admin.NOTE_VIEWS WHERE CREATED_AT >= SYSDATE - 30  GROUP BY TRUNC(CREATED_AT) ORDER BY day", nativeQuery = true)
+    List<Object[]> countLast30daysNoteViews();
 
 }
 
