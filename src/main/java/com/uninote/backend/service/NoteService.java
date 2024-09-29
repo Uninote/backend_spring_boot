@@ -753,6 +753,100 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findRecentPublicNotesByDepartment(department, pageable);
+        return noteRepository.findRecentPublicNotesByDepartment(department,  pageable);
+    }
+
+    public Page<NoteDTO> getPublicNotesByDepartmentAndSemesterByType(Long departmentId, int semester, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartmentAndSemesterByType(departmentId, semester, typeId, pageable);
+    }
+    
+    public Page<NoteDTO> getPublicNotesByDepartmentByType(Department department, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartmentByType(department, typeId,pageable);
+    }
+    
+
+
+    public Page<NoteDTO> getPublicNotesByCourseByType(Course course, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByCourseByType(course, typeId,pageable);
+    }
+    
+
+    public Page<NoteDTO> getPublicNotesByUniversityByType(University university, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByUniversityByType(university,typeId, pageable);
+    }
+
+
+    public Page<NoteDTO> getPublicNotesByType(int page, int size, String sortBy, String sortDir, Long typeId) {
+        
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");            
+        validSortFields.put("createdAt", "createdAt");    
+        validSortFields.put("title", "title");            
+    
+        
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
+                    ? Sort.by(sortField).ascending() 
+                    : Sort.by(sortField).descending();
+    
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        
+        return noteRepository.findPublicNotesByType(pageable, typeId);
     }
 }
