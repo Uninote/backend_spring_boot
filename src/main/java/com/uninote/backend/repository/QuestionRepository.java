@@ -32,7 +32,7 @@ List<Object[]> findDistinctReportedQuestions();
         "JOIN admin.Question_Report qr ON q.question_id = qr.question_id " +
         "JOIN admin.Flashcards f ON q.question_id = f.question_id " +  
         "WHERE qr.status = 0 AND q.question_type_id = 1", nativeQuery = true)
-    List<Object[]> findReportedFlashcards();
+    List<Object[]> findReportedFlashcards() ;
 
     @Query(value = "SELECT DISTINCT q.question_id, q.course_id, q.question_type_id, " +
         "DBMS_LOB.SUBSTR(q.question_text, 4000, 1), " +

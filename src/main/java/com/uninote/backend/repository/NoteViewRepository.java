@@ -19,6 +19,5 @@ public interface NoteViewRepository extends JpaRepository<NoteView, Long> {
 
     List<NoteView> findByCreatedAtAfter(LocalDateTime localDateTime);
 
-    @Query(value =  "SELECT TRUNC(CREATED_AT) AS day, COUNT(*) AS count FROM NOTE_VIEWS WHERE CREATED_AT >= SYSDATE - 30  GROUP BY TRUNC(CREATED_AT) ORDER BY day", nativeQuery = true)
-    List<Object[]> countLast30daysNoteViews();
+    
 }

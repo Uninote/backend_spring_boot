@@ -332,6 +332,24 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
     @Query("SELECT n.uuid FROM Note n WHERE n.id = :id")
     Optional<String> findUuidById(@Param("id") Long id);
 
+      @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
+               "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+               "FROM Note n " +
+               "JOIN n.course c " +
+               "JOIN c.department d " +
+               "JOIN n.user u " +
+               "JOIN CourseName cn ON cn.course = c " +
+               "JOIN cn.language l " +  
+               "JOIN UniversityName un ON un.university = d.university " +
+               "JOIN un.language ul " +  
+               "JOIN DepartmentName dn ON dn.department = d " +
+               "JOIN dn.language dl " +  
+               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "AND n.isPublic = true AND d = :department AND n   .deleted = false ORDER BY n.createdAt desc")
+   Page<NoteDTO> findRecentPublicNotesByDepartment(@Param("department") Department department,  Pageable pageable);
+
+
 
 }
 

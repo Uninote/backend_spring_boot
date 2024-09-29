@@ -384,4 +384,19 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         return uuid.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
     
+
+
+    @GetMapping("/public/recent/department/{departmentId}")
+    public ResponseEntity<Page<NoteDTO>> getPublicRecentNotesByDepartment(
+            @PathVariable Long departmentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "likes") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Department department = new Department();
+        department.setId(departmentId);
+        Page<NoteDTO> notes = noteService.getRecentPublicNotesByDepartment(department, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(notes);
+    }
 }

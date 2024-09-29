@@ -737,4 +737,22 @@ public class NoteService {
     public Optional<String> findUuidByNoteId(Long id) {
         return noteRepository.findUuidById(id);
     }
+
+
+    public Page<NoteDTO> getRecentPublicNotesByDepartment(Department department, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findRecentPublicNotesByDepartment(department, pageable);
+    }
 }

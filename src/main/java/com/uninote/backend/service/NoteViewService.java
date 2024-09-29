@@ -91,16 +91,6 @@ public class NoteViewService {
     }
 
 
-    public List<Map<String, Object>> getNoteViewsLast30Days() {
-        List<Object[]> results = noteViewRepository.countLast30daysNoteViews();
-        
-        
-        return results.stream().map(result -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("day", result[0].toString());  
-            map.put("count", result[1]);           
-            return map;
-        }).collect(Collectors.toList());
-    }
+   
     
 }
