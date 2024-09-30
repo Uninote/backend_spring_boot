@@ -409,10 +409,23 @@ public class NoteService {
         dto.setSemester(note.getCourse().getSemester());
         dto.setUsername(note.getUser().getUsername());
         dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
-        dto.setNoteTypeId(note.getNoteType().getTypeId());
-        dto.setNoteType(note.getNoteType().getTypeName());
-        dto.setAcademicYear(note.getAcademicYear());
-        dto.setProfessor(note.getProfessor());
+        if (note.getNoteType() != null) {
+            if (note.getNoteType().getTypeId() != null) {
+                dto.setNoteTypeId(note.getNoteType().getTypeId());
+            }
+            if (note.getNoteType().getTypeName() != null) {
+                dto.setNoteType(note.getNoteType().getTypeName());
+            }
+        }
+        
+        if (note.getAcademicYear() != null) {
+            dto.setAcademicYear(note.getAcademicYear());
+        }
+        
+        if (note.getProfessor() != null) {
+            dto.setProfessor(note.getProfessor());
+        }
+        
         return dto;
     }
 
@@ -476,7 +489,7 @@ public class NoteService {
         validSortFields.put("likes", "likes");            
         validSortFields.put("createdAt", "createdAt");    
         validSortFields.put("title", "title");            
-    
+        
         
         String sortField = validSortFields.getOrDefault(sortBy, "likes");
     
