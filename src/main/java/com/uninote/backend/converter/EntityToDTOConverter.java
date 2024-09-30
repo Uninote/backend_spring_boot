@@ -107,7 +107,7 @@ public class EntityToDTOConverter {
             course.getId(),
             course.getDepartment().getId(),
             course.getCode(),
-            course.getmSemester(),
+            course.getSemester(),
             course.getCourseNames().stream()
                   .map(EntityToDTOConverter::convertCourseNameToDTO)
                   .collect(Collectors.toSet())

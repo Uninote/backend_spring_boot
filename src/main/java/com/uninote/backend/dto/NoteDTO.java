@@ -22,6 +22,7 @@ public class NoteDTO {
     private String academicYear;
     private Long noteTypeId;
     private String noteType;
+    private int semester;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -228,5 +229,13 @@ public class NoteDTO {
     
     public void setNoteType(String noteType) {
         this.noteType = noteType;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
+    }
+
+    public int getSemester() {
+        return semester;
     }
 }

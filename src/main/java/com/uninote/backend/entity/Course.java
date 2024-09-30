@@ -57,7 +57,7 @@ public class Course {
         this.semester = sem;
     }
 
-    public int getmSemester() {
+    public int getSemester() {
         return this.semester;
     }
 
