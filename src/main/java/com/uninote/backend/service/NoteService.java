@@ -340,6 +340,10 @@ public class NoteService {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid course ID: " + noteDto.getCourseId()));
             note.setCourse(course);
         }
+        if (noteDto.getNoteTypeId() != null) {
+            NoteType noteType = noteTypeRepository.findById(noteDto.getNoteTypeId()).orElseThrow(() -> new IllegalArgumentException(("Incorrect Note Type Id")) );
+            note.setNoteType(noteType);
+        }
         if (noteDto.getUserId() != null) {
             User user = userRepository.findById(noteDto.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + noteDto.getUserId()));
