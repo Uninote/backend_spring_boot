@@ -409,6 +409,10 @@ public class NoteService {
         dto.setSemester(note.getCourse().getSemester());
         dto.setUsername(note.getUser().getUsername());
         dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
+        dto.setNoteTypeId(note.getNoteType().getTypeId());
+        dto.setNoteType(note.getNoteType().getTypeName());
+        dto.setAcademicYear(note.getAcademicYear());
+        dto.setProfessor(note.getProfessor());
         return dto;
     }
 
