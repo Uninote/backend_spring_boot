@@ -184,9 +184,10 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
        "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
        "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
-       "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear) " +
        "FROM NoteSave ns " +
        "JOIN ns.note n " +
+       "LEFT JOIN n.noteType tn " +
        "JOIN n.course c " +
        "JOIN c.department d " +
        "JOIN n.user u " +
