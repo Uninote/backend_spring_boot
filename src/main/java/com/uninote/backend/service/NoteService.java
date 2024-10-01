@@ -694,6 +694,9 @@ public class NoteService {
             noteDTO.setUsername((String) objects[12]);
             noteDTO.setProfileImageUrl((String) objects[13]);
             noteDTO.setCreatedAt((LocalDateTime) objects[14]);
+            noteDTO.setProfessor((String) objects[15]);
+            noteDTO.setNoteType((String) objects[16]);
+            noteDTO.setAcademicYear((String) objects[17]);
             return noteDTO;
         });
     }

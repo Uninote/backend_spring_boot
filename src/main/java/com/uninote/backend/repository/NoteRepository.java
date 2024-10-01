@@ -216,7 +216,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
     
     @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
        "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-       "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear) " +
        "FROM Note n " +
        "JOIN n.course c " +
        "JOIN c.department d " +
@@ -225,6 +225,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "JOIN cn.language l " +
        "JOIN d.university univ " +
        "JOIN univ.universityNames un " +
+       "LEFT JOIN n.noteType tn " +
        "JOIN un.language ul " +
        "JOIN d.departmentNames dn " +
        "JOIN dn.language dl " +
@@ -242,7 +243,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
     @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
        "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-       "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear) " +
        "FROM Note n " +
        "JOIN n.course c " +
        "JOIN c.department d " +
@@ -250,6 +251,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "JOIN c.courseNames cn " +
        "JOIN cn.language l " +
        "JOIN d.university univ " +
+       "LEFT JOIN n.noteType tn " +
        "JOIN univ.universityNames un " +
        "JOIN un.language ul " +
        "JOIN d.departmentNames dn " +
@@ -268,11 +270,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
     
     @Query(value = "SELECT n.note_id, c.course_id, u.user_id, n.title, n.description, n.pdf_url, " +
                "n.filename, n.is_public, cn.course_name, un.university_name, dn.department_name, " +
-               "n.like_count, u.username, u.profile_image_url, n.created_at " +
+               "n.like_count, u.username, u.profile_image_url, n.created_at, n.professor, n.academic_year, tn.type_name " +
                "FROM admin.notes n " +
                "JOIN admin.courses c ON n.course_id = c.course_id " +
                "JOIN admin.departments d ON c.department_id = d.department_id " +
                "JOIN admin.users u ON n.user_id = u.user_id " +
+               "LEFT JOIN admin.note_types tn ON n.type_id = tn.type_id " +
                "JOIN admin.course_names cn ON c.course_id = cn.course_id " +
                "JOIN admin.languages l ON cn.language_id = l.language_id " +
                "JOIN admin.universities univ ON d.university_id = univ.university_id " +
