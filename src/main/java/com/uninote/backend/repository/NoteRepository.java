@@ -48,9 +48,10 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
        "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
        "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
        "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
-       "n.likes , u.username, u.profileImageUrl, n.createdAt) " +
+       "n.likes , u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear) " +
        "FROM Note n " +
        "JOIN n.course c " +
+       "LEFT JOIN n.noteType tn " +
        "JOIN c.department d " +
        "JOIN n.user u " +
        "WHERE n.user.id = :userId AND  n.deleted = false")
