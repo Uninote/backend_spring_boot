@@ -73,13 +73,14 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
                "JOIN CourseName cn ON cn.course = c " +
-               "JOIN cn.language l " +  
+               "JOIN cn.language l " +
+               "LEFT JOIN n.noteType tn "+  
                "JOIN UniversityName un ON un.university = d.university " +
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
@@ -93,11 +94,12 @@ Page<NoteDTO> findPublicNotes(Pageable pageable);
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN n.noteType tn " + 
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
                "JOIN UniversityName un ON un.university = d.university " +
@@ -112,11 +114,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
 @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
                "JOIN UniversityName un ON un.university = d.university " +
@@ -129,11 +132,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
                "JOIN UniversityName un ON un.university = d.university " +
@@ -146,11 +150,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
                "JOIN UniversityName un ON un.university = d.university " +
