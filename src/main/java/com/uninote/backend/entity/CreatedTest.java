@@ -30,7 +30,7 @@ public class CreatedTest {
     private Long sessionId;
     @Column(name = "TYPE_ID", nullable = false)
     private Long typeId;
-
+    
     
     @Column(name = "COURSE_ID", nullable = true)  
     private Long courseId;

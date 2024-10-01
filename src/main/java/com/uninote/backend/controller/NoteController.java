@@ -14,10 +14,13 @@ import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteService;
 import com.uninote.backend.service.UserService;
 import com.uninote.backend.utils.EncryptionUtil;
+import com.uninote.backend.validation.NoteValidation.CreateGroup;
+import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -153,7 +156,7 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<NoteDTO> saveNote(@RequestBody NoteDTO notedto) {
+    public ResponseEntity<NoteDTO> saveNote(@Validated(CreateGroup.class) @RequestBody NoteDTO notedto) {
         Note savedNote = noteService.saveNote(notedto);
         NoteDTO noteDto= EntityToDTOConverter.convertNoteToDTO(savedNote);
         return ResponseEntity.ok(noteDto);
@@ -340,7 +343,7 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody NoteDTO noteDto) {
+    public ResponseEntity<Note> updateNote(@PathVariable Long id,  @RequestBody NoteDTO noteDto) {
         Note updatedNote = noteService.updateNote(id, noteDto);
         return ResponseEntity.ok(updatedNote);
     }

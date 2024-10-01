@@ -1,9 +1,23 @@
 package com.uninote.backend.dto;
 
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 
+import com.uninote.backend.validation.NoteValidation.CreateGroup;
+import com.uninote.backend.validation.NoteValidation.UpdateGroup;
+
 public class NoteDTO {
+
+    @NotNull(message = "Note ID is required for updates", groups = UpdateGroup.class)
     private Long noteId;
+    
+
+
+    @NotNull(message = "Course ID is required for creation", groups = CreateGroup.class)
     private Long courseId;
     private Long userId;
     private String title;
