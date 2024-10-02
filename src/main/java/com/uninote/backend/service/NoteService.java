@@ -35,6 +35,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.uninote.backend.converter.Converters;
+import com.uninote.backend.converter.Converters.*;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -663,7 +668,7 @@ public class NoteService {
         return noteRepository.searchUserNotes(keyword,userId, pageable);
     }
 
-    public Page<NoteDTO> searchNotesWithEditDistance(String keyword, Long userId, int threshold, int page, int size, String sortBy, String sortDir) {
+    public Page<NoteDTO> searchUserNotesWithEditDistance(String keyword,Long userId, int threshold, int page, int size, String sortBy, String sortDir) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "like_count");
         validSortFields.put("createdAt", "createdAt");
@@ -676,7 +681,7 @@ public class NoteService {
                     : Sort.by(sortField).descending();
     
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Object[]> result = noteRepository.searchUserNotesWithEditDistance(keyword, userId, threshold, pageable);
+        Page<Object[]> result = noteRepository.searchNotesWithEditDistance(keyword, threshold, pageable);
         return result.map(objects -> {
             NoteDTO noteDTO = new NoteDTO();
             noteDTO.setNoteId((Long) objects[0]);
@@ -701,6 +706,53 @@ public class NoteService {
         });
     }
     
+
+    public Page<NoteDTO> searchNotesWithEditDistance(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "like_count");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "like_count");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Object[]> result = noteRepository.searchNotesWithEditDistance(keyword, threshold, pageable);
+        return result.map(objects -> {
+            NoteDTO noteDTO = new NoteDTO();
+    
+            
+            noteDTO.setNoteId(Converters.convertToLong(objects[0]));
+            noteDTO.setCourseId(Converters.convertToLong(objects[1]));
+            noteDTO.setUserId(Converters.convertToLong(objects[2]));
+            
+            noteDTO.setTitle(Converters.convertToString(objects[3]));
+            noteDTO.setDescription(Converters.convertToString(objects[4]));
+            noteDTO.setPdfUrl(Converters.convertToString(objects[5]));
+            noteDTO.setFilename(Converters.convertToString(objects[6]));
+    
+            noteDTO.setIsPublic(Converters.convertToBoolean(objects[7]));
+    
+            noteDTO.setCourseName(Converters.convertToString(objects[8]));
+            noteDTO.setUniversityName(Converters.convertToString(objects[9]));
+            noteDTO.setDepartmentName(Converters.convertToString(objects[10]));
+    
+            noteDTO.setTotalLikes(Converters.convertToLong(objects[11]));
+    
+            noteDTO.setUsername(Converters.convertToString(objects[12]));
+            noteDTO.setProfileImageUrl(Converters.convertToString(objects[13]));
+    
+            noteDTO.setCreatedAt(Converters.convertToLocalDateTime(objects[14]));
+    
+            noteDTO.setProfessor(Converters.convertToString(objects[15]));
+            noteDTO.setNoteType(Converters.convertToString(objects[16]));
+            noteDTO.setAcademicYear(Converters.convertToString(objects[17]));
+            return noteDTO;
+        });
+    }
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid course ID"));

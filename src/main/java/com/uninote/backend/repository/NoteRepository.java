@@ -301,6 +301,38 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                                                @Param("threshold") int threshold, 
                                                Pageable pageable);
 
+    @Query(value = "SELECT n.note_id, c.course_id, u.user_id, n.title, n.description, n.pdf_url, " +
+               "n.filename, n.is_public, cn.course_name, un.university_name, dn.department_name, " +
+               "n.like_count as like_count, u.username, u.profile_image_url, n.created_at, n.professor, n.academic_year, tn.type_name " +
+               "FROM admin.notes n " +
+               "JOIN admin.courses c ON n.course_id = c.course_id " +
+               "JOIN admin.departments d ON c.department_id = d.department_id " +
+               "JOIN admin.users u ON n.user_id = u.user_id " +
+               "LEFT JOIN admin.note_types tn ON n.type_id = tn.type_id " +
+               "JOIN admin.course_names cn ON c.course_id = cn.course_id " +
+               "JOIN admin.languages l ON cn.language_id = l.language_id " +
+               "JOIN admin.universities univ ON d.university_id = univ.university_id " +
+               "JOIN admin.university_names un ON univ.university_id = un.university_id " +
+               "JOIN admin.languages ul ON un.language_id = ul.language_id " +
+               "JOIN admin.department_names dn ON d.department_id = dn.department_id " +
+               "JOIN admin.languages dl ON dn.language_id = dl.language_id " +
+               "WHERE n.is_public = 1 AND n.deleted = 0 " +
+               "AND l.language_code = 'EN' AND ul.language_code = 'EN' AND dl.language_code = 'EN' " +
+               "AND (" +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(n.title, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(n.description, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(cn.course_name, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(un.university_name, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(dn.department_name, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold" +
+               ") " +
+               "ORDER BY n.like_count DESC, n.created_at DESC", 
+       nativeQuery = true)
+Page<Object[]> searchNotesWithEditDistance(@Param("keyword") String keyword, 
+                                                
+                                               @Param("threshold") double threshold, 
+                                               Pageable pageable);
+
+
 
     @Query(value = "SELECT n.note_id AS id, c.course_id AS courseId, u.user_id AS userId, n.title AS title, " +
                "DBMS_LOB.SUBSTR(n.description, 4000, 1) AS description, n.pdf_url AS pdfUrl, n.filename AS filename, " +
@@ -375,7 +407,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
                "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' AND n.noteType.typeId = :typeId " +
-               "AND n.isPublic = true AND d = :department AND n   .deleted = false ")
+               "AND n.isPublic = true AND d = :department AND n.deleted = false ")
    Page<NoteDTO> findPublicNotesByDepartmentByType(@Param("department") Department department,@Param("typeId") Long typeId,  Pageable pageable);
 
 
