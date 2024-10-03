@@ -42,8 +42,8 @@ public class InviteService {
         return invites.stream().map(EntityToDTOConverter::convertInviteToDTO).collect(Collectors.toList());
     }
 
-    public InviteDTO acceptInvite(Long inviteId, Long inviteeId) {
-        Invite invite = inviteRepository.findById(inviteId)
+    public InviteDTO acceptInvite(String inviteUuId, Long inviteeId) {
+        Invite invite = inviteRepository.findByUuid(inviteUuId)
                 .orElseThrow(() -> new IllegalArgumentException("Invite not found"));
         User invitee = userRepository.findById(inviteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Invitee not found"));
@@ -62,6 +62,6 @@ public class InviteService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
         Invite invite = new Invite(user, null, null);
         invite = inviteRepository.save(invite);
-        return "http://uninote.gr/invite?inviteId=" + invite.getId() + "&userId=" + userId + "&date=" + LocalDateTime.now();
+        return "https://uninote.gr/invite?inviteId=" + invite.getUuid();
     }
 }

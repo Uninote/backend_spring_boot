@@ -319,11 +319,11 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "WHERE n.is_public = 1 AND n.deleted = 0 " +
                "AND l.language_code = 'EN' AND ul.language_code = 'EN' AND dl.language_code = 'EN' " +
                "AND (" +
-               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(n.title, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
-               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(n.description, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
-               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(cn.course_name, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
-               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(un.university_name, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold OR " +
-               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(dn.department_name, ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= :threshold" +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(NVL(n.title, ''), ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= LEAST(LENGTH(:keyword), LENGTH(NVL(n.title, ''))) * :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(NVL(n.description, ''), ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= LEAST(LENGTH(:keyword), LENGTH(NVL(n.description, ''))) * :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(NVL(cn.course_name, ''), ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= LEAST(LENGTH(:keyword), LENGTH(NVL(cn.course_name, ''))) * :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(NVL(un.university_name, ''), ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= LEAST(LENGTH(:keyword), LENGTH(NVL(un.university_name, ''))) * :threshold OR " +
+               "UTL_MATCH.EDIT_DISTANCE(LOWER(REPLACE(REPLACE(NVL(dn.department_name, ''), ' ', ''), '-', '')), LOWER(REPLACE(REPLACE(:keyword, ' ', ''), '-', ''))) <= LEAST(LENGTH(:keyword), LENGTH(NVL(dn.department_name, ''))) * :threshold" +
                ") " +
                "ORDER BY n.like_count DESC, n.created_at DESC", 
        nativeQuery = true)

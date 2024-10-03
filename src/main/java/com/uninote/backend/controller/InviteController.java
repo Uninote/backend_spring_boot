@@ -24,10 +24,7 @@ public class InviteController {
         return inviteService.getInvitesByUserId(userId);
     }
 
-    @PutMapping("/{inviteId}/signup")
-    public InviteDTO updateSignUpDate(@PathVariable Long inviteId, @RequestParam Long inviteeId) {
-        return inviteService.acceptInvite(inviteId, inviteeId);
-    }
+    
 
     @GetMapping("/generate/{userId}")
     public String generateInviteLink(@PathVariable Long userId) {
@@ -35,7 +32,7 @@ public class InviteController {
     }
 
     @PostMapping("/accept")
-    public InviteDTO acceptInvite(@RequestParam Long inviteId, @RequestParam Long inviteeId) {
-        return inviteService.acceptInvite(inviteId, inviteeId);
+    public InviteDTO acceptInvite(@RequestParam String inviteUuId, @RequestParam Long inviteeId) {
+        return inviteService.acceptInvite(inviteUuId, inviteeId);
     }
 }
