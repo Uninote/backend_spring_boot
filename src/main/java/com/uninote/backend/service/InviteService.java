@@ -62,6 +62,6 @@ public class InviteService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
         Invite invite = new Invite(user, null, null);
         invite = inviteRepository.save(invite);
-        return "https://uninote.gr/invite?inviteId=" + invite.getUuid();
+        return invite.getUuid();
     }
 }
