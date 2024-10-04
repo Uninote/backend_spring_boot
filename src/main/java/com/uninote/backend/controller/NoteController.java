@@ -293,12 +293,12 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
 
 
     @GetMapping("public/search")
-    public Page<NoteDTO> searchNotes(@RequestParam String keyword,
+    public List<NoteDTO> searchNotes(@RequestParam String keyword,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "likes") String sortBy,
         @RequestParam(defaultValue = "desc") String sortDir) {
-        return noteService.searchNotesWithEditDistance(keyword, 0.02 ,page ,size, sortBy, sortDir);
+        return noteService.searchNotesWithEditDistance(keyword, 0.2 ,page ,size, sortBy, sortDir);
     }
 
     @GetMapping("/search/user/{userId}")

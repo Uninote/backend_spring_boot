@@ -36,3 +36,4 @@ public class InviteController {
         return inviteService.acceptInvite(inviteUuId, inviteeId);
     }
 }
+    

@@ -681,7 +681,7 @@ public class NoteService {
                     : Sort.by(sortField).descending();
     
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Object[]> result = noteRepository.searchNotesWithEditDistance(keyword, threshold, pageable);
+        Page<Object[]> result = noteRepository.searchUserNotesWithEditDistance(keyword, userId,threshold, pageable);
         return result.map(objects -> {
             NoteDTO noteDTO = new NoteDTO();
             noteDTO.setNoteId((Long) objects[0]);
@@ -707,7 +707,7 @@ public class NoteService {
     }
     
 
-    public Page<NoteDTO> searchNotesWithEditDistance(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
+    public List<NoteDTO> searchNotesWithEditDistance(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "like_count");
         validSortFields.put("createdAt", "createdAt");
@@ -720,8 +720,14 @@ public class NoteService {
                     : Sort.by(sortField).descending();
     
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Object[]> result = noteRepository.searchNotesWithEditDistance(keyword, threshold, pageable);
-        return result.map(objects -> {
+        int limit = pageable.getPageSize();
+        int offset = (int) pageable.getOffset();
+        int isShort = 0;
+        if (keyword.length() <= 4) {
+            isShort = 1;
+        }
+        List<Object[]> result = noteRepository.searchNotes(keyword, threshold);
+        return result.stream().map(objects -> {
             NoteDTO noteDTO = new NoteDTO();
     
             
@@ -751,7 +757,7 @@ public class NoteService {
             noteDTO.setNoteType(Converters.convertToString(objects[16]));
             noteDTO.setAcademicYear(Converters.convertToString(objects[17]));
             return noteDTO;
-        });
+        }).collect(Collectors.toList());
     }
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())

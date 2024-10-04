@@ -13,7 +13,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+//@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     
