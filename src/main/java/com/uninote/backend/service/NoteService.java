@@ -720,13 +720,13 @@ public class NoteService {
                     : Sort.by(sortField).descending();
     
         Pageable pageable = PageRequest.of(page, size, sort);
-        int limit = pageable.getPageSize();
-        int offset = (int) pageable.getOffset();
+        int start_row = page*size;
+        int end_row =  start_row+size; 
         int isShort = 0;
         if (keyword.length() <= 4) {
             isShort = 1;
         }
-        List<Object[]> result = noteRepository.searchNotes(keyword, threshold);
+        List<Object[]> result = noteRepository.searchNotes(keyword, (float)0.3, start_row, end_row);
         return result.stream().map(objects -> {
             NoteDTO noteDTO = new NoteDTO();
     
@@ -754,8 +754,8 @@ public class NoteService {
             noteDTO.setCreatedAt(Converters.convertToLocalDateTime(objects[14]));
     
             noteDTO.setProfessor(Converters.convertToString(objects[15]));
-            noteDTO.setNoteType(Converters.convertToString(objects[16]));
-            noteDTO.setAcademicYear(Converters.convertToString(objects[17]));
+            noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
+            noteDTO.setNoteType(Converters.convertToString(objects[17]));
             return noteDTO;
         }).collect(Collectors.toList());
     }
