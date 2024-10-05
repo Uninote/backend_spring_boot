@@ -394,7 +394,12 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                                                " CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
                                                " CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +
                                                " CASE WHEN depw.word IS NOT NULL THEN 1 ELSE 0 END) AS relevance_score, " +
-                                               "ROW_NUMBER() OVER (ORDER BY n.like_count DESC, n.created_at DESC) AS row_number " +
+                                               "ROW_NUMBER() OVER (ORDER BY "  +
+                                               "(CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +
+                                               " CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
+                                               " CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +
+                                               " CASE WHEN depw.word IS NOT NULL THEN 1 ELSE 0 END) " +
+                                               "DESC) AS row_number " +
                                                "FROM admin.notes n " +
                                                "JOIN admin.courses c ON n.course_id = c.course_id " +
                                                "JOIN admin.departments d ON c.department_id = d.department_id " +
