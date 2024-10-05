@@ -30,7 +30,8 @@ public class UserFilterSearchController {
             @RequestParam(value = "courseId", required = false) Long courseId
             ) {
                 Long sessionId  = userSessionService.findLastSessionForUser(userId);
-                userFilterSearchService.logSearch(userId, universityId, departmentId, semester, courseId, sessionId);
+                userFilterSearchService.logSearch(userId, universityId, departmentId, semester, courseId, sessionId);   
             }
                         
+            
 }

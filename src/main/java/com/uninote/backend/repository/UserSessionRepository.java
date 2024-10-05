@@ -13,7 +13,7 @@ import com.uninote.backend.entity.UserSession;
 @Repository
 public interface UserSessionRepository  extends JpaRepository<UserSession, Long>{
 
-    @Query("SELECT us.sessionId FROM UserSession us WHERE us.userId = :userId ORDER BY us.loginTime DESC")
+    @Query(value = "SELECT session_id FROM user_session WHERE user_id = :userId ORDER BY login_time DESC LIMIT 1", nativeQuery = true)
     Optional<Long> findLastSessionIdByUserId(@Param("userId") Long userId);
 
 

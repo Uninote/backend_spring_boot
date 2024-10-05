@@ -391,7 +391,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                                                "       n.professor, " +
                                                "       n.academic_year, " +
                                                "       tn.type_name, " +
-                                               "(CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +
+                                               "(CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +   
                                                " CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
                                                " CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +
                                                " CASE WHEN depw.word IS NOT NULL THEN 1 ELSE 0 END) AS relevance_score, " +
@@ -505,7 +505,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                    "           n.pdf_url AS pdfUrl, " +
                    "           n.filename AS filename, " +
                    "           n.is_public, " +
-                   "           cn.course_name AS courseName, " +
+                   "           cn.course_name AS courseName, " +  
                    "           un.university_name AS universityName, " +
                    "           dn.department_name AS departmentName, " +
                    "           n.like_count AS likes, " +
