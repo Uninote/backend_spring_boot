@@ -822,7 +822,7 @@ public class NoteService {
     long totalElements = 0;
     int totalPages = 0;
     if (!res.isEmpty() && res.get(0).length > 18) { 
-        totalElements = Converters.convertToLong(res.get(0)[18]);
+        totalElements = res.size();
         if(start_row < end_row) {
             totalPages = (int) Math.ceil((double) totalElements / size);
         } else {
