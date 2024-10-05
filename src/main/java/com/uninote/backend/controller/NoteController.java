@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
+import com.uninote.backend.dto.NoteSearchResponse;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
@@ -293,12 +294,12 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
 
 
     @GetMapping("public/search")
-    public List<NoteDTO> searchNotes(@RequestParam String keyword,
+    public NoteSearchResponse searchNotes(@RequestParam String keyword,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "likes") String sortBy,
         @RequestParam(defaultValue = "desc") String sortDir) {
-        return noteService.searchNotesWithEditDistance(keyword, 0.3 ,page ,size, sortBy, sortDir);
+        return noteService.searchNotesWithEditDistancePaginated(keyword, 0.3 ,page ,size, sortBy, sortDir);
     }
 
     @GetMapping("/search/user/{userId}")

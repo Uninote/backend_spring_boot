@@ -5,6 +5,8 @@ import org.springframework.data.domain.Sort;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
+import com.uninote.backend.dto.NoteSearchResponse;
+import com.uninote.backend.dto.NoteSearchResult;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
@@ -759,6 +761,80 @@ public class NoteService {
             return noteDTO;
         }).collect(Collectors.toList());
     }
+
+
+    public NoteSearchResponse searchNotesWithEditDistancePaginated(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
+    Map<String, String> validSortFields = new HashMap<>();
+    validSortFields.put("likes", "like_count");
+    validSortFields.put("createdAt", "createdAt");
+    validSortFields.put("title", "title");
+
+    String sortField = validSortFields.getOrDefault(sortBy, "like_count");
+
+    // Create a Sort object for ordering the results
+    Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+            ? Sort.by(sortField).ascending()
+            : Sort.by(sortField).descending();
+
+    Pageable pageable = PageRequest.of(page, size, sort);
+    int start_row = page * size;
+    int end_row = start_row + size;
+
+    int isShort = 0;
+    if (keyword.length() <= 4) {
+        isShort = 1;
+    }
+
+    // Call the repository method to get the results with the additional fields
+    List<Object[]> res = noteRepository.searchNotesWithPagination(keyword, (float) threshold, start_row, end_row);
+    List<NoteDTO> dtos = res.stream().map(objects -> {
+        NoteDTO noteDTO = new NoteDTO();
+
+        
+        noteDTO.setNoteId(Converters.convertToLong(objects[0]));
+        noteDTO.setCourseId(Converters.convertToLong(objects[1]));
+        noteDTO.setUserId(Converters.convertToLong(objects[2]));
+        
+        noteDTO.setTitle(Converters.convertToString(objects[3]));
+        noteDTO.setDescription(Converters.convertToString(objects[4]));
+        noteDTO.setPdfUrl(Converters.convertToString(objects[5]));
+        noteDTO.setFilename(Converters.convertToString(objects[6]));
+
+        noteDTO.setIsPublic(Converters.convertToBoolean(objects[7]));
+
+        noteDTO.setCourseName(Converters.convertToString(objects[8]));
+        noteDTO.setUniversityName(Converters.convertToString(objects[9]));
+        noteDTO.setDepartmentName(Converters.convertToString(objects[10]));
+
+        noteDTO.setTotalLikes(Converters.convertToLong(objects[11]));
+
+        noteDTO.setUsername(Converters.convertToString(objects[12]));
+        noteDTO.setProfileImageUrl(Converters.convertToString(objects[13]));
+
+        noteDTO.setCreatedAt(Converters.convertToLocalDateTime(objects[14]));
+
+        noteDTO.setProfessor(Converters.convertToString(objects[15]));
+        noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
+        noteDTO.setNoteType(Converters.convertToString(objects[17]));
+        return noteDTO;
+    }).collect(Collectors.toList());
+   
+    long totalElements = 0;
+    int totalPages = 0;
+    if (!res.isEmpty() && res.get(0).length > 18) { 
+        totalElements = Converters.convertToLong(res.get(0)[18]);
+        if(start_row < end_row) {
+            totalPages = (int) Math.ceil((double) totalElements / size);
+        } else {
+            totalPages =1;
+        }
+    }
+
+    
+    return new NoteSearchResponse(dtos, totalElements, totalPages);
+}
+
+
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid course ID"));

@@ -5,6 +5,7 @@ import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.dto.NoteDTO;
+import com.uninote.backend.dto.NoteSearchResult;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
@@ -427,8 +428,128 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                                         @Param("start_row") int startRow, 
                                         @Param("end_row") int endRow);
 
-                                
-                                
+
+
+                                        @Query(value = "WITH note_words AS (" +
+                   "    SELECT n.note_id, " +
+                   "           REGEXP_SUBSTR(LOWER(REPLACE(NVL(n.title, ''), '-', '')), '[^ ]+', 1, LEVEL) AS word, " +
+                   "           LEVEL AS word_level " +
+                   "    FROM admin.notes n " +
+                   "    CONNECT BY PRIOR n.note_id = n.note_id " +
+                   "    AND PRIOR DBMS_RANDOM.VALUE IS NOT NULL " +
+                   "    AND LEVEL <= LENGTH(LOWER(REPLACE(NVL(n.title, ''), '-', ''))) " +
+                   "    - LENGTH(REPLACE(LOWER(REPLACE(NVL(n.title, ''), '-', '')), ' ', '')) + 1 " +
+                   "), " +
+                   "course_words AS (" +
+                   "    SELECT c.course_id, " +
+                   "           REGEXP_SUBSTR(LOWER(REPLACE(NVL(cn.course_name, ''), '-', '')), '[^ ]+', 1, LEVEL) AS word, " +
+                   "           LEVEL AS word_level " +
+                   "    FROM admin.courses c " +
+                   "    JOIN admin.course_names cn ON c.course_id = cn.course_id " +
+                   "    CONNECT BY PRIOR c.course_id = c.course_id " +
+                   "    AND PRIOR DBMS_RANDOM.VALUE IS NOT NULL " +
+                   "    AND LEVEL <= LENGTH(LOWER(REPLACE(NVL(cn.course_name, ''), '-', ''))) " +
+                   "    - LENGTH(REPLACE(LOWER(REPLACE(NVL(cn.course_name, ''), '-', '')), ' ', '')) + 1 " +
+                   "), " +
+                   "university_words AS (" +
+                   "    SELECT univ.university_id, " +
+                   "           REGEXP_SUBSTR(LOWER(REPLACE(NVL(un.university_name, ''), '-', '')), '[^ ]+', 1, LEVEL) AS word, " +
+                   "           LEVEL AS word_level " +
+                   "    FROM admin.universities univ " +
+                   "    JOIN admin.university_names un ON univ.university_id = un.university_id " +
+                   "    CONNECT BY PRIOR univ.university_id = univ.university_id " +
+                   "    AND PRIOR DBMS_RANDOM.VALUE IS NOT NULL " +
+                   "    AND LEVEL <= LENGTH(LOWER(REPLACE(NVL(un.university_name, ''), '-', ''))) " +
+                   "    - LENGTH(REPLACE(LOWER(REPLACE(NVL(un.university_name, ''), '-', '')), ' ', '')) + 1 " +
+                   "), " +
+                   "department_words AS (" +
+                   "    SELECT d.department_id, " +
+                   "           REGEXP_SUBSTR(LOWER(REPLACE(NVL(dn.department_name, ''), '-', '')), '[^ ]+', 1, LEVEL) AS word, " +
+                   "           LEVEL AS word_level " +
+                   "    FROM admin.departments d " +
+                   "    JOIN admin.department_names dn ON d.department_id = dn.department_id " +
+                   "    CONNECT BY PRIOR d.department_id = d.department_id " +
+                   "    AND PRIOR DBMS_RANDOM.VALUE IS NOT NULL " +
+                   "    AND LEVEL <= LENGTH(LOWER(REPLACE(NVL(dn.department_name, ''), '-', ''))) " +
+                   "    - LENGTH(REPLACE(LOWER(REPLACE(NVL(dn.department_name, ''), '-', '')), ' ', '')) + 1 " +
+                   "), " +
+                   "total_elements AS (" +
+                   "    SELECT COUNT(*) AS total_count " +
+                   "    FROM admin.notes n " +
+                   "    JOIN admin.courses c ON n.course_id = c.course_id " +
+                   "    JOIN admin.departments d ON c.department_id = d.department_id " +
+                   "    JOIN admin.users u ON n.user_id = u.user_id " +
+                   "    JOIN admin.course_names cn ON c.course_id = cn.course_id " +
+                   "    JOIN admin.languages l1 ON cn.language_id = l1.language_id AND l1.language_code = 'EN' " +
+                   "    JOIN admin.universities univ ON d.university_id = univ.university_id " +
+                   "    JOIN admin.university_names un ON univ.university_id = un.university_id " +
+                   "    JOIN admin.languages l2 ON un.language_id = l2.language_id AND l2.language_code = 'EN' " +
+                   "    JOIN admin.department_names dn ON d.department_id = dn.department_id " +
+                   "    JOIN admin.languages l3 ON dn.language_id = l3.language_id AND l3.language_code = 'EN' " +
+                   "    LEFT JOIN note_words nw ON nw.note_id = n.note_id AND UTL_MATCH.EDIT_DISTANCE(nw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(nw.word)) " +
+                   "    LEFT JOIN course_words cw ON cw.course_id = c.course_id AND UTL_MATCH.EDIT_DISTANCE(cw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(cw.word)) " +
+                   "    LEFT JOIN university_words uw ON uw.university_id = univ.university_id AND UTL_MATCH.EDIT_DISTANCE(uw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(uw.word)) " +
+                   "    LEFT JOIN department_words depw ON depw.department_id = d.department_id AND UTL_MATCH.EDIT_DISTANCE(depw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(depw.word)) " +
+                   "    WHERE n.is_public = 1 AND n.deleted = 0 " +
+                   "    AND (nw.word IS NOT NULL OR cw.word IS NOT NULL OR uw.word IS NOT NULL OR depw.word IS NOT NULL) " +
+                   ") " +
+                   "SELECT id, courseId, userId, title, description, pdfUrl, filename, is_public, courseName, universityName, departmentName, likes, username, profileImageUrl, createdAt, professor, academic_year, type_name, relevance_score, row_number, " +
+                   "       total_elements.total_count AS total_elements, " +
+                   "       CEIL(total_elements.total_count / (:end_row - :start_row + 1)) AS total_pages " +
+                   "FROM ( " +
+                   "    SELECT n.note_id AS id, " +
+                   "           c.course_id AS courseId, " +
+                   "           u.user_id AS userId, " +
+                   "           n.title AS title, " +
+                   "           DBMS_LOB.SUBSTR(n.description, 4000, 1) AS description, " +
+                   "           n.pdf_url AS pdfUrl, " +
+                   "           n.filename AS filename, " +
+                   "           n.is_public, " +
+                   "           cn.course_name AS courseName, " +
+                   "           un.university_name AS universityName, " +
+                   "           dn.department_name AS departmentName, " +
+                   "           n.like_count AS likes, " +
+                   "           u.username AS username, " +
+                   "           u.profile_image_url AS profileImageUrl, " +
+                   "           n.created_at AS createdAt, " +
+                   "           n.professor, " +
+                   "           n.academic_year, " +
+                   "           tn.type_name, " +
+                   "           (CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +
+                   "            CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
+                   "            CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +
+                   "            CASE WHEN depw.word IS NOT NULL THEN 1 ELSE 0 END) AS relevance_score, " +
+                   "           ROW_NUMBER() OVER (ORDER BY (CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +
+                   "                                         CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
+                   "                                         CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +
+                   "                                         CASE WHEN depw.word IS NOT NULL THEN 1 ELSE 0 END) DESC) AS row_number " +
+                   "    FROM admin.notes n " +
+                   "    JOIN admin.courses c ON n.course_id = c.course_id " +
+                   "    JOIN admin.departments d ON c.department_id = d.department_id " +
+                   "    JOIN admin.users u ON n.user_id = u.user_id " +
+                   "    LEFT JOIN admin.note_types tn ON n.type_id = tn.type_id " +
+                   "    JOIN admin.course_names cn ON c.course_id = cn.course_id " +
+                   "    JOIN admin.languages l1 ON cn.language_id = l1.language_id AND l1.language_code = 'EN' " +
+                   "    JOIN admin.universities univ ON d.university_id = univ.university_id " +
+                   "    JOIN admin.university_names un ON univ.university_id = un.university_id " +
+                   "    JOIN admin.languages l2 ON un.language_id = l2.language_id AND l2.language_code = 'EN' " +
+                   "    JOIN admin.department_names dn ON d.department_id = dn.department_id " +
+                   "    JOIN admin.languages l3 ON dn.language_id = l3.language_id AND l3.language_code = 'EN' " +
+                   "    LEFT JOIN note_words nw ON nw.note_id = n.note_id AND UTL_MATCH.EDIT_DISTANCE(nw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(nw.word)) " +
+                   "    LEFT JOIN course_words cw ON cw.course_id = c.course_id AND UTL_MATCH.EDIT_DISTANCE(cw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(cw.word)) " +
+                   "    LEFT JOIN university_words uw ON uw.university_id = univ.university_id AND UTL_MATCH.EDIT_DISTANCE(uw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(uw.word)) " +
+                   "    LEFT JOIN department_words depw ON depw.department_id = d.department_id AND UTL_MATCH.EDIT_DISTANCE(depw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(depw.word)) " +
+                   "    WHERE n.is_public = 1 AND n.deleted = 0 " +
+                   "    AND (nw.word IS NOT NULL OR cw.word IS NOT NULL OR uw.word IS NOT NULL OR depw.word IS NOT NULL) " +
+                   ") result, total_elements " +
+                   "WHERE row_number BETWEEN :start_row AND :end_row " +
+                   "ORDER BY relevance_score DESC", 
+           nativeQuery = true)
+    List<Object[]> searchNotesWithPagination(
+            @Param("keyword") String keyword, 
+            @Param("threshold") float threshold, 
+            @Param("start_row") int startRow, 
+            @Param("end_row") int endRow);
                                 
                                 
 
