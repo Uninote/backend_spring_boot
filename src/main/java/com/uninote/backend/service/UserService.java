@@ -473,4 +473,13 @@ public void softDeleteUserById(Long userId) {
 
         return session.getSessionId();  
     }
+
+
+
+    public void verfiyEmail(String firebaseUuid) {
+        Long id = userRepository.findUserIdByFirebaseUid(firebaseUuid).orElseThrow(() -> new IllegalArgumentException("Firebase uuid not found"));
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+    }
 }

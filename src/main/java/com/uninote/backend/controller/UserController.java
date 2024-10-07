@@ -222,4 +222,9 @@ public class UserController {
     public String getUserEmailByUsername(@PathVariable String username) {
         return userService.getUserEmailByUsername(username);
     }
+
+    @PostMapping("/verify-email/{firebaseUid}")
+    public void verfiyEmail(@PathVariable String firebaseUid) {
+        userService.verfiyEmail(firebaseUid);
+    }
 }

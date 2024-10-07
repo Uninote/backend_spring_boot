@@ -90,6 +90,10 @@ public class User {
     @ManyToMany(mappedBy = "approvedUsers")
     private Set<User> approvedByUsers = new HashSet<>();
 
+    @Column(name = "email_verified", nullable = true)
+    private boolean emailVerified = false;
+
+
     @PrePersist
     protected void onCreate() {
         if (streak == 0) {
@@ -105,7 +109,7 @@ public class User {
         if (profileImageUrl==null) {
             profileImageUrl = DEFAULT_PROFILE_URL;
         }
-
+        emailVerified = false;
         updatedAt = LocalDateTime.now();
         //lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
@@ -295,6 +299,14 @@ public class User {
 
     public void setInstagramUsername(String instagramUsername) {
         this.instagramUsername = instagramUsername;
+    }
+
+    public boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
 }
