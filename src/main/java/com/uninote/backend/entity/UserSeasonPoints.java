@@ -20,12 +20,18 @@ public class UserSeasonPoints {
     private int points;
 
     @Column
-    private Integer ranking; // Nullable, to store the ranking at the end of the season
+    private Integer ranking; 
 
     @Column(nullable = false, columnDefinition = "integer default 0")
     private boolean rewardsClaimed;
 
-    // Getters and setters
+    public UserSeasonPoints(User user, Season season, int points, Integer ranking, boolean rewardsClaimed) {
+        this.user = user;
+        this.season = season;
+        this.points = points;
+        this.ranking = ranking;
+        this.rewardsClaimed = rewardsClaimed;
+    }
 
     public Long getId() {
         return id;

@@ -19,7 +19,6 @@ public class Season {
     @Column(nullable = false)
     private LocalDateTime endDate;
 
-    // Getters and setters
 
     public Long getSeasonId() {
         return seasonId;
