@@ -14,6 +14,7 @@ import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
 import com.uninote.backend.entity.UserSeasonPoints;
+import com.uninote.backend.entity.UserSeasonPointsId;
 import com.uninote.backend.entity.UserSession;
 import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
@@ -280,7 +281,10 @@ public void softDeleteUserById(Long userId) {
         if (currentSeasonOpt.isPresent()) {
             Season currentSeason = currentSeasonOpt.get();
 
-            UserSeasonPoints userSeasonPoints = new UserSeasonPoints(savedUser, currentSeason, 0, null, false);
+            UserSeasonPointsId userSeasonPointsId =new UserSeasonPointsId();
+            userSeasonPointsId.setSeasonId(currentSeason.getSeasonId());
+            userSeasonPointsId.setUserId(user.getId());
+            UserSeasonPoints userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
             userSeasonPointsRepository.save(userSeasonPoints);
         }
         
@@ -363,9 +367,19 @@ public void softDeleteUserById(Long userId) {
             if (currentSeasonOpt.isPresent()) {
                 Season currentSeason = currentSeasonOpt.get();
 
-            
-                UserSeasonPoints userSeasonPoints = userSeasonPointsRepository.findByUserAndSeason(user, currentSeason)
-                    .orElse(new UserSeasonPoints(user, currentSeason, 0, null, false));
+                UserSeasonPoints userSeasonPoints;
+                Long userId = user.getId();
+                Long seasonId = currentSeason.getSeasonId();
+                Optional<UserSeasonPoints> userSeasonPointsOpt = userSeasonPointsRepository.findByIdUserIdAndIdSeasonId(userId, seasonId);
+                if(!userSeasonPointsOpt.isPresent()) {
+                    UserSeasonPointsId userSeasonPointsId =new UserSeasonPointsId();
+                    userSeasonPointsId.setSeasonId(currentSeason.getSeasonId());
+                    userSeasonPointsId.setUserId(user.getId());
+                    userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
+                    
+                } else{
+                    userSeasonPoints = userSeasonPointsOpt.get();
+                }
 
                 userSeasonPoints.setPoints(userSeasonPoints.getPoints() + uniScoreIncreaseType.getIncreaseAmount());
 

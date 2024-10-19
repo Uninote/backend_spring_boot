@@ -1,6 +1,9 @@
 package com.uninote.backend.entity;
 
 import javax.persistence.*;
+
+import org.hibernate.Hibernate;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -113,11 +116,18 @@ public class User {
         updatedAt = LocalDateTime.now();
         //lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
+
+        if (department != null && Hibernate.isInitialized(department)) {
+            university = this.department.getUniversity();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        if (department != null && Hibernate.isInitialized(department)) {
+            university = this.department.getUniversity();
+        }
     }
 
     public User() {}

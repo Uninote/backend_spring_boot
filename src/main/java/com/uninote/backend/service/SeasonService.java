@@ -3,10 +3,12 @@ package com.uninote.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.uninote.backend.entity.Season;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserSeasonPoints;
+import com.uninote.backend.entity.UserSeasonPointsId;
 import com.uninote.backend.repository.SeasonRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
@@ -27,12 +29,16 @@ public class SeasonService {
     @Autowired
     private UserSeasonPointsRepository userSeasonPointsRepository;
 
+    @Transactional
     public Season createSeason(Season season) {
         Season savedSeason = seasonRepository.save(season);
         List<User> allUsers = userRepository.findAllByAndEmailVerifiedTrueAndUsernameIsNotNull();
 
         for (User user : allUsers) {
-            UserSeasonPoints userSeasonPoints = new UserSeasonPoints(user, savedSeason, 0, null, false);
+            UserSeasonPointsId userSeasonPointsId = new UserSeasonPointsId();
+            userSeasonPointsId.setSeasonId(savedSeason.getSeasonId());
+            userSeasonPointsId.setUserId(user.getId());
+            UserSeasonPoints userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
             userSeasonPointsRepository.save(userSeasonPoints); 
         }
 

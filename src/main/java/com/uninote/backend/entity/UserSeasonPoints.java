@@ -4,17 +4,16 @@ import javax.persistence.*;
 @Entity
 public class UserSeasonPoints {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+   @EmbeddedId
+    private UserSeasonPointsId id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;  
+    
+    /*@Column(name = "user_id", nullable = false)
+    private Long userId;  
 
-    @ManyToOne
-    @JoinColumn(name = "season_id", nullable = false)
-    private Season season;
+    
+    @Column(name = "season_id", nullable = false)
+    private Long seasonId;*/
 
     @Column(nullable = false, columnDefinition = "integer default 0")
     private int points;
@@ -25,37 +24,40 @@ public class UserSeasonPoints {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private boolean rewardsClaimed;
 
-    public UserSeasonPoints(User user, Season season, int points, Integer ranking, boolean rewardsClaimed) {
-        this.user = user;
-        this.season = season;
+    public UserSeasonPoints() {}
+
+    public UserSeasonPoints(UserSeasonPointsId userSeasonPointsId, int points, Integer ranking, boolean rewardsClaimed) {
+        //this.userId = user;
+        //this.seasonId = season;
+        this.id = userSeasonPointsId;
         this.points = points;
         this.ranking = ranking;
         this.rewardsClaimed = rewardsClaimed;
     }
 
-    public Long getId() {
+    public UserSeasonPointsId getUserSeasonPointsId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UserSeasonPointsId id) {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+   /* public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long user) {
+        this.userId = user;
     }
 
-    public Season getSeason() {
-        return season;
+    public Long getSeasonId() {
+        return seasonId;
     }
 
-    public void setSeason(Season season) {
-        this.season = season;
-    }
+    public void setSeasonId(Long season) {
+        this.seasonId = season;
+    }*/
 
     public int getPoints() {
         return points;
