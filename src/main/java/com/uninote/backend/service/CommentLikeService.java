@@ -50,7 +50,7 @@ public class CommentLikeService {
             CommentLike commentLike = new CommentLike(commentLikeId, comment, user);
             commentLikeRepository.save(commentLike); 
 
-            userService.updateUniScore(commentCreator, 1L);
+            
         }
     }
 
@@ -67,7 +67,7 @@ public class CommentLikeService {
         if (existingLike.isPresent()) {
             commentLikeRepository.delete(existingLike.get());
 
-            userService.updateUniScore(comment.getUser(), -1L);
+            
         }
     }
 

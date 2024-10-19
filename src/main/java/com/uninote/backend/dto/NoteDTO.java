@@ -1,9 +1,23 @@
 package com.uninote.backend.dto;
 
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 
+import com.uninote.backend.validation.NoteValidation.CreateGroup;
+import com.uninote.backend.validation.NoteValidation.UpdateGroup;
+
 public class NoteDTO {
+
+    @NotNull(message = "Note ID is required for updates", groups = UpdateGroup.class)
     private Long noteId;
+    
+
+
+    @NotNull(message = "Course ID is required for creation", groups = CreateGroup.class)
     private Long courseId;
     private Long userId;
     private String title;
@@ -18,6 +32,11 @@ public class NoteDTO {
     private String username;
     private String profileImageUrl;
     private LocalDateTime createdAt;
+    private String professor;
+    private String academicYear;
+    private Long noteTypeId;
+    private String noteType;
+    private int semester;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -68,6 +87,29 @@ public class NoteDTO {
         this.noteId = noteId;
     }
     
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+        this.noteType = noteType;
+        this.professor = professor;
+        this.academicYear = academicYear;
+                    
+    }
     public NoteDTO() {};
 
     
@@ -86,6 +128,8 @@ public class NoteDTO {
     public void setUserId(Long userId) {
         this.userId = userId;
     }
+
+    
 
     public String getTitle() {
         return title;
@@ -126,7 +170,7 @@ public class NoteDTO {
         this.isPublic = isPublic;
     }
 
-    public void setNotesId(Long noteId){
+    public void setNoteId(Long noteId){
         this.noteId = noteId;
     }
 
@@ -190,4 +234,45 @@ public class NoteDTO {
         this.createdAt = createdAt;
     }
 
+
+    public String getProfessor() {
+        return professor;
+    }
+    
+    public void setProfessor(String professor) {
+        this.professor = professor;
+    }
+    
+    
+    public String getAcademicYear() {
+        return academicYear;
+    }
+    
+    public void setAcademicYear(String academicYear) {
+        this.academicYear = academicYear;
+    }
+    
+    public Long getNoteTypeId() {
+        return noteTypeId;
+    }
+    
+    public void setNoteTypeId(Long noteTypeId) {
+        this.noteTypeId = noteTypeId;
+    }
+    
+    public String getNoteType() {
+        return noteType;
+    }
+    
+    public void setNoteType(String noteType) {
+        this.noteType = noteType;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
+    }
+
+    public int getSemester() {
+        return semester;
+    }
 }

@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "user_approvals")
+@Table(name = "user_approvals", schema = "ADMIN")
 public class Approval implements Serializable {
 
     @EmbeddedId

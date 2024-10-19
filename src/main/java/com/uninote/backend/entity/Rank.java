@@ -7,7 +7,7 @@ import java.util.Set;
 @Entity
 @Table(name = "ranks", uniqueConstraints = {
     @UniqueConstraint(columnNames = "rank_name")
-})
+}, schema = "ADMIN")
 public class Rank {
 
     @Id

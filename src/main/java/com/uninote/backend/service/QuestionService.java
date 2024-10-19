@@ -5,12 +5,14 @@ import com.uninote.backend.dto.ChoiceDTO;
 import com.uninote.backend.dto.FlashcardDTO;
 import com.uninote.backend.dto.MultipleChoiceQuestionDTO;
 import com.uninote.backend.dto.QuestionDTO;
+import com.uninote.backend.dto.QuestionTypeDTO;
 import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.entity.Choice;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Flashcard;
 import com.uninote.backend.entity.MultipleChoiceQuestion;
 import com.uninote.backend.entity.Question;
+import com.uninote.backend.entity.QuestionReport;
 import com.uninote.backend.entity.QuestionType;
 import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.interfaceProjection.FlashcardProjection;
@@ -19,6 +21,7 @@ import com.uninote.backend.repository.ChoiceRepository;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.FlashcardRepository;
 import com.uninote.backend.repository.MultipleChoiceQuestionRepository;
+import com.uninote.backend.repository.QuestionReportRepository;
 import com.uninote.backend.repository.QuestionRepository;
 import com.uninote.backend.repository.QuestionTypeRepository;
 import com.uninote.backend.repository.TrueFalseQuestionRepository;
@@ -77,6 +80,9 @@ public class QuestionService {
 
     @Autowired
     private ChoiceRepository choiceRepository;
+
+    @Autowired
+    private QuestionReportRepository reportRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(QuestionService.class);
 
@@ -293,6 +299,53 @@ public class QuestionService {
     public List<MultipleChoiceQuestionDTO> getRandomMultipleChoiceQuestionsByCourse(Long courseId, int count) {
         List<MultipleChoiceQuestion> multipleChoiceQuestions = multipleChoiceQuestionRepository.findByCourseId(courseId);
         return multipleChoiceQuestions.stream().limit(count).map(EntityToDTOConverter::convertToMultipleChoiceQuestionDTO).collect(Collectors.toList());
+    }
+
+    public List<QuestionTypeDTO> getDistinctQuestionTypesByCourseId(Long courseId) {
+        List<Object[]> results = questionRepository.findDistinctQuestionTypeIdsAndNamesByCourseId(courseId);
+
+        
+        return results.stream()
+                .map(result -> new QuestionTypeDTO((Long) result[0], (String) result[1]))
+                .collect(Collectors.toList());
+    }
+
+
+    public List<QuestionDTO> findDistinctReportedQuestionDTOs() {
+        
+        List<Object[]> results = questionRepository.findDistinctReportedQuestions();
+
+       
+        List<QuestionDTO> questionDTOs = new ArrayList<>();
+
+        
+        for (Object[] row : results) {
+            Long questionId = ((BigDecimal) row[0]).longValue();  
+            Long courseId = ((BigDecimal) row[1]).longValue();     
+            Long questionTypeId = ((BigDecimal) row[2]).longValue();
+            String questionText = (String) row[3];
+            Boolean isDifficult = ((BigDecimal) row[4]).intValue() == 1;  
+
+            
+            QuestionDTO dto = new QuestionDTO(questionId, courseId, questionTypeId, questionText, isDifficult);
+
+            
+            questionDTOs.add(dto);
+        }
+
+        return questionDTOs;
+    }
+
+    public boolean updateAllReportsStatusByQuestionId(Long noteId) {
+        List<QuestionReport> reports = reportRepository.findByQuestionId(noteId);
+        
+        if (!reports.isEmpty()) {
+            reports.forEach(report -> report.setStatus(1)); 
+            reportRepository.saveAll(reports);
+            return true;
+        }
+        
+        return false; 
     }
 
     

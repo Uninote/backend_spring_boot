@@ -20,4 +20,8 @@ public interface NoteProjection {
     String getProfileImageUrl();
     LocalDateTime getCreatedAt();
     NoteDTO getFirstNote();
+    String getProfessor();      
+    String getAcademicYear();  
+    Long getNoteTypeId();       
+    String getNoteType();
 }

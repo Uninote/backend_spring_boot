@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "collection_saves")
+@Table(name = "collection_saves", schema = "ADMIN")
 public class CollectionSave {
 
     @EmbeddedId

@@ -15,8 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -59,7 +63,7 @@ public class NoteViewService {
                 noteView.setCreatedAt(LocalDateTime.now());; 
             
             CompletableFuture.runAsync(() -> {
-                        if (noteCreator.getId() != userId) {
+                        if (!noteCreator.getId().equals(userId)) {
                                 userService.updateUniScore(note.getUser(), 3L);
                         }
                 });        
@@ -85,5 +89,8 @@ public class NoteViewService {
         
         return updatedNoteView.getId();
     }
+
+
+   
     
 }

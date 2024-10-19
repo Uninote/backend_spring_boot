@@ -1,6 +1,8 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.service.CollectionLikeService;
+import com.uninote.backend.service.NoteCollectionService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/collections")
 public class CollectionLikeController {
 
+    
     private final CollectionLikeService collectionLikeService;
+
+    @Autowired
+    private NoteCollectionService noteCollectionService;
+
 
     @Autowired
     public CollectionLikeController(CollectionLikeService collectionLikeService) {
@@ -37,5 +44,19 @@ public class CollectionLikeController {
     public ResponseEntity<Long> getTotalActiveLikes(@PathVariable Long collectionId) {
         Long totalLikes = collectionLikeService.getTotalActiveLikesForCollection(collectionId);
         return ResponseEntity.ok(totalLikes);
+    }
+
+
+    @PostMapping("/toggle-like/{userId}/{collectionId}")
+    public ResponseEntity<String> toggleLikeCollection(@PathVariable Long collectionId, @PathVariable Long userId) {
+        boolean isLiked = noteCollectionService.hasUserLiked(collectionId, userId);
+
+        if (isLiked) {
+            collectionLikeService.unlikeCollection(collectionId, userId);
+            return ResponseEntity.ok("Collection unliked successfully.");
+        } else {
+            collectionLikeService.likeCollection(collectionId, userId);
+            return ResponseEntity.ok("Collection liked successfully.");
+        }
     }
 }

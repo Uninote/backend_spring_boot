@@ -38,15 +38,7 @@ public class MultipleChoiceQuestionController {
         return multipleChoiceQuestionService.saveMultipleChoiceQuestion(multipleChoiceQuestion);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<MultipleChoiceQuestion> updateMultipleChoiceQuestion(@PathVariable Long id, @RequestBody MultipleChoiceQuestion multipleChoiceQuestion) {
-        if (!multipleChoiceQuestionService.getMultipleChoiceQuestionById(id).isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        multipleChoiceQuestion.setId(id);
-        MultipleChoiceQuestion updatedMultipleChoiceQuestion = multipleChoiceQuestionService.saveMultipleChoiceQuestion(multipleChoiceQuestion);
-        return ResponseEntity.ok(updatedMultipleChoiceQuestion);
-    }
+    
 
     @GetMapping("/multiple_choice/course/{courseId}")
     public ResponseEntity<List<MultipleChoiceQuestionDTO>> getMultipleChoiceQuestionsByCourseId(@PathVariable Long courseId,  @RequestParam(value = "limit", defaultValue = "10") int limit) {
@@ -61,4 +53,16 @@ public class MultipleChoiceQuestionController {
         multipleChoiceQuestionService.deleteMultipleChoiceQuestion(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @PutMapping("/{questionId}")
+    public ResponseEntity<MultipleChoiceQuestionDTO> updateMultipleChoiceQuestion(
+            @PathVariable Long questionId,
+            @RequestBody MultipleChoiceQuestionDTO updatedQuestionDTO) {
+
+        MultipleChoiceQuestionDTO updatedQuestion = multipleChoiceQuestionService.updateMultipleChoiceQuestion(questionId, updatedQuestionDTO);
+
+        return ResponseEntity.ok(updatedQuestion);
+    }
+
 }

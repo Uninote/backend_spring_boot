@@ -12,6 +12,7 @@ import com.uninote.backend.service.UserLoginService;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/metrics")
@@ -58,4 +59,21 @@ public class UserLoginMetricsController {
         List<Long> userIds = userLoginService.getUsersLoggedInConsecutively(startDate, endDate);
         return ResponseEntity.ok(userIds);
     }
+
+
+    @GetMapping("/user-distinct-login-days")
+    public ResponseEntity<Map<Integer, Long>> getUserDistinctLoginDaysForLastWeek() {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusWeeks(1);
+
+        Map<Integer, Long> loginDayCounts = userLoginService.getUserDistinctLoginDays(startDate, endDate);
+
+        return ResponseEntity.ok(loginDayCounts);
+    }
+
+    @GetMapping("/logins-last-30-days")
+    public List<Map<String, Object>> getLoginsLast30Days() {
+        return userLoginService.getDistinctLoginsPerDay();
+    }
+
 }

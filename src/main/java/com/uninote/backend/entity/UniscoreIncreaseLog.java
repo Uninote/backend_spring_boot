@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "uniscore_increase_logs")
+@Table(name = "uniscore_increase_logs", schema = "ADMIN")
 public class UniscoreIncreaseLog {
 
     @Id

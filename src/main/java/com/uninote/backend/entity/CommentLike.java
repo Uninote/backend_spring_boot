@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "COMMENT_LIKES")
+@Table(name = "COMMENT_LIKES", schema = "ADMIN")
 public class CommentLike implements Serializable {
 
     @EmbeddedId

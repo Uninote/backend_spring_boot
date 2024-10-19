@@ -6,7 +6,7 @@ import java.util.Date;
 
 
 @Entity
-@Table(name = "Question_Report")
+@Table(name = "Question_Report", schema = "ADMIN")
 public class QuestionReport {
 
     @EmbeddedId

@@ -16,6 +16,7 @@ public class UserDTO {
     private String bio;
     private String rank;
     private int streak;
+    private String instagramUsername;
     public UserDTO() {}
 
     
@@ -160,5 +161,13 @@ public class UserDTO {
 
     public void setStreak(int streak) {
         this.streak = streak;
+    }
+
+    public String getInstagramUsername() {
+        return instagramUsername;
+    }
+
+    public void setInstagramUsername(String instagramUsername) {
+        this.instagramUsername = instagramUsername;
     }
 }

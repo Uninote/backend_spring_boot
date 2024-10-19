@@ -3,7 +3,7 @@ package com.uninote.backend.entity;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "uniscore_increase_types")
+@Table(name = "uniscore_increase_types", schema = "ADMIN")
 public class UniscoreIncreaseType {
 
     @Id

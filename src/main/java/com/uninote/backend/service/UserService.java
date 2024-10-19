@@ -7,11 +7,14 @@ import com.uninote.backend.dto.UserStatsDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
 import com.uninote.backend.entity.Role;
+import com.uninote.backend.entity.Season;
 import com.uninote.backend.entity.UniscoreIncreaseLog;
 import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserLogin;
+import com.uninote.backend.entity.UserSeasonPoints;
+import com.uninote.backend.entity.UserSeasonPointsId;
 import com.uninote.backend.entity.UserSession;
 import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
@@ -29,6 +32,7 @@ import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
+import com.uninote.backend.repository.UserSeasonPointsRepository;
 import com.uninote.backend.repository.UserSessionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +92,10 @@ public class UserService {
     @Autowired
     private BadgeService badgeService;
 
+
+    @Autowired
+    private UserSeasonPointsRepository userSeasonPointsRepository;
+
     @Autowired
     private UniscoreIncreaseTypeRepository uniScoreIncreaseTypeRepository;
 
@@ -104,10 +112,13 @@ public class UserService {
     private UserSessionService userSessionService;
 
     @Autowired
-    private NoteCollectionRepository noteCollectionRepository;
+    private NoteCollectionRepository noteCollectionRepository;  
 
     @Autowired
     private UserSessionRepository userSessionRepository;
+
+    @Autowired
+    private SeasonService seasonService;
 
     public Long loginUserAndUpdateStreak(Long userId) {
         User user = userRepository.findById(userId)
@@ -265,9 +276,19 @@ public void softDeleteUserById(Long userId) {
         user.setUpdatedAt(LocalDateTime.now());
         //user.setLastLogin(LocalDateTime.now());
         user.setRole(role);
+        User savedUser = userRepository.save(user);
+        Optional<Season> currentSeasonOpt = seasonService.getCurrentSeason();
+        if (currentSeasonOpt.isPresent()) {
+            Season currentSeason = currentSeasonOpt.get();
 
+            UserSeasonPointsId userSeasonPointsId =new UserSeasonPointsId();
+            userSeasonPointsId.setSeasonId(currentSeason.getSeasonId());
+            userSeasonPointsId.setUserId(user.getId());
+            UserSeasonPoints userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
+            userSeasonPointsRepository.save(userSeasonPoints);
+        }
         
-        return userRepository.save(user);
+        return savedUser;
     }
     public User updateUser(Long userId, UserDTO userDto) {
         User user = userRepository.findById(userId)
@@ -300,6 +321,9 @@ public void softDeleteUserById(Long userId) {
         }
         if(userDto.getBio() !=null) {
             user.setBio(userDto.getBio());
+        }
+        if(userDto.getInstagramUsername() != null) {
+            user.setInstagramUsername(userDto.getInstagramUsername());
         }
 
         user.setUpdatedAt(LocalDateTime.now());
@@ -339,8 +363,30 @@ public void softDeleteUserById(Long userId) {
             user.setRank(newRank);
             UniscoreIncreaseLog increaseLog = new UniscoreIncreaseLog(user, uniScoreIncreaseType);
             uniscoreIncreaseLogRepository.save(increaseLog);
-            userRepository.save(user);
-            badgeService.checkBadgesForUser(user.getId());
+            Optional<Season> currentSeasonOpt = seasonService.getCurrentSeason();
+            if (currentSeasonOpt.isPresent()) {
+                Season currentSeason = currentSeasonOpt.get();
+
+                UserSeasonPoints userSeasonPoints;
+                Long userId = user.getId();
+                Long seasonId = currentSeason.getSeasonId();
+                Optional<UserSeasonPoints> userSeasonPointsOpt = userSeasonPointsRepository.findByIdUserIdAndIdSeasonId(userId, seasonId);
+                if(!userSeasonPointsOpt.isPresent()) {
+                    UserSeasonPointsId userSeasonPointsId =new UserSeasonPointsId();
+                    userSeasonPointsId.setSeasonId(currentSeason.getSeasonId());
+                    userSeasonPointsId.setUserId(user.getId());
+                    userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
+                    
+                } else{
+                    userSeasonPoints = userSeasonPointsOpt.get();
+                }
+
+                userSeasonPoints.setPoints(userSeasonPoints.getPoints() + uniScoreIncreaseType.getIncreaseAmount());
+
+                userSeasonPointsRepository.save(userSeasonPoints);
+            }
+                userRepository.save(user);
+                badgeService.checkBadgesForUser(user.getId());
         } else {
             throw new IllegalArgumentException("Unknown activity type: " + activityType);
         }
@@ -469,5 +515,14 @@ public void softDeleteUserById(Long userId) {
         userSessionRepository.save(session);  
 
         return session.getSessionId();  
+    }
+
+
+
+    public void verfiyEmail(String firebaseUuid) {
+        Long id = userRepository.findUserIdByFirebaseUid(firebaseUuid).orElseThrow(() -> new IllegalArgumentException("Firebase uuid not found"));
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setEmailVerified(true);
+        userRepository.save(user);
     }
 }

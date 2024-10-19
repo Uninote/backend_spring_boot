@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
+import com.uninote.backend.dto.NoteSearchResponse;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
@@ -14,10 +15,13 @@ import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteService;
 import com.uninote.backend.service.UserService;
 import com.uninote.backend.utils.EncryptionUtil;
+import com.uninote.backend.validation.NoteValidation.CreateGroup;
+import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -153,7 +157,7 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<NoteDTO> saveNote(@RequestBody NoteDTO notedto) {
+    public ResponseEntity<NoteDTO> saveNote(@Validated(CreateGroup.class) @RequestBody NoteDTO notedto) {
         Note savedNote = noteService.saveNote(notedto);
         NoteDTO noteDto= EntityToDTOConverter.convertNoteToDTO(savedNote);
         return ResponseEntity.ok(noteDto);
@@ -290,12 +294,12 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
 
 
     @GetMapping("public/search")
-    public Page<NoteDTO> searchNotes(@RequestParam String keyword,
+    public NoteSearchResponse searchNotes(@RequestParam String keyword,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "likes") String sortBy,
         @RequestParam(defaultValue = "desc") String sortDir) {
-        return noteService.searchNotes(keyword, page, size, sortBy, sortDir);
+        return noteService.searchNotesWithEditDistancePaginated(keyword, 0.3 ,page ,size, sortBy, sortDir);
     }
 
     @GetMapping("/search/user/{userId}")
@@ -305,7 +309,7 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "likes") String sortBy,
         @RequestParam(defaultValue = "desc") String sortDir) {
-        return noteService.searchUserNotes(keyword,userId, page, size, sortBy, sortDir);
+        return noteService.searchUserNotes(keyword,userId,page ,size, sortBy, sortDir);
     }
     @GetMapping("/public/user-course/{userId}/{courseId}")
     public ResponseEntity<List<NoteDTO>> getPublicNotesByUserAndCourse(@PathVariable Long userId, @PathVariable Long courseId) {
@@ -340,7 +344,7 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody NoteDTO noteDto) {
+    public ResponseEntity<Note> updateNote(@PathVariable Long id,  @RequestBody NoteDTO noteDto) {
         Note updatedNote = noteService.updateNote(id, noteDto);
         return ResponseEntity.ok(updatedNote);
     }
@@ -384,4 +388,90 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         return uuid.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
     
+
+
+    @GetMapping("/public/recent/department/{departmentId}")
+    public ResponseEntity<Page<NoteDTO>> getPublicRecentNotesByDepartment(
+            @PathVariable Long departmentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "likes") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Department department = new Department();
+        department.setId(departmentId);
+        Page<NoteDTO> notes = noteService.getRecentPublicNotesByDepartment(department, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(notes);
+    }
+
+
+    @GetMapping("/public-by-type")
+public Page<NoteDTO> getPublicNotesByType(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "likes") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
+        @RequestParam(defaultValue = "typeId") Long typeId
+) {
+    return noteService.getPublicNotesByType(page, size, sortBy, sortDir, typeId);
+}
+
+@GetMapping("/public-by-type/university/{universityId}")
+public ResponseEntity<Page<NoteDTO>> getPublicNotesByUniversityByType(
+        @PathVariable Long universityId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "likes") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
+        @RequestParam(defaultValue = "typeId") Long typeId) {
+
+    University university = universityRepository.findById(universityId)
+            .orElseThrow(() -> new IllegalArgumentException("University not found"));
+    Page<NoteDTO> notes = noteService.getPublicNotesByUniversityByType(university, page, size, sortBy, sortDir, typeId);
+    return ResponseEntity.ok(notes);
+}
+
+@GetMapping("/public-by-type/department/{departmentId}")
+public ResponseEntity<Page<NoteDTO>> getPublicNotesByDepartmentByType(
+        @PathVariable Long departmentId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "likes") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
+        @RequestParam(defaultValue = "typeId") Long typeId) {
+
+    Department department = new Department();
+    department.setId(departmentId);
+    Page<NoteDTO> notes = noteService.getPublicNotesByDepartmentByType(department, page, size, sortBy, sortDir, typeId);
+    return ResponseEntity.ok(notes);
+}
+
+@GetMapping("/public-by-type/department-semester/{departmentId}/{semester}")
+public ResponseEntity<Page<NoteDTO>> getPublicNotesByDepartmentAndSemesterByType(
+        @PathVariable Long departmentId,
+        @PathVariable int semester,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "likes") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
+        @RequestParam(defaultValue = "typeId") Long typeId) {
+
+    Page<NoteDTO> notes = noteService.getPublicNotesByDepartmentAndSemesterByType(departmentId, semester, page, size, sortBy, sortDir, typeId);
+    return ResponseEntity.ok(notes);
+}
+
+@GetMapping("/public-by-type/course/{courseId}")
+public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourseByType(
+        @PathVariable Long courseId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "likes") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
+        @RequestParam(defaultValue = "typeId") Long typeId) {
+
+    Course course = courseRepository.findById(courseId)
+            .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+    Page<NoteDTO> notes = noteService.getPublicNotesByCourseByType(course, page, size, sortBy, sortDir, typeId);
+    return ResponseEntity.ok(notes);
+}
 }

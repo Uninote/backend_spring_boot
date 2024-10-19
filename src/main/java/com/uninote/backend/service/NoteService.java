@@ -5,6 +5,8 @@ import org.springframework.data.domain.Sort;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.NoteDTO;
+import com.uninote.backend.dto.NoteSearchResponse;
+import com.uninote.backend.dto.NoteSearchResult;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
@@ -13,6 +15,7 @@ import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
+import com.uninote.backend.entity.NoteType;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
@@ -23,6 +26,7 @@ import com.uninote.backend.repository.NoteClickRepository;
 import com.uninote.backend.repository.NoteLikeRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
+import com.uninote.backend.repository.NoteTypeRepository;
 import com.uninote.backend.repository.NoteViewRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UserRepository;
@@ -33,6 +37,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.uninote.backend.converter.Converters;
+import com.uninote.backend.converter.Converters.*;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,6 +100,9 @@ public class NoteService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NoteTypeRepository noteTypeRepository;
 
     
 
@@ -335,6 +347,10 @@ public class NoteService {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid course ID: " + noteDto.getCourseId()));
             note.setCourse(course);
         }
+        if (noteDto.getNoteTypeId() != null) {
+            NoteType noteType = noteTypeRepository.findById(noteDto.getNoteTypeId()).orElseThrow(() -> new IllegalArgumentException(("Incorrect Note Type Id")) );
+            note.setNoteType(noteType);
+        }
         if (noteDto.getUserId() != null) {
             User user = userRepository.findById(noteDto.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + noteDto.getUserId()));
@@ -355,6 +371,21 @@ public class NoteService {
         if (noteDto.getFilename() != null) {
             note.setFilename(noteDto.getFilename());
         }
+
+        if (noteDto.getProfessor() != null) {
+        note.setProfessor(noteDto.getProfessor());
+    }
+
+    
+    if (noteDto.getAcademicYear() != null) {
+        note.setAcademicYear(noteDto.getAcademicYear());
+    }
+
+    if (noteDto.getNoteTypeId() != null) {
+        NoteType noteType = noteTypeRepository.findById(noteDto.getNoteTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid note type ID: " + noteDto.getNoteTypeId()));
+        note.setNoteType(noteType);
+    }
 
         note.setUpdatedAt(LocalDateTime.now());
 
@@ -382,8 +413,26 @@ public class NoteService {
     public NoteDTO getNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
         NoteDTO dto =  convertToDTO(note);
+        dto.setSemester(note.getCourse().getSemester());
         dto.setUsername(note.getUser().getUsername());
         dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
+        if (note.getNoteType() != null) {
+            if (note.getNoteType().getTypeId() != null) {
+                dto.setNoteTypeId(note.getNoteType().getTypeId());
+            }
+            if (note.getNoteType().getTypeName() != null) {
+                dto.setNoteType(note.getNoteType().getTypeName());
+            }
+        }
+        
+        if (note.getAcademicYear() != null) {
+            dto.setAcademicYear(note.getAcademicYear());
+        }
+        
+        if (note.getProfessor() != null) {
+            dto.setProfessor(note.getProfessor());
+        }
+        
         return dto;
     }
 
@@ -447,7 +496,7 @@ public class NoteService {
         validSortFields.put("likes", "likes");            
         validSortFields.put("createdAt", "createdAt");    
         validSortFields.put("title", "title");            
-    
+        
         
         String sortField = validSortFields.getOrDefault(sortBy, "likes");
     
@@ -620,7 +669,172 @@ public class NoteService {
         Pageable pageable = PageRequest.of(page, size, sort);
         return noteRepository.searchUserNotes(keyword,userId, pageable);
     }
+
+    public Page<NoteDTO> searchUserNotesWithEditDistance(String keyword,Long userId, int threshold, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "like_count");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
     
+        String sortField = validSortFields.getOrDefault(sortBy, "like_count");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Object[]> result = noteRepository.searchUserNotesWithEditDistance(keyword, userId,threshold, pageable);
+        return result.map(objects -> {
+            NoteDTO noteDTO = new NoteDTO();
+            noteDTO.setNoteId((Long) objects[0]);
+            noteDTO.setCourseId((Long) objects[1]);
+            noteDTO.setUserId((Long) objects[2]);
+            noteDTO.setTitle((String) objects[3]);
+            noteDTO.setDescription((String) objects[4]);
+            noteDTO.setPdfUrl((String) objects[5]);
+            noteDTO.setFilename((String) objects[6]);
+            noteDTO.setIsPublic((Boolean) objects[7]);
+            noteDTO.setCourseName((String) objects[8]);
+            noteDTO.setUniversityName((String) objects[9]); 
+            noteDTO.setDepartmentName((String) objects[10]);
+            noteDTO.setTotalLikes((Long) objects[11]);
+            noteDTO.setUsername((String) objects[12]);
+            noteDTO.setProfileImageUrl((String) objects[13]);
+            noteDTO.setCreatedAt((LocalDateTime) objects[14]);
+            noteDTO.setProfessor((String) objects[15]);
+            noteDTO.setNoteType((String) objects[16]);
+            noteDTO.setAcademicYear((String) objects[17]);
+            return noteDTO;
+        });
+    }
+    
+
+    public List<NoteDTO> searchNotesWithEditDistance(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "like_count");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "like_count");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+        int start_row = page*size;
+        int end_row =  start_row+size; 
+        int isShort = 0;
+        if (keyword.length() <= 4) {
+            isShort = 1;
+        }
+        List<Object[]> result = noteRepository.searchNotes(keyword, (float)0.3, start_row, end_row);
+        return result.stream().map(objects -> {
+            NoteDTO noteDTO = new NoteDTO();
+    
+            
+            noteDTO.setNoteId(Converters.convertToLong(objects[0]));
+            noteDTO.setCourseId(Converters.convertToLong(objects[1]));
+            noteDTO.setUserId(Converters.convertToLong(objects[2]));
+            
+            noteDTO.setTitle(Converters.convertToString(objects[3]));
+            noteDTO.setDescription(Converters.convertToString(objects[4]));
+            noteDTO.setPdfUrl(Converters.convertToString(objects[5]));
+            noteDTO.setFilename(Converters.convertToString(objects[6]));
+    
+            noteDTO.setIsPublic(Converters.convertToBoolean(objects[7]));
+    
+            noteDTO.setCourseName(Converters.convertToString(objects[8]));
+            noteDTO.setUniversityName(Converters.convertToString(objects[9]));
+            noteDTO.setDepartmentName(Converters.convertToString(objects[10]));
+    
+            noteDTO.setTotalLikes(Converters.convertToLong(objects[11]));
+    
+            noteDTO.setUsername(Converters.convertToString(objects[12]));
+            noteDTO.setProfileImageUrl(Converters.convertToString(objects[13]));
+    
+            noteDTO.setCreatedAt(Converters.convertToLocalDateTime(objects[14]));
+    
+            noteDTO.setProfessor(Converters.convertToString(objects[15]));
+            noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
+            noteDTO.setNoteType(Converters.convertToString(objects[17]));
+            return noteDTO;
+        }).collect(Collectors.toList());
+    }
+
+
+    public NoteSearchResponse searchNotesWithEditDistancePaginated(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
+    Map<String, String> validSortFields = new HashMap<>();
+    validSortFields.put("likes", "like_count");
+    validSortFields.put("createdAt", "createdAt");
+    validSortFields.put("title", "title");
+
+    String sortField = validSortFields.getOrDefault(sortBy, "like_count");
+
+    // Create a Sort object for ordering the results
+    Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+            ? Sort.by(sortField).ascending()
+            : Sort.by(sortField).descending();
+
+    Pageable pageable = PageRequest.of(page, size, sort);
+    int start_row = page * size;
+    int end_row = start_row + size;
+
+    int isShort = 0;
+    if (keyword.length() <= 4) {
+        isShort = 1;
+    }
+
+    // Call the repository method to get the results with the additional fields
+    List<Object[]> res = noteRepository.searchNotesWithPagination(keyword, (float) threshold, start_row, end_row);
+    List<NoteDTO> dtos = res.stream().map(objects -> {
+        NoteDTO noteDTO = new NoteDTO();
+
+        
+        noteDTO.setNoteId(Converters.convertToLong(objects[0]));
+        noteDTO.setCourseId(Converters.convertToLong(objects[1]));
+        noteDTO.setUserId(Converters.convertToLong(objects[2]));
+        
+        noteDTO.setTitle(Converters.convertToString(objects[3]));
+        noteDTO.setDescription(Converters.convertToString(objects[4]));
+        noteDTO.setPdfUrl(Converters.convertToString(objects[5]));
+        noteDTO.setFilename(Converters.convertToString(objects[6]));
+
+        noteDTO.setIsPublic(Converters.convertToBoolean(objects[7]));
+
+        noteDTO.setCourseName(Converters.convertToString(objects[8]));
+        noteDTO.setUniversityName(Converters.convertToString(objects[9]));
+        noteDTO.setDepartmentName(Converters.convertToString(objects[10]));
+
+        noteDTO.setTotalLikes(Converters.convertToLong(objects[11]));
+
+        noteDTO.setUsername(Converters.convertToString(objects[12]));
+        noteDTO.setProfileImageUrl(Converters.convertToString(objects[13]));
+
+        noteDTO.setCreatedAt(Converters.convertToLocalDateTime(objects[14]));
+
+        noteDTO.setProfessor(Converters.convertToString(objects[15]));
+        noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
+        noteDTO.setNoteType(Converters.convertToString(objects[17]));
+        return noteDTO;
+    }).collect(Collectors.toList());
+   
+    long totalElements = 0;
+    int totalPages = 0;
+    if (!res.isEmpty() && res.get(0).length > 18) { 
+        totalElements = Converters.convertToLong(res.get(0)[20]);
+        if(start_row < end_row) {
+            totalPages = (int) Math.ceil((double) totalElements / size);
+        } else {
+            totalPages =1;
+        }
+    }
+
+    
+    return new NoteSearchResponse(dtos, totalElements, totalPages);
+}
+
+
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid course ID"));
@@ -635,6 +849,20 @@ public class NoteService {
         note.setPdfUrl(noteDto.getPdfUrl());
         note.setFilename(noteDto.getFilename());
         note.setIsPublic(noteDto.getIsPublic());
+        if (noteDto.getProfessor() != null) {
+            note.setProfessor(noteDto.getProfessor());
+        }
+    
+        
+        if (noteDto.getAcademicYear() != null) {
+            note.setAcademicYear(noteDto.getAcademicYear());
+        }
+    
+        if (noteDto.getNoteTypeId() != null) {
+            NoteType noteType = noteTypeRepository.findById(noteDto.getNoteTypeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid note type ID: " + noteDto.getNoteTypeId()));
+            note.setNoteType(noteType);
+        }
 
         Note savedNote = noteRepository.save(note);
         boolean hasReceivedFirstLog = uniscoreIncreaseLogsRepository.existsByUserIdAndIncreaseTypeId(user.getId(), 22L);
@@ -667,5 +895,117 @@ public class NoteService {
     
     public Optional<String> findUuidByNoteId(Long id) {
         return noteRepository.findUuidById(id);
+    }
+
+
+    public Page<NoteDTO> getRecentPublicNotesByDepartment(Department department, int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findRecentPublicNotesByDepartment(department,  pageable);
+    }
+
+    public Page<NoteDTO> getPublicNotesByDepartmentAndSemesterByType(Long departmentId, int semester, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartmentAndSemesterByType(departmentId, semester, typeId, pageable);
+    }
+    
+    public Page<NoteDTO> getPublicNotesByDepartmentByType(Department department, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByDepartmentByType(department, typeId,pageable);
+    }
+    
+
+
+    public Page<NoteDTO> getPublicNotesByCourseByType(Course course, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByCourseByType(course, typeId,pageable);
+    }
+    
+
+    public Page<NoteDTO> getPublicNotesByUniversityByType(University university, int page, int size, String sortBy, String sortDir, Long typeId) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByUniversityByType(university,typeId, pageable);
+    }
+
+
+    public Page<NoteDTO> getPublicNotesByType(int page, int size, String sortBy, String sortDir, Long typeId) {
+        
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");            
+        validSortFields.put("createdAt", "createdAt");    
+        validSortFields.put("title", "title");            
+    
+        
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
+                    ? Sort.by(sortField).ascending() 
+                    : Sort.by(sortField).descending();
+    
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        
+        return noteRepository.findPublicNotesByType(pageable, typeId);
     }
 }

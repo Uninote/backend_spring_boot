@@ -21,8 +21,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
-               "FROM users u " +
-               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "FROM admin.users u " +
+               "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) " +
                "ORDER BY u.uniscore DESC " +
                "FETCH FIRST 100 ROWS ONLY", 
@@ -31,8 +31,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
-               "FROM users u " +
-               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "FROM admin.users u " +
+               "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
@@ -42,8 +42,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
-               "FROM users u " +
-               "JOIN ranks r ON u.rank_id = r.rank_id " +
+               "FROM admin.users u " +
+               "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
@@ -53,7 +53,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     //Optional<User> findByFirebaseUid(String firebaseUid);
 
-    @Query(value = "SELECT user_id FROM users  WHERE firebase_uid = :firebaseUid", nativeQuery = true)
+    @Query(value = "SELECT user_id FROM admin.users  WHERE firebase_uid = :firebaseUid", nativeQuery = true)
     Optional<Long> findUserIdByFirebaseUid(@Param("firebaseUid") String firebaseUid);
 
     @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
@@ -71,7 +71,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.id AS id, u.firebaseUid AS firebaseUid, u.name AS name, " +
        "dn.name AS departmentName, dn.fullName AS departmentFullName, " +
        "un.name AS universityName, un.fullName AS universityFullName, " +
-       "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+       "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, " +
        "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id) AS totalNotes, " +
        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true) AS totalPublicNotes, " +
@@ -86,7 +86,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
 
     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
-      "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+      "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, " +
       "dn.name AS departmentName, " +
       "un.name AS universityName " +
       "FROM User u " +
@@ -97,7 +97,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.department_id ORDER BY u.uniscore DESC) AS rank " +
-               "  FROM users u " +
+               "  FROM admin.users u " +
                "  WHERE u.role_id IN (1, 2)" +
                ") ranked_users WHERE ranked_users.user_id = :userId", 
        nativeQuery = true)
@@ -106,7 +106,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.university_id ORDER BY u.uniscore DESC) AS rank " +
-               "  FROM users u " +
+               "  FROM admin.users u " +
                "  WHERE u.role_id IN (1, 2)" +
                ") ranked_users WHERE ranked_users.user_id = :userId", 
        nativeQuery = true)
@@ -116,7 +116,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (ORDER BY u.uniscore DESC) AS rank " +
-               "  FROM users u " +
+               "  FROM admin.users u " +
                "  WHERE u.role_id IN (1, 2)" +
                ") ranked_users WHERE ranked_users.user_id = :userId", 
        nativeQuery = true)
@@ -126,9 +126,11 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
         @Query("SELECT u.id FROM User u WHERE u.username = :username")
       Optional<Long> findUserIdByUsername(@Param("username") String username);
 
-        @Query(value = "SELECT email FROM users u WHERE username = :username", nativeQuery = true)
+        @Query(value = "SELECT email FROM admin.users u WHERE username = :username", nativeQuery = true)
         Optional<String> findUserEmailByUsername(@Param("username") String username);
 
+
+        List<User> findAllByAndEmailVerifiedTrueAndUsernameIsNotNull();
 
 
 

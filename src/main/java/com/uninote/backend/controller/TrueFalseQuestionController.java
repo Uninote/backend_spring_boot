@@ -4,6 +4,8 @@ import com.uninote.backend.dto.TrueFalseQuestionDTO;
 import com.uninote.backend.entity.TrueFalseQuestion;
 import com.uninote.backend.interfaceProjection.TrueFalseQuestionProjection;
 import com.uninote.backend.service.QuestionService;
+import com.uninote.backend.service.TrueFalseQuestionService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,9 @@ public class TrueFalseQuestionController {
     @Autowired
     private QuestionService questionService;
 
+    @Autowired
+    private TrueFalseQuestionService trueFalseQuestionService;
+
     @PostMapping
     public ResponseEntity<TrueFalseQuestion> createTrueFalseQuestion(@RequestBody TrueFalseQuestionDTO trueFalseQuestionDTO) {
         TrueFalseQuestion createdTrueFalseQuestion = questionService.createTrueFalseQuestion(trueFalseQuestionDTO);
@@ -26,6 +31,18 @@ public class TrueFalseQuestionController {
     @GetMapping("/course/{courseId}")
     public ResponseEntity<List<TrueFalseQuestionProjection>> getTrueFalseQuestionsByCourseId(@PathVariable Long courseId, @RequestParam(value = "limit", defaultValue = "10") int limit) {
         return ResponseEntity.ok(questionService.getRandomTrueFalseQuestionsByCourseId(courseId, limit));
+    }
+
+    @PutMapping("/{questionId}")
+    public ResponseEntity<TrueFalseQuestionDTO> updateTrueFalseQuestion(
+            @PathVariable Long questionId,
+            @RequestBody TrueFalseQuestionDTO updatedQuestionDTO) {
+
+       
+        TrueFalseQuestionDTO updatedQuestion = trueFalseQuestionService.updateTrueFalseQuestion(questionId, updatedQuestionDTO);
+
+        
+        return ResponseEntity.ok(updatedQuestion);
     }
 }
 

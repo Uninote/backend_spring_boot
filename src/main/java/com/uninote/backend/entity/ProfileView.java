@@ -5,7 +5,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "profile_views")
+@Table(name = "profile_views", schema = "ADMIN")
 public class ProfileView {
 
     @Id

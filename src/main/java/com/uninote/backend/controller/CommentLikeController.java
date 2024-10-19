@@ -38,4 +38,17 @@ public class CommentLikeController {
         long totalLikes = commentLikeService.getTotalCommentLikes(commentId);
         return ResponseEntity.ok(totalLikes);
     }
+
+    @PostMapping("/toggle-like/{userId}/{commentId}")
+    public ResponseEntity<String> toggleLikeComment(@PathVariable Long commentId, @PathVariable Long userId) {
+        boolean isLiked = commentLikeService.isCommentLikedByUser(commentId, userId);
+
+        if (isLiked) {
+            commentLikeService.unlikeComment(commentId, userId);
+            return ResponseEntity.ok("Comment unliked successfully.");
+        } else {
+            commentLikeService.likeComment(commentId, userId);
+            return ResponseEntity.ok("Comment liked successfully.");
+        }
+    }
 }

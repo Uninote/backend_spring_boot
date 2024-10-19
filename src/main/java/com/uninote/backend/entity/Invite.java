@@ -2,9 +2,10 @@ package com.uninote.backend.entity;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "invites")
+@Table(name = "invites", schema = "ADMIN")
 public class Invite {
 
     @Id
@@ -27,6 +28,9 @@ public class Invite {
     @Column(name = "date_of_sign_up")
     private LocalDateTime dateOfSignUp;
 
+    @Column(name = "uuid_col", nullable = false, unique = true, updatable = false)
+    private String uuid;
+
     public Invite() {
         this.dateOfInvite = LocalDateTime.now();
     }
@@ -36,9 +40,9 @@ public class Invite {
         this.invitee = invitee;
         this.dateOfInvite = LocalDateTime.now();
         this.dateOfSignUp = dateOfSignUp;
+        this.uuid = UUID.randomUUID().toString(); 
     }
 
-    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -77,5 +81,13 @@ public class Invite {
 
     public void setDateOfSignUp(LocalDateTime dateOfSignUp) {
         this.dateOfSignUp = dateOfSignUp;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

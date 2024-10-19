@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
-@Table(name = "created_tests")
+@Table(name = "created_tests", schema = "ADMIN")
 public class CreatedTest {
 
     @Id
@@ -30,7 +30,7 @@ public class CreatedTest {
     private Long sessionId;
     @Column(name = "TYPE_ID", nullable = false)
     private Long typeId;
-
+    
     
     @Column(name = "COURSE_ID", nullable = true)  
     private Long courseId;

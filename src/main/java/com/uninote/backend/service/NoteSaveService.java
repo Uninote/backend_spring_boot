@@ -15,6 +15,7 @@ import com.uninote.backend.repository.UserSessionRepository;
 
 import java.util.Optional;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -58,12 +59,14 @@ public class NoteSaveService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         User noteCreator = note.getUser();
-
+        
         Optional<NoteSave> noteSave = noteSaveRepository.findByNoteIdAndUserId(noteId, userId);
         if (!noteSave.isPresent()) {
             NoteSave newNoteSave = new NoteSave(noteId, userId);
             noteSaveRepository.save(newNoteSave);
-            userService.updateUniScore(noteCreator, 2l);
+            if(noteCreator.getId() != userId) {
+                userService.updateUniScore(noteCreator, 2l);
+            }
         } else if (!noteSave.get().getIsActive()) {
             noteSave.get().setIsActive(true);
             noteSaveRepository.save(noteSave.get());
@@ -105,7 +108,9 @@ public class NoteSaveService {
             noteSave = new NoteSave(noteId, userId);
             noteSave.setIsActive(true);
             noteSaveRepository.save(noteSave);
-            userService.updateUniScore(noteCreator, 2l);
+            if (!noteCreator.getId().equals(userId)) {
+                userService.updateUniScore(noteCreator, 2l);
+            }
             saveHistoryService.saveSaveHistory(userId, noteId, 1, sessionId);  
         } else if (noteSave.getIsActive()) {
             noteSave.setIsActive(false);

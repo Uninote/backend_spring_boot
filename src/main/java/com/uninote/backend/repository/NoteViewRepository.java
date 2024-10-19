@@ -18,4 +18,6 @@ public interface NoteViewRepository extends JpaRepository<NoteView, Long> {
     List<Object []> findTop10ByOrderByViewCountDesc();
 
     List<NoteView> findByCreatedAtAfter(LocalDateTime localDateTime);
+
+    
 }

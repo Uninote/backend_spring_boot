@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.util.Set;
 
 @Entity
-@Table(name = "badge_types")
+@Table(name = "badge_types", schema = "ADMIN")
 public class BadgeType {
 
     @Id

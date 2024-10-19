@@ -1,6 +1,9 @@
 package com.uninote.backend.entity;
 
 import javax.persistence.*;
+
+import org.hibernate.Hibernate;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,7 +13,7 @@ import java.util.Set;
     @UniqueConstraint(columnNames = "username"),
     @UniqueConstraint(columnNames = "email"),
     @UniqueConstraint(columnNames = "firebase_uid")
-})
+}, schema = "ADMIN")
 public class User {
 
     private static final String DEFAULT_PROFILE_URL = "https://firebasestorage.googleapis.com/v0/b/uninote-app.appspot.com/o/images%2Fdefault-images%2Fdefault-woman-pfp.png?alt=media&token=d148c633-ef3f-4161-bf97-413c74415c3d";
@@ -76,6 +79,8 @@ public class User {
     @Column(name = "banner_url")
     private String bannerUrl;
 
+    @Column(name = "instagram_username", nullable = true, length = 100)
+    private String instagramUsername;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -87,6 +92,10 @@ public class User {
 
     @ManyToMany(mappedBy = "approvedUsers")
     private Set<User> approvedByUsers = new HashSet<>();
+
+    @Column(name = "email_verified", nullable = true)
+    private boolean emailVerified = false;
+
 
     @PrePersist
     protected void onCreate() {
@@ -103,15 +112,22 @@ public class User {
         if (profileImageUrl==null) {
             profileImageUrl = DEFAULT_PROFILE_URL;
         }
-
+        emailVerified = false;
         updatedAt = LocalDateTime.now();
         //lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
+
+        if (department != null && Hibernate.isInitialized(department)) {
+            university = this.department.getUniversity();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        if (department != null && Hibernate.isInitialized(department)) {
+            university = this.department.getUniversity();
+        }
     }
 
     public User() {}
@@ -286,4 +302,21 @@ public class User {
     public void setApprovedByUsers(Set<User> approvedByUsers) {
         this.approvedByUsers = approvedByUsers;
     }
+
+    public String getInstagramUsername() {
+        return instagramUsername;
+    }
+
+    public void setInstagramUsername(String instagramUsername) {
+        this.instagramUsername = instagramUsername;
+    }
+
+    public boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
 }

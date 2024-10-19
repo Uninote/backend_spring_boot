@@ -6,7 +6,7 @@ import java.util.Set;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "courses")
+@Table(name = "courses", schema = "ADMIN")
 public class Course {
 
     @Id
@@ -27,8 +27,7 @@ public class Course {
     private int semester;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<CourseName> courseNames = new HashSet<>()
-    ;
+    private Set<CourseName> courseNames = new HashSet<>();
     // Getters and setters
     public Long getId() {
         return id;
@@ -58,7 +57,7 @@ public class Course {
         this.semester = sem;
     }
 
-    public int getmSemester() {
+    public int getSemester() {
         return this.semester;
     }
 

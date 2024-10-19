@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_badges")
+@Table(name = "user_badges", schema = "ADMIN")
 public class UserBadge {
     @EmbeddedId
     private UserBadgeId id = new UserBadgeId();
