@@ -1,5 +1,5 @@
 package com.uninote.backend.config.security;
-
+/* 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -26,3 +26,4 @@ public class AuthenticationService {
         return new ApiKeyAuthentication(requestApiKey, AuthorityUtils.NO_AUTHORITIES);
     }
 }
+*/
