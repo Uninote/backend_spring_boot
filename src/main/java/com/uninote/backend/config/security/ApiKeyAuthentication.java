@@ -1,5 +1,5 @@
 package com.uninote.backend.config.security;
-
+/* 
 import java.util.Collection;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -23,4 +23,4 @@ public class ApiKeyAuthentication extends AbstractAuthenticationToken {
     public Object getPrincipal() {
         return apiKey;
     }
-}
+}*/
