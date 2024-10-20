@@ -287,7 +287,7 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourse(
         @RequestParam(defaultValue = "desc") String sortDir) {
 
     Course course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+            .orElseThrow(() -> new IllegalArgumentException("Co urse not found"));
     Page<NoteDTO> notes = noteService.getPublicNotesByCourse(course, page, size, sortBy, sortDir);
     return ResponseEntity.ok(notes);
 }

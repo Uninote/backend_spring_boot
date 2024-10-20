@@ -56,10 +56,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "SELECT user_id FROM admin.users  WHERE firebase_uid = :firebaseUid", nativeQuery = true)
     Optional<Long> findUserIdByFirebaseUid(@Param("firebaseUid") String firebaseUid);
 
-    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId")
+    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId AND n.deleted = false")
     long countUserNotes(Long userId);
 
-    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId AND n.isPublic = true")
+    @Query("SELECT COUNT(n) FROM Note n WHERE n.user.id = :userId AND n.isPublic = true AND n.deleted = false")
     long countUserPublicNotes(Long userId);
 
     @Query("SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = :userId")
@@ -73,8 +73,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
        "un.name AS universityName, un.fullName AS universityFullName, " +
        "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, " +
        "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
-       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id) AS totalNotes, " +
-       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true) AS totalPublicNotes, " +
+       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id and n.deleted = 0) AS totalNotes, " +
+       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = 0) AS totalPublicNotes, " +
        "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes " +
        "FROM User u " +
        "JOIN DepartmentName dn ON dn.department = u.department " +
@@ -88,8 +88,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
       "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, " +
       "dn.name AS departmentName, " +
-      "un.name AS universityName " +
-      "FROM User u " +
+      "un.name AS universityName " +    
+      "FROM User u " +   
       "JOIN DepartmentName dn ON dn.department = u.department AND dn.language.id = :languageId " +
       "JOIN UniversityName un ON un.university = u.university AND un.language.id = :languageId " +
       "WHERE u.id = :userId")
