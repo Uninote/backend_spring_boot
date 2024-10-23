@@ -48,4 +48,11 @@ public class UserSeasonPointsService {
         List<UserInfoProjection> res = userSeasonPointsRepository.top100UsersPerSeasonAndUniversity(seasonId,universityId);
         return res;
     }
+
+    public List<UserInfoProjection> getTop100UsersByCurrentSeasonAndDepartment(Long departmentId) {
+        Season season = seasonService.getCurrentSeason().orElseThrow(() -> new IllegalArgumentException("No current Season"));
+        Long seasonId = season.getSeasonId();
+        List<UserInfoProjection> res = userSeasonPointsRepository.top100UsersPerSeasonAndDepartment(seasonId, departmentId);
+        return res;
+    }
 }

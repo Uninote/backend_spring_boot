@@ -30,4 +30,10 @@ public class UserSeasonPointsController {
         List<UserInfoProjection> users = userSeasonPointsService.getTop100UsersByCurrentSeasonAndUniversity(universityId);
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/current-season/department/{departmentId}")
+    public ResponseEntity<List<UserInfoProjection>> getTop100UserCurrentSeasonAndDepartment(@PathVariable Long departmentId) {
+        List<UserInfoProjection> users = userSeasonPointsService.getTop100UsersByCurrentSeasonAndDepartment(departmentId);
+        return ResponseEntity.ok(users);
+    }
 }
