@@ -126,12 +126,13 @@ public class BadgeService {
 
     @Transactional
     public void assignBadgeToUser(Long userId, Long badgeId) {
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Badge badge = badgeRepository.findById(badgeId)
                 .orElseThrow(() -> new IllegalArgumentException("Badge not found"));
 
-        if (!meetsRequirement(user, badge)) {
+        if (!meetsRequirement(user, badge) && badge.getType().getId()!=5) {
             throw new IllegalArgumentException("User does not meet the requirements for this badge.");
         }
         logger.debug("assigning badge {}", badge.getId());
@@ -263,15 +264,18 @@ public class BadgeService {
     public void checkSpecialBadgesForUser(Long userId, Long courseId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        if(!noteRepository.existsByCourseId(courseId)) {
+        if(noteRepository.existsByCourseId(courseId) == 0) {
             assignBadgeToUser(userId, PIONEER_BADGE_ID);
         }
         Long departmentId = departmentRepository.getDepartmentIdByCourseId(courseId);
-        if(!noteRepository.existsByDepartmentId(departmentId)) {
+        if(noteRepository.existsByDepartmentId(departmentId) == 0) {
             assignBadgeToUser(userId, EXPERT_PIONEER_BADGE_ID);
         }
         
     }
+
+
+
 
    
 }
