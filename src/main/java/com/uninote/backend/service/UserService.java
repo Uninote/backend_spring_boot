@@ -398,6 +398,14 @@ public void softDeleteUserById(Long userId) {
                 } else{
                     userSeasonPoints = userSeasonPointsOpt.get();
                 }
+                if(user.getSeasonScore() != null) {
+                    user.setSeasonScore(user.getSeasonScore() + uniScoreIncreaseType.getIncreaseAmount());
+                } else {
+                    user.setSeasonScore((long)uniScoreIncreaseType.getIncreaseAmount());
+
+                }
+
+                userRepository.save(user);
 
                 userSeasonPoints.setPoints(userSeasonPoints.getPoints() + uniScoreIncreaseType.getIncreaseAmount());
 

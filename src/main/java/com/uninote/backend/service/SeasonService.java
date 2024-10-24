@@ -39,6 +39,8 @@ public class SeasonService {
             userSeasonPointsId.setSeasonId(savedSeason.getSeasonId());
             userSeasonPointsId.setUserId(user.getId());
             UserSeasonPoints userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
+            user.setSeasonScore(0L);
+            userRepository.save(user);
             userSeasonPointsRepository.save(userSeasonPoints); 
         }
 
