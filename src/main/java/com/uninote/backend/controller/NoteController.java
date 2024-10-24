@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.NoteSearchResponse;
 import com.uninote.backend.entity.Course;
@@ -474,4 +475,11 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourseByType(
     Page<NoteDTO> notes = noteService.getPublicNotesByCourseByType(course, page, size, sortBy, sortDir, typeId);
     return ResponseEntity.ok(notes);
 }
+
+
+@GetMapping("/user/{userId}/course-notes")
+    public ResponseEntity<List<CourseNameDTO>> getCoursesWithNotesByUser(@PathVariable Long userId) {
+        List<CourseNameDTO> courses = noteService.getCoursesWithNotesByUser(userId);
+        return ResponseEntity.ok(courses);
+    }
 }

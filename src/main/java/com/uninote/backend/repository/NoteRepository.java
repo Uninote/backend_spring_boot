@@ -9,6 +9,8 @@ import com.uninote.backend.dto.NoteSearchResult;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
+import com.uninote.backend.dto.CourseDTO;
+import com.uninote.backend.dto.CourseNameDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -735,5 +737,14 @@ nativeQuery = true)
 int existsByDepartmentId(@Param("departmentId") Long departmentId);
 
 
-}
+@Query("SELECT DISTINCT new com.uninote.backend.dto.CourseNameDTO(c.id, cn.name, 'EN') " +
+       "FROM Note n " +
+       "JOIN n.course c " +
+       "JOIN c.courseNames cn " +
+       "WHERE n.user.id = :userId AND "+
+       "n.deleted = false")
+List<CourseNameDTO> findCoursesWithNotesByUserId(@Param("userId") Long userId);
+
+
+}  
 

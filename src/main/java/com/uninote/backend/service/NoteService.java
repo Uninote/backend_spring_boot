@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.NoteSearchResponse;
 import com.uninote.backend.dto.NoteSearchResult;
@@ -1012,5 +1013,10 @@ public class NoteService {
     
         
         return noteRepository.findPublicNotesByType(pageable, typeId);
+    }
+
+
+    public List<CourseNameDTO> getCoursesWithNotesByUser(Long userId) {
+        return noteRepository.findCoursesWithNotesByUserId(userId);
     }
 }

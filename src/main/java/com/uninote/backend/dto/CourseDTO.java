@@ -19,6 +19,7 @@
             this.semester = semester;
             this.courseNames = courseNames;
         }
+        
 
         public Long getId() {
             return id;
