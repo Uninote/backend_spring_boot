@@ -136,6 +136,7 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
 
         List<User> findAllByAndEmailVerifiedTrueAndUsernameIsNotNull();
 
+        List<User> findAllByUsernameIsNotNull();
 
 
 

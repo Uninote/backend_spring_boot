@@ -32,7 +32,7 @@ public class SeasonService {
     @Transactional
     public Season createSeason(Season season) {
         Season savedSeason = seasonRepository.save(season);
-        List<User> allUsers = userRepository.findAllByAndEmailVerifiedTrueAndUsernameIsNotNull();
+        List<User> allUsers = userRepository.findAllByUsernameIsNotNull();
 
         for (User user : allUsers) {
             UserSeasonPointsId userSeasonPointsId = new UserSeasonPointsId();
