@@ -38,6 +38,11 @@ import javax.transaction.Transactional;
 
 @Service
 public class BadgeService {
+
+
+    private static final long PIONEER_BADGE_ID = 13L;
+
+    private static final long EXPERT_PIONEER_BADGE_ID = 14L;
     @Autowired
     private UserRepository userRepository;
 
@@ -247,6 +252,19 @@ public class BadgeService {
         }
     }
 
+    
+    public void checkSpecialBadgesForUser(Long userId, Long courseId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if(!noteRepository.existsByCourseId(courseId)) {
+            assignBadgeToUser(userId, PIONEER_BADGE_ID);
+        }
+          
+        if(!noteRepository.existsByDepartmentId(courseId)) {
+            assignBadgeToUser(userId, EXPERT_PIONEER_BADGE_ID);
+        }
+        
+    }
 
    
 }

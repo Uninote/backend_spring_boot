@@ -719,5 +719,19 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
             "AND n.isPublic = true AND n.deleted = false")
    Page<NoteDTO> findPublicNotesByType(Pageable pageable, @Param("typeId") Long typeId);
 
+
+
+   @Query(value = "SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END FROM adminn.NOTES WHERE COURSE_ID = :courseId", nativeQuery = true)
+    boolean existsByCourseId(@Param("courseId") Long courseId);
+
+
+    @Query(value = "SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END " +
+               "FROM admin.NOTES n " +
+               "JOIN admin.COURSES c ON n.COURSE_ID = c.COURSE_ID " +
+               "JOIN admin.DEPARTMENTS d ON c.DEPARTMENT_ID = d.DEPARTMENT_ID " +
+               "WHERE d.DEPARTMENT_ID = :departmentId", 
+       nativeQuery = true)
+boolean existsByDepartmentId(@Param("departmentId") Long departmentId);
+
 }
 

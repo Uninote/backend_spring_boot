@@ -23,6 +23,6 @@ public interface SeasonRepository extends JpaRepository<Season, Long> {
            "(s.startDate < :endDate AND s.endDate > :startDate)")
     Optional<Season> findOverlappingSeason(LocalDateTime startDate, LocalDateTime endDate);
 
-    
+        
 
 }

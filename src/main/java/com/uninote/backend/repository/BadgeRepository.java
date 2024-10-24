@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BadgeRepository extends JpaRepository<Badge, Long> {
-
     
-    
+    @Query("SELECT * FROM BADGE b WHERE b.type.id = 5")
+    List<Badge> findSpecial();
 }
