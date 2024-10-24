@@ -85,6 +85,9 @@ public class User {
     @Column(name = "instagram_username", nullable = true, length = 100)
     private String instagramUsername;
 
+    @Column(name = "certified", nullable = false, columnDefinition = "NUMBER(1) DEFAULT 0")
+    private Boolean certified = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "user_approvals",
@@ -328,6 +331,14 @@ public class User {
 
     public void setSeasonScore(Long seasonScore) {
         this.seasonScore = seasonScore;
+    }
+
+    public Boolean getCertified() {
+        return certified;
+    }
+
+    public void setCertified(Boolean certified) {
+        this.certified = certified;
     }
 
 }
