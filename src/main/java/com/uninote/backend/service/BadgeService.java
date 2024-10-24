@@ -174,26 +174,24 @@ public class BadgeService {
 
 
          public List<BadgeProjection> getTopBadgesPerCategory(Long userId) {
-            // Fetch badges using the custom query
             List<BadgeProjection> allBadges = userBadgeRepository.findAllBadgesByUserId(userId);
         
-            // Group badges by category (typeName)
             Map<String, List<BadgeProjection>> badgesByCategory = allBadges.stream()
                     .collect(Collectors.groupingBy(BadgeProjection::getTypeName));
         
             List<BadgeProjection> topBadges = new ArrayList<>();
         
-            // For each category, find the top badge
             for (Map.Entry<String, List<BadgeProjection>> entry : badgesByCategory.entrySet()) {
                 List<BadgeProjection> categoryBadges = entry.getValue();
         
-                // Find the badge that the user has with the highest requirement, or the one with the lowest requirement
                 BadgeProjection topBadge = categoryBadges.stream()
-                        .filter(BadgeProjection::getUserHasBadge)  // Filter to badges the user owns
-                        .max(Comparator.comparingInt(BadgeProjection::getRequirement))  // Get the badge with the highest requirement
-                        .orElseGet(() -> categoryBadges.stream()
-                                .min(Comparator.comparingInt(BadgeProjection::getRequirement))  // If user doesn't own any, pick the one with the lowest requirement
-                                .orElse(null));
+                .filter(badge -> badge.getTypeName() != "Secret") 
+                .filter(BadgeProjection::getUserHasBadge) 
+                .max(Comparator.comparingInt(BadgeProjection::getRequirement)) 
+                .orElseGet(() -> categoryBadges.stream()
+                        .filter(badge -> badge.getTypeName() != "Secret") 
+                        .min(Comparator.comparingInt(BadgeProjection::getRequirement)) 
+                        .orElse(null));
         
                 if (topBadge != null) {
                     topBadges.add(topBadge);
