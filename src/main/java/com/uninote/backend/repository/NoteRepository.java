@@ -302,7 +302,7 @@ Page<Object[]> searchUserNotesSimple(@Param("keyword") String keyword,
                                                Pageable pageable);
     @Query(value = "SELECT n.note_id, c.course_id, u.user_id, n.title, n.description, n.pdf_url, " +
                "n.filename, n.is_public, cn.course_name, un.university_name, dn.department_name, " +
-               "n.like_count, u.username, u.profile_image_url, n.created_at, n.professor, n.academic_year, tn.type_name " +
+               "n.like_count, u.username, u.profile_image_url, n.created_at, n.professor, n.academic_year, tn.type_name, u.certified " +
                "FROM admin.notes n " +
                "JOIN admin.courses c ON n.course_id = c.course_id " +
                "JOIN admin.departments d ON c.department_id = d.department_id " +

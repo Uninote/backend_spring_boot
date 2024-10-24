@@ -758,6 +758,7 @@ public class NoteService {
             noteDTO.setProfessor(Converters.convertToString(objects[15]));
             noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
             noteDTO.setNoteType(Converters.convertToString(objects[17]));
+            noteDTO.setCertified(objects[18] != null && ((BigDecimal) objects[18]).intValue() == 1);
             return noteDTO;
         }).collect(Collectors.toList());
     }
@@ -816,6 +817,8 @@ public class NoteService {
         noteDTO.setProfessor(Converters.convertToString(objects[15]));
         noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
         noteDTO.setNoteType(Converters.convertToString(objects[17]));
+        noteDTO.setCertified(objects[18] != null && ((BigDecimal) objects[18]).intValue() == 1);
+
         return noteDTO;
     }).collect(Collectors.toList());
    
