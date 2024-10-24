@@ -37,6 +37,7 @@ public class NoteDTO {
     private Long noteTypeId;
     private String noteType;
     private int semester;
+    private Boolean certified;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -108,6 +109,31 @@ public class NoteDTO {
         this.noteType = noteType;
         this.professor = professor;
         this.academicYear = academicYear;
+                    
+    }
+
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+        this.noteType = noteType;
+        this.professor = professor;
+        this.academicYear = academicYear;
+        this.certified = certified;
                     
     }
     public NoteDTO() {};
@@ -274,5 +300,13 @@ public class NoteDTO {
 
     public int getSemester() {
         return semester;
+    }
+
+    public Boolean getCertified() {
+        return certified;
+    }
+
+    public void setCertified(Boolean certified){
+        this.certified = certified;
     }
 }

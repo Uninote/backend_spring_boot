@@ -12,4 +12,5 @@ public interface UserInfoProjection {
     String getUniversityName();
     String getInstagramUsername();
     Long getSeasonScore();
+    Boolean getCertified();
 }

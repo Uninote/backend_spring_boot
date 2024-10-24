@@ -79,7 +79,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
        "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id and n.deleted = 0) AS totalNotes, " +
        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = 0) AS totalPublicNotes, " +
-       "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes " +
+       "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes, " +
+       "u.certified AS certified " +
        "FROM User u " +
        "JOIN DepartmentName dn ON dn.department = u.department " +
        "JOIN UniversityName un ON un.university = u.university " +
@@ -92,7 +93,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
       "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername,COALESCE(u.seasonScore, 0) AS seasonScore, " +
       "dn.name AS departmentName, " +
-      "un.name AS universityName " +    
+      "un.name AS universityName, " + 
+      "u.certified AS certified " +   
       "FROM User u " +   
       "JOIN DepartmentName dn ON dn.department = u.department AND dn.language.id = :languageId " +
       "JOIN UniversityName un ON un.university = u.university AND un.language.id = :languageId " +

@@ -21,5 +21,6 @@ public interface UserProfileProjection {
     long getTotalLikes();
     String getInstagramUsername();
     Long getSeasonScore();
+    Boolean getCertified();
 
 }
