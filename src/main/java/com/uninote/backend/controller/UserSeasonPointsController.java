@@ -25,7 +25,7 @@ public class UserSeasonPointsController {
         return ResponseEntity.ok(users);
     }
 
-    @GetMapping("/current-season/university/{universityId}")
+    @GetMapping("/current-season/university/{unive  rsityId}")
     public ResponseEntity<List<UserInfoProjection>> getTop100UserCurrentSeasonAndUniversity(@PathVariable Long universityId) {
         List<UserInfoProjection> users = userSeasonPointsService.getTop100UsersByCurrentSeasonAndUniversity(universityId);
         return ResponseEntity.ok(users);

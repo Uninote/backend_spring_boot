@@ -20,4 +20,6 @@ public interface UserProfileProjection {
     long getTotalPublicNotes();
     long getTotalLikes();
     String getInstagramUsername();
+    Long getSeasonScore();
+
 }

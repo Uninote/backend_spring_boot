@@ -27,6 +27,9 @@ public class User {
     @Column(name = "firebase_uid", nullable = true, unique = true)
     private String firebaseUid;
 
+    @Column(name = "season_score")
+    private Long seasonScore;
+
     @Lob
     @Column(name = "bio", columnDefinition = "CLOB")
     private String bio;
@@ -317,6 +320,14 @@ public class User {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public Long getSeasonScore() {
+        return seasonScore;
+    }
+
+    public void setSeasonScore(Long seasonScore) {
+        this.seasonScore = seasonScore;
     }
 
 }
