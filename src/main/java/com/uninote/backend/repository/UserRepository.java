@@ -18,7 +18,11 @@ import com.uninote.backend.interfaceProjection.UserProfileProjection;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findById(String id);
-    
+
+
+    @Query(value ="select count(*) from admin.users where email_verified = 1", nativeQuery = true)
+    Long countTotalVerifiedUsers();    
+
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName " +
                "FROM admin.users u " +

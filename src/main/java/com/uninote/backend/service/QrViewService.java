@@ -19,4 +19,8 @@ public class QrViewService {
         qr.setViewTime(LocalDateTime.now());
         qrViewRepository.save(qr);
     }
+
+    public Long countViews() {
+        return qrViewRepository.countAll();
+    }
 }

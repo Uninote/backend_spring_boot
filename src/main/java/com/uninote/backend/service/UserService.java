@@ -123,7 +123,11 @@ public class UserService {
 
 
     private final Map<Long, Object> locks = new ConcurrentHashMap<>();
+    
 
+    public Long getTotalUsers() {
+        return userRepository.countTotalVerifiedUsers();
+    }
 
     public Long loginUserAndUpdateStreak(Long userId) {
 

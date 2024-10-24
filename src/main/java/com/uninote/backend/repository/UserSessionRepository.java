@@ -13,6 +13,9 @@ import com.uninote.backend.entity.UserSession;
 @Repository
 public interface UserSessionRepository  extends JpaRepository<UserSession, Long>{
 
+    @Query(value ="select count(*) from users where email_verified = 1", nativeQuery = true)
+    Long countTotalVerifiedUsers();
+
     @Query(value = "SELECT session_id FROM user_session WHERE user_id = :userId ORDER BY login_time DESC LIMIT 1", nativeQuery = true)
     Optional<Long> findLastSessionIdByUserId(@Param("userId") Long userId);
 
