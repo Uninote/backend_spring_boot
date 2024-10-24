@@ -15,6 +15,7 @@ import com.uninote.backend.interfaceProjection.BadgeProjection;
 import com.uninote.backend.repository.BadgeNotificationRepository;
 import com.uninote.backend.repository.BadgeRepository;
 import com.uninote.backend.repository.BadgeTypeRepository;
+import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.InviteRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserBadgeRepository;
@@ -67,6 +68,8 @@ public class BadgeService {
     @Autowired
     private BadgeNotificationRepository badgeNotificationRepository;
 
+    @Autowired
+    private DepartmentRepository departmentRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(BadgeService.class);
 
@@ -220,6 +223,7 @@ public class BadgeService {
 
         } */
         private boolean meetsRequirement(User user, Badge badge) {
+            if (badge.getType().getId() != 5L){
             logger.debug("checking badge TYPE {}", badge.getType().getId().intValue());
             logger.debug("USER Notes {}", noteRepository.countByUserId(user.getId()));
             switch (badge.getType().getId().intValue()) {
@@ -236,6 +240,9 @@ public class BadgeService {
                 default:
                     return false;
             }
+        } else {
+            return false;
+        }
         }
 
         public void checkBadgesForUser(Long userId) {
@@ -259,8 +266,8 @@ public class BadgeService {
         if(!noteRepository.existsByCourseId(courseId)) {
             assignBadgeToUser(userId, PIONEER_BADGE_ID);
         }
-          
-        if(!noteRepository.existsByDepartmentId(courseId)) {
+        Long departmentId = departmentRepository.getDepartmentIdByCourseId(courseId);
+        if(!noteRepository.existsByDepartmentId(departmentId)) {
             assignBadgeToUser(userId, EXPERT_PIONEER_BADGE_ID);
         }
         

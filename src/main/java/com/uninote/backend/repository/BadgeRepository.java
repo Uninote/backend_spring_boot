@@ -13,6 +13,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BadgeRepository extends JpaRepository<Badge, Long> {
     
-    @Query("SELECT * FROM BADGE b WHERE b.type.id = 5")
+    @Query(value =  "SELECT * FROM BADGE b WHERE b.type.id = 5", nativeQuery = true)
     List<Badge> findSpecial();
 }
