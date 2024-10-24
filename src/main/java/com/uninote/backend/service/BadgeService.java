@@ -15,6 +15,7 @@ import com.uninote.backend.interfaceProjection.BadgeProjection;
 import com.uninote.backend.repository.BadgeNotificationRepository;
 import com.uninote.backend.repository.BadgeRepository;
 import com.uninote.backend.repository.BadgeTypeRepository;
+import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.InviteRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserBadgeRepository;
@@ -38,6 +39,11 @@ import javax.transaction.Transactional;
 
 @Service
 public class BadgeService {
+
+
+    private static final long PIONEER_BADGE_ID = 13L;
+
+    private static final long EXPERT_PIONEER_BADGE_ID = 14L;
     @Autowired
     private UserRepository userRepository;
 
@@ -62,6 +68,8 @@ public class BadgeService {
     @Autowired
     private BadgeNotificationRepository badgeNotificationRepository;
 
+    @Autowired
+    private DepartmentRepository departmentRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(BadgeService.class);
 
@@ -118,12 +126,13 @@ public class BadgeService {
 
     @Transactional
     public void assignBadgeToUser(Long userId, Long badgeId) {
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Badge badge = badgeRepository.findById(badgeId)
                 .orElseThrow(() -> new IllegalArgumentException("Badge not found"));
 
-        if (!meetsRequirement(user, badge)) {
+        if (!meetsRequirement(user, badge) && badge.getType().getId()!=5) {
             throw new IllegalArgumentException("User does not meet the requirements for this badge.");
         }
         logger.debug("assigning badge {}", badge.getId());
@@ -215,6 +224,7 @@ public class BadgeService {
 
         } */
         private boolean meetsRequirement(User user, Badge badge) {
+            if (badge.getType().getId() != 5L){
             logger.debug("checking badge TYPE {}", badge.getType().getId().intValue());
             logger.debug("USER Notes {}", noteRepository.countByUserId(user.getId()));
             switch (badge.getType().getId().intValue()) {
@@ -231,6 +241,9 @@ public class BadgeService {
                 default:
                     return false;
             }
+        } else {
+            return false;
+        }
         }
 
         public void checkBadgesForUser(Long userId) {
@@ -246,6 +259,22 @@ public class BadgeService {
             }
         }
     }
+
+    
+    public void checkSpecialBadgesForUser(Long userId, Long courseId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if(noteRepository.existsByCourseId(courseId) == 0) {
+            assignBadgeToUser(userId, PIONEER_BADGE_ID);
+        }
+        Long departmentId = departmentRepository.getDepartmentIdByCourseId(courseId);
+        if(noteRepository.existsByDepartmentId(departmentId) == 0) {
+            assignBadgeToUser(userId, EXPERT_PIONEER_BADGE_ID);
+        }
+        
+    }
+
+
 
 
    

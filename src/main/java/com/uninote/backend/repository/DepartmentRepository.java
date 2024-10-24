@@ -18,6 +18,9 @@ import com.uninote.backend.interfaceProjection.DepartmentProjection;
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Optional<Department> findById(Long departmentId);
 
+    @Query(value = "SELECT c.department_id FROM admin.courses c where c.course_id = :courseId", nativeQuery = true)
+    Long getDepartmentIdByCourseId(@Param("courseId") Long courseId);
+
     @Query("SELECT new com.uninote.backend.dto.DepartmentNameDTO(dn.id.departmentId, dn.name, l.code, dn.fullName) " +
        "FROM DepartmentName dn " +
        "JOIN dn.language l " +

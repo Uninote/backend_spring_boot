@@ -845,6 +845,7 @@ public class NoteService {
         User user = userRepository.findById(noteDto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
         System.out.println(course.toString()+user.toString());
+        badgeService.checkSpecialBadgesForUser(noteDto.getUserId(), noteDto.getCourseId());
         Note note = new Note();
         note.setCourse(course);
         note.setUser(user);
