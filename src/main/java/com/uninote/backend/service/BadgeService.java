@@ -185,15 +185,13 @@ public class BadgeService {
                 List<BadgeProjection> categoryBadges = entry.getValue();
         
                 BadgeProjection topBadge = categoryBadges.stream()
-                .filter(badge -> badge.getTypeName() != "Secret") 
-                .filter(BadgeProjection::getUserHasBadge) 
-                .max(Comparator.comparingInt(BadgeProjection::getRequirement)) 
-                .orElseGet(() -> categoryBadges.stream()
-                        .filter(badge -> badge.getTypeName() != "Secret") 
-                        .min(Comparator.comparingInt(BadgeProjection::getRequirement)) 
-                        .orElse(null));
+                        .filter(BadgeProjection::getUserHasBadge) 
+                        .max(Comparator.comparingInt(BadgeProjection::getRequirement))  
+                        .orElseGet(() -> categoryBadges.stream()
+                                .min(Comparator.comparingInt(BadgeProjection::getRequirement))  
+                                .orElse(null));
         
-                if (topBadge != null) {
+                if ((topBadge != null) && topBadge.getTypeName()!="Secret") {
                     topBadges.add(topBadge);
                 }
             }
