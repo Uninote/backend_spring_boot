@@ -335,6 +335,7 @@ public class User {
 
     public Boolean getCertified() {
         return certified;
+        
     }
 
     public void setCertified(Boolean certified) {
