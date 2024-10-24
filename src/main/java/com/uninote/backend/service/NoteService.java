@@ -416,6 +416,7 @@ public class NoteService {
         dto.setSemester(note.getCourse().getSemester());
         dto.setUsername(note.getUser().getUsername());
         dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
+        dto.setCertified(note.getUser().getCertified());
         if (note.getNoteType() != null) {
             if (note.getNoteType().getTypeId() != null) {
                 dto.setNoteTypeId(note.getNoteType().getTypeId());
