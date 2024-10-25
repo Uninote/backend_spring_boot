@@ -24,11 +24,15 @@ public class UserCourseGradeService {
     private UserCourseGradeRepository userCourseGradeRepository;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private CourseRepository courseRepository;
 
+    
     
     public UserCourseGrade assignGradeToUser(Long userId, Long courseId, Double grade) {
         User user = userRepository.findById(userId)
@@ -42,15 +46,12 @@ public class UserCourseGradeService {
         userCourseGrade.setGrade(grade);
         userCourseGrade.setDateAssigned(LocalDate.now());
 
-        return userCourseGradeRepository.save(userCourseGrade);
+        UserCourseGrade usg  = userCourseGradeRepository.save(userCourseGrade);
+        userService.ceritfyUser(userId);
+        return usg;
     }
 
-    /**
-     * Get all grades for a specific user
-     * 
-     * @param userId  The ID of the user
-     * @return List<UserCourseGrade>  List of grades for the user
-     */
+   
     public List<UserCourseGrade> getGradesForUser(Long userId) {
         return userCourseGradeRepository.findByUserId(userId);
     }
@@ -58,6 +59,7 @@ public class UserCourseGradeService {
     
     public List<UserCourseGrade> getGradesForCourse(Long courseId) {
         return userCourseGradeRepository.findByCourseId(courseId);
+
     }
 
     

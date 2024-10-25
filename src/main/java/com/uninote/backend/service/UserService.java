@@ -30,6 +30,7 @@ import com.uninote.backend.repository.RoleRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
+import com.uninote.backend.repository.UserCourseGradeRepository;
 import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
@@ -41,6 +42,8 @@ import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -62,7 +65,10 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
-    
+
+    @Autowired
+    private UserCourseGradeRepository userCourseGradeRepository;
+
     @Autowired
     private RankService rankService;
 
@@ -623,5 +629,13 @@ public void softDeleteUserById(Long userId) {
         User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setEmailVerified(true);
         userRepository.save(user);
+    }
+
+    public void ceritfyUser(Long userId) {
+        if (noteRepository.countByUserId(userId) >= 20 && userCourseGradeRepository.countByUserId(userId).compareTo(BigDecimal.ONE) >= 0) {
+            User user =  userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+            user.setCertified(true);
+            userRepository.save(user);
+        }
     }
 }

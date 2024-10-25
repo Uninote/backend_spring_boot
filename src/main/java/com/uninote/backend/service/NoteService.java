@@ -945,6 +945,7 @@ public class NoteService {
                 userService.updateUniScore(user, 23L); 
             }
         badgeService.checkBadgesForUser(user.getId()); 
+        userService.ceritfyUser(noteDto.getUserId());
         return savedNote;
     }
 
