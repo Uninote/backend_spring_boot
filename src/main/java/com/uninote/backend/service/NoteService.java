@@ -399,6 +399,22 @@ public class NoteService {
                     userRepository.save(creator);
                 }
             }
+
+            if(seasonOpt.isPresent() && !note.getIsPublic() && noteDto.getIsPublic()) {
+                Season season = seasonOpt.get();
+
+                if (note.getCreatedAt().isAfter(season.getStartDate()) || note.getCreatedAt().isEqual(season.getStartDate())) {
+
+                    UniscoreIncreaseType un = uniscoreIncreaseTypeRepository.findById(23L).orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
+                    creator.setSeasonScore(creator.getSeasonScore() + un.getIncreaseAmount());
+
+                    UserSeasonPoints usp = userSeasonPointsRepository.findByIdUserIdAndIdSeasonId(note.getUser().getId(), season.getSeasonId() ).orElseThrow(() -> new IllegalArgumentException("User points not initialized"));
+                    usp.setPoints(usp.getPoints() + un.getIncreaseAmount());
+                    userSeasonPointsRepository.save(usp);
+                    userRepository.save(creator);
+                }
+            }
+
             note.setIsPublic(noteDto.getIsPublic());    
         }
         if (noteDto.getFilename() != null) {
