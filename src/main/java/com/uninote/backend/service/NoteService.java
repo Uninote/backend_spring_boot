@@ -359,7 +359,7 @@ public class NoteService {
      public Note updateNote(Long noteId, NoteDTO noteDto) {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found with ID: " + noteId));
-
+        User creator = note.getUser();
         if (noteDto.getCourseId() != null) {
             Course course = courseRepository.findById(noteDto.getCourseId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid course ID: " + noteDto.getCourseId()));
@@ -384,6 +384,21 @@ public class NoteService {
             note.setPdfUrl(noteDto.getPdfUrl());
         }
         if (noteDto.getIsPublic() != null) {
+            Optional<Season> seasonOpt = seasonService.getCurrentSeason();
+            if(seasonOpt.isPresent() && note.getIsPublic() && !noteDto.getIsPublic()) {
+                Season season = seasonOpt.get();
+
+                if (note.getCreatedAt().isAfter(season.getStartDate()) || note.getCreatedAt().isEqual(season.getStartDate())) {
+
+                    UniscoreIncreaseType un = uniscoreIncreaseTypeRepository.findById(23L).orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
+                    creator.setSeasonScore(creator.getSeasonScore() - un.getIncreaseAmount());
+
+                    UserSeasonPoints usp = userSeasonPointsRepository.findByIdUserIdAndIdSeasonId(note.getUser().getId(), season.getSeasonId() ).orElseThrow(() -> new IllegalArgumentException("User points not initialized"));
+                    usp.setPoints(usp.getPoints() - un.getIncreaseAmount());
+                    userSeasonPointsRepository.save(usp);
+                    userRepository.save(creator);
+                }
+            }
             note.setIsPublic(noteDto.getIsPublic());    
         }
         if (noteDto.getFilename() != null) {
