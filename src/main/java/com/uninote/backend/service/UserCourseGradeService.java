@@ -12,6 +12,7 @@ import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.UserCourseGradeRepository;
 import com.uninote.backend.repository.UserRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +40,9 @@ public class UserCourseGradeService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
-
+        if (userCourseGradeRepository.existsByCourseIdAdnUserId(userId, courseId).compareTo(BigDecimal.ZERO) > 0 ) {
+            return null;
+        }
         UserCourseGrade userCourseGrade = new UserCourseGrade();
         userCourseGrade.setUserId(userId);
         userCourseGrade.setCourseId(courseId);

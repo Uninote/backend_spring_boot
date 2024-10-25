@@ -23,4 +23,8 @@ public interface UserCourseGradeRepository extends JpaRepository<UserCourseGrade
     @Query(value = "SELECT COUNT(*) FROM ADMIN.USER_COURSE_GRADES WHERE USER_ID = :userId AND is_public = 1", nativeQuery = true)
     BigDecimal countByUserId(@Param("userId") Long userId);
 
+
+    @Query(value = "SELECT COUNT(*) FROM ADMIN.USER_COURSE_GRADES WHERE USER_ID = :userId AND COURSE_ID = :courseId", nativeQuery = true)
+    BigDecimal existsByCourseIdAdnUserId(@Param("userId") Long userId, @Param("courseId") Long courseId);
+
 }
