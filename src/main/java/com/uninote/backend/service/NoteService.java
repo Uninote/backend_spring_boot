@@ -18,9 +18,12 @@ import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteType;
 import com.uninote.backend.entity.NoteView;
+import com.uninote.backend.entity.Season;
+import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.entity.UserSeasonPoints;
 import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.NoteClickRepository;
@@ -29,8 +32,12 @@ import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.NoteTypeRepository;
 import com.uninote.backend.repository.NoteViewRepository;
+import com.uninote.backend.repository.SeasonRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
+import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UserRepository;
+import com.uninote.backend.repository.UserSeasonPointsRepository;
+
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
@@ -105,8 +112,18 @@ public class NoteService {
     @Autowired
     private NoteTypeRepository noteTypeRepository;
 
-    
+    @Autowired
+    private UniscoreIncreaseTypeRepository uniscoreIncreaseTypeRepository;
 
+    
+    @Autowired
+    private UserSeasonPointsRepository userSeasonPointsRepository;
+
+    @Autowired
+    private SeasonRepository seasonRepository;
+
+    @Autowired
+    private SeasonService seasonService;
 
     private RealMatrix ratingsMatrix;
     private static final double CLICK_WEIGHT = 0.05;
@@ -490,6 +507,21 @@ public class NoteService {
     Note note = noteRepository.findById(noteId)
             .orElseThrow(() -> new IllegalArgumentException("Invalid note ID"));
     note.setDeleted(true);
+    User user = note.getUser();
+    Optional<Season> seasonOpt = seasonService.getCurrentSeason();
+        if(seasonOpt.isPresent()) {
+            Season season = seasonOpt.get();
+
+            if (note.getCreatedAt().isAfter(season.getStartDate()) || note.getCreatedAt().isEqual(season.getStartDate())) {
+
+                UniscoreIncreaseType un = uniscoreIncreaseTypeRepository.findById(23L).orElseThrow(() -> new IllegalArgumentException("Increase type not found"));
+                user.setSeasonScore(user.getSeasonScore() - un.getIncreaseAmount());
+
+                UserSeasonPoints usp = userSeasonPointsRepository.findByIdUserIdAndIdSeasonId(note.getUser().getId(), season.getSeasonId() ).orElseThrow(() -> new IllegalArgumentException("User points not initialized"));
+                userSeasonPointsRepository.save(usp);
+                userRepository.save(user);
+            }
+        }
     noteRepository.save(note);
 }
     public Page<NoteDTO> getPublicNotes(int page, int size, String sortBy, String sortDir) {
