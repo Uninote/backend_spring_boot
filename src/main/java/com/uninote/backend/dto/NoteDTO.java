@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
@@ -38,6 +39,7 @@ public class NoteDTO {
     private String noteType;
     private int semester;
     private Boolean certified;
+    private Double grade;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -134,6 +136,32 @@ public class NoteDTO {
         this.professor = professor;
         this.academicYear = academicYear;
         this.certified = certified;
+                    
+    }
+
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+        this.noteType = noteType;
+        this.professor = professor;
+        this.academicYear = academicYear;
+        this.certified = certified;
+        this.grade = grade;
                     
     }
     public NoteDTO() {};
@@ -308,5 +336,13 @@ public class NoteDTO {
 
     public void setCertified(Boolean certified){
         this.certified = certified;
+    }
+
+    public void setGrade(Double grade) {
+        this.grade = grade;
+    }
+
+    public Double getGrade() {
+        return grade;
     }
 }

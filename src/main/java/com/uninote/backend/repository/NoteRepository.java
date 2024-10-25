@@ -77,11 +77,12 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +
                "LEFT JOIN n.noteType tn "+  
@@ -98,11 +99,12 @@ Page<NoteDTO> findPublicNotes(Pageable pageable);
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "LEFT JOIN n.noteType tn " + 
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
@@ -118,11 +120,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
 @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
@@ -136,11 +139,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
@@ -154,11 +158,12 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
@@ -187,13 +192,14 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
        "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
        "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
-       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified ) " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
        "FROM NoteSave ns " +
        "JOIN ns.note n " +
        "LEFT JOIN n.noteType tn " +
        "JOIN n.course c " +
        "JOIN c.department d " +
        "JOIN n.user u " +
+       "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
        "WHERE ns.user.id = :userId AND ns.isActive = TRUE AND n.isPublic = TRUE AND n.deleted = false")
    List<NoteDTO> findPublicSavedNotesByUserId(@Param("userId") Long userId);
 
@@ -630,11 +636,12 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
                "LEFT JOIN n.noteType tn " +
@@ -650,11 +657,12 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
    
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
@@ -668,11 +676,12 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
                "LEFT JOIN n.noteType tn " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language l " +  
@@ -686,11 +695,12 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
     "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-    "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified ) " +
+    "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
     "FROM Note n " +
     "JOIN n.course c " +
     "JOIN c.department d " +
     "JOIN n.user u " +
+    "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
     "LEFT JOIN n.noteType tn " +
     "JOIN CourseName cn ON cn.course = c " +
     "JOIN cn.language l " +  
@@ -705,11 +715,12 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
             "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-            "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified ) " +
+            "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
             "FROM Note n " +
             "JOIN n.course c " +
             "JOIN c.department d " +
             "JOIN n.user u " +
+            "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
             "LEFT JOIN n.noteType tn " +
             "JOIN CourseName cn ON cn.course = c " +
             "JOIN cn.language l " +  
