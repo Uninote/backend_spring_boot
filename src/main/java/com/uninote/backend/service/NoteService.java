@@ -518,6 +518,7 @@ public class NoteService {
                 user.setSeasonScore(user.getSeasonScore() - un.getIncreaseAmount());
 
                 UserSeasonPoints usp = userSeasonPointsRepository.findByIdUserIdAndIdSeasonId(note.getUser().getId(), season.getSeasonId() ).orElseThrow(() -> new IllegalArgumentException("User points not initialized"));
+                usp.setPoints(usp.getPoints() - un.getIncreaseAmount());
                 userSeasonPointsRepository.save(usp);
                 userRepository.save(user);
             }
