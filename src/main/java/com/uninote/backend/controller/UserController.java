@@ -100,7 +100,7 @@ public class UserController {
 
         Long sessionId;
 
-        if(deviceId){
+        if(deviceId != null){
             sessionId = userService.loginUserAndUpdateStreak(id,deviceId);
  
         } else {
