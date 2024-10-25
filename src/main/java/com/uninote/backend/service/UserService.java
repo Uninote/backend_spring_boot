@@ -199,6 +199,79 @@ public class UserService {
         }
     }
 
+
+    public Long loginUserAndUpdateStreak(Long userId, Boolean deviceId) {
+        // 0 for laptop
+        //1 for phone
+        locks.putIfAbsent(userId, new Object());
+        synchronized (locks.get(userId)) {
+            try {
+
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+                LocalDate lastLoginDate = (user.getLastLogin() != null) ? user.getLastLogin().toLocalDate() : null;
+                LocalDate today = LocalDate.now();
+
+
+                boolean isFirstLogin = (lastLoginDate == null || lastLoginDate.isBefore(today.minusDays(1)));
+                boolean isConsecutiveLogin = (lastLoginDate != null && lastLoginDate.isEqual(today.minusDays(1)));
+
+
+                if (isFirstLogin) {
+                    user.setStreak(1);
+                    updateUniScore(user, 24L);
+                } else if (isConsecutiveLogin) {
+                    user.setStreak(user.getStreak() + 1);
+                    updateUniScore(user, 24L);
+                    updateUniScore(user, 25L);
+                }
+
+
+                user.setLastLogin(LocalDateTime.now());
+                CompletableFuture<Void> notificationFuture = CompletableFuture.runAsync(()-> {
+                    if (isFirstLogin || isConsecutiveLogin) {
+                        loginWebSocketController.sendLoginNotification(
+                                user.getFirebaseUid(),
+                                "Congratulations! You have received 50 uniscore for logging in today."
+                        );
+                    }
+                });
+                userRepository.save(user);
+
+                CompletableFuture<Void> badgeFuture = CompletableFuture.runAsync(() -> {
+                    badgeService.checkBadgesForUser(userId);
+
+                });
+
+                UserLogin userLogin = new UserLogin();  
+                userLogin.setUser(user);
+                userLogin.setLoginTimestamp(LocalDateTime.now());
+                userLogin.setDevice(deviceId);
+                userLoginRepository.save(userLogin);
+                Optional<UserSession> activeSession = userSessionRepository.findActiveSessionByUserId(userId);
+                Long sessionId;
+                if (activeSession.isPresent()) {
+                
+                    sessionId = activeSession.get().getSessionId();
+                } else {
+                    sessionId = userSessionService.startSession(userId);
+                }
+
+
+                CompletableFuture<Void> allTasks = CompletableFuture.allOf(notificationFuture,badgeFuture);
+                allTasks.exceptionally(ex -> {
+                    System.err.println("An error occurred during asynchronous operations: " + ex.getMessage());
+                    return null;
+                });
+                //allTasks.join();
+                return sessionId;
+            } finally {
+                locks.remove(userId);
+            }
+        }
+    }
+
     public User findById(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
         return userOptional.orElse(null);

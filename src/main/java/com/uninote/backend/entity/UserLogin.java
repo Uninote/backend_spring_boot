@@ -20,6 +20,8 @@ public class UserLogin {
     @Column(name = "login_timestamp", nullable = false)
     private LocalDateTime loginTimestamp;
 
+    @Column(name = "device", nullable = true) 
+    private Boolean device;
     
     public Long getId() {
         return id;
@@ -43,5 +45,13 @@ public class UserLogin {
 
     public void setLoginTimestamp(LocalDateTime loginTimestamp) {
         this.loginTimestamp = loginTimestamp;
+    }
+
+    public Boolean getDevice() {
+        return device;
+    }
+
+    public void setDevice(Boolean dev) {
+        this.device = dev;
     }
 }

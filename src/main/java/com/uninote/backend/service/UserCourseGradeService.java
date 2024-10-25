@@ -37,8 +37,8 @@ public class UserCourseGradeService {
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
 
         UserCourseGrade userCourseGrade = new UserCourseGrade();
-        userCourseGrade.setUser(user);
-        userCourseGrade.setCourse(course);
+        userCourseGrade.setUserId(userId);
+        userCourseGrade.setCourseId(courseId);
         userCourseGrade.setGrade(grade);
         userCourseGrade.setDateAssigned(LocalDate.now());
 

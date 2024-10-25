@@ -11,13 +11,11 @@ public class UserCourseGrade {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id", nullable = false)
-    private Course course;
+    @Column(name = "course_id", nullable = false)
+    private Long courseId;
 
     @Column(name = "grade", precision = 5, scale = 2)
     private Double grade;
@@ -34,20 +32,20 @@ public class UserCourseGrade {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public Long getUser() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long user) {
+        this.userId = user;
     }
 
-    public Course getCourse() {
-        return course;
+    public Long getCourse() {
+        return courseId;
     }
 
-    public void setCourse(Course course) {
-        this.course = course;
+    public void setCourseId(Long course) {
+        this.courseId = course;
     }
 
     public Double getGrade() {

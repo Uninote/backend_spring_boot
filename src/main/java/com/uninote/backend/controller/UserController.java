@@ -96,8 +96,17 @@ public class UserController {
     }
 
     @PutMapping("/{id}/login")
-    public ResponseEntity<Long> loginUserAndUpdateStreak(@PathVariable Long id) {
-        Long sessionId = userService.loginUserAndUpdateStreak(id);
+    public ResponseEntity<Long> loginUserAndUpdateStreak(@PathVariable Long id, @RequestParam(required = false) Boolean deviceId) {
+
+        Long sessionId;
+
+        if(deviceId){
+            sessionId = userService.loginUserAndUpdateStreak(id,deviceId);
+ 
+        } else {
+            sessionId = userService.loginUserAndUpdateStreak(id);
+
+        }
         return ResponseEntity.ok(sessionId);
     }
 
