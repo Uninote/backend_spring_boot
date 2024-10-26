@@ -502,7 +502,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                    "    WHERE n.is_public = 1 AND n.deleted = 0 " +
                    "    AND (nw.word IS NOT NULL OR cw.word IS NOT NULL OR uw.word IS NOT NULL OR depw.word IS NOT NULL) " +
                    ") " +
-                   "SELECT id, courseId, userId, title, description, pdfUrl, filename, is_public, courseName, universityName, departmentName, likes, username, profileImageUrl, createdAt, professor, academic_year, type_name, relevance_score, row_number, " +
+                   "SELECT id, courseId, userId, title, description, pdfUrl, filename, is_public, courseName, universityName, departmentName, likes, username, profileImageUrl, createdAt, professor, academic_year, type_name, certified,  grade , relevance_score, row_number, " +
                    "       total_elements.total_count AS total_elements, " +
                    "       CEIL(total_elements.total_count / (:end_row - :start_row + 1)) AS total_pages " +
                    "FROM ( " +
@@ -525,7 +525,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                    "           n.academic_year, " +
                    "           tn.type_name, " +
                    "            u.certified, "+
-                   "            ucg.grade, "+
+                   "            ucg.grade AS grade , "+
                    "           (CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +
                    "            CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
                    "            CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +

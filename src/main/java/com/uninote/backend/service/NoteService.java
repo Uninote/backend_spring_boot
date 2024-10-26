@@ -43,6 +43,8 @@ import com.uninote.backend.repository.UserSeasonPointsRepository;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,7 +87,10 @@ public class NoteService {
     @Autowired
     private NoteSaveRepository noteSaveRepository;
 
-     @Autowired
+    private static final Logger logger = LoggerFactory.getLogger(NoteService.class);
+
+
+    @Autowired
     private CourseRepository courseRepository;
 
     @Autowired
@@ -891,8 +896,11 @@ public class NoteService {
         noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
         noteDTO.setNoteType(Converters.convertToString(objects[17]));
         noteDTO.setCertified(objects[18] != null && ((BigDecimal) objects[18]).intValue() == 1);
-        noteDTO.setGrade(Converters.convertToDouble(objects[19]));
-
+        Double grade = Optional.ofNullable(objects[19])
+            .map(Converters::convertToDouble)
+            .orElse(null);
+        noteDTO.setGrade(grade);        
+        //logger.error(objects[19].toString());
         return noteDTO;
     }).collect(Collectors.toList());
    
