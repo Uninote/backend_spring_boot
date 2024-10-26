@@ -23,6 +23,7 @@ import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.entity.UserCourseGrade;
 import com.uninote.backend.entity.UserSeasonPoints;
 import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
@@ -35,6 +36,7 @@ import com.uninote.backend.repository.NoteViewRepository;
 import com.uninote.backend.repository.SeasonRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
+import com.uninote.backend.repository.UserCourseGradeRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
 
@@ -73,6 +75,9 @@ public class NoteService {
 
     @Autowired
     private UniscoreIncreaseLogRepository uniscoreIncreaseLogsRepository;
+
+    @Autowired
+    private UserCourseGradeRepository userCourseGradeRepository;
 
     @Autowired
     private NoteRepository noteRepository;
@@ -462,6 +467,8 @@ public class NoteService {
     public NoteDTO getNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
         NoteDTO dto =  convertToDTO(note);
+        UserCourseGrade usg  = userCourseGradeRepository.findByUserIdAndCourseId(note.getUser().getId(), note.getCourse().getId()).orElseThrow(() -> new IllegalArgumentException("Grade not found"));
+        dto.setGrade(usg.getGrade());
         dto.setSemester(note.getCourse().getSemester());
         dto.setUsername(note.getUser().getUsername());
         dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
