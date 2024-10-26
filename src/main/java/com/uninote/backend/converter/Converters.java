@@ -10,6 +10,11 @@ public class Converters {
     return value != null && value instanceof BigDecimal ? ((BigDecimal) value).longValue() : null;
 }
 
+    public static Double convertToDouble(Object value) {
+        return value != null && value instanceof BigDecimal ? ((BigDecimal) value).doubleValue() : null;
+
+    }
+
 public static Integer convertToInteger(Object value) {
     return value != null && value instanceof BigDecimal ? ((BigDecimal) value).intValue() : null;
 }

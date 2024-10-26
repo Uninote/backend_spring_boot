@@ -884,6 +884,7 @@ public class NoteService {
         noteDTO.setAcademicYear(Converters.convertToString(objects[16]));
         noteDTO.setNoteType(Converters.convertToString(objects[17]));
         noteDTO.setCertified(objects[18] != null && ((BigDecimal) objects[18]).intValue() == 1);
+        noteDTO.setGrade(Converters.convertToDouble(objects[19]));
 
         return noteDTO;
     }).collect(Collectors.toList());

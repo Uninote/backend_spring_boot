@@ -425,6 +425,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                                                "LEFT JOIN course_words cw ON cw.course_id = c.course_id AND UTL_MATCH.EDIT_DISTANCE(cw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(cw.word)) " +
                                                "LEFT JOIN university_words uw ON uw.university_id = univ.university_id AND UTL_MATCH.EDIT_DISTANCE(uw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(uw.word)) " +
                                                "LEFT JOIN department_words depw ON depw.department_id = d.department_id AND UTL_MATCH.EDIT_DISTANCE(depw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(depw.word)) " +
+                                               "JOIN user_course_grades ucg ON ucg.user_id = u.user_id and ucg.course_id = c.course_id "+
                                                "WHERE n.is_public = 1 AND n.deleted = 0 " +
                                                "AND (nw.word IS NOT NULL OR cw.word IS NOT NULL OR uw.word IS NOT NULL OR depw.word IS NOT NULL)) " +
                                                "WHERE row_number BETWEEN :start_row AND :end_row " +
@@ -523,6 +524,8 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                    "           n.professor, " +
                    "           n.academic_year, " +
                    "           tn.type_name, " +
+                   "            u.certified, "+
+                   "            ucg.grade, "+
                    "           (CASE WHEN nw.word IS NOT NULL THEN 5 ELSE 0 END + " +
                    "            CASE WHEN cw.word IS NOT NULL THEN 2 ELSE 0 END + " +
                    "            CASE WHEN uw.word IS NOT NULL THEN 1 ELSE 0 END + " +
@@ -547,6 +550,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                    "    LEFT JOIN course_words cw ON cw.course_id = c.course_id AND UTL_MATCH.EDIT_DISTANCE(cw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(cw.word)) " +
                    "    LEFT JOIN university_words uw ON uw.university_id = univ.university_id AND UTL_MATCH.EDIT_DISTANCE(uw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(uw.word)) " +
                    "    LEFT JOIN department_words depw ON depw.department_id = d.department_id AND UTL_MATCH.EDIT_DISTANCE(depw.word, LOWER(REPLACE(:keyword, ' ', ''))) <= CEIL(:threshold * length(depw.word)) " +
+                   "    LEFT JOIN admin.user_course_grades ucg ON ucg.user_id = u.user_id and ucg.course_id = c.course_id "+
                    "    WHERE n.is_public = 1 AND n.deleted = 0 " +
                    "    AND (nw.word IS NOT NULL OR cw.word IS NOT NULL OR uw.word IS NOT NULL OR depw.word IS NOT NULL) " +
                    ") result, total_elements " +
