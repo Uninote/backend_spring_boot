@@ -31,6 +31,14 @@ public class SeasonController {
                             .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/season-exists")
+    public ResponseEntity<Boolean> existsCurrentSeason() {
+        Optional<Season> currentSeason = seasonService.getCurrentSeason();
+        return currentSeason.map(season -> ResponseEntity.ok(true))
+                            .orElseGet(() -> ResponseEntity.ok(false));
+    }
+
+
     @PostMapping("/create-season")
     public ResponseEntity<?> createNewSeason(
             @RequestParam("name") String name,
