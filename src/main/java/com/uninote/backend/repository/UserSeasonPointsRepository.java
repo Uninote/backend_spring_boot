@@ -21,7 +21,7 @@ public interface UserSeasonPointsRepository extends JpaRepository<UserSeasonPoin
 
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
-               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, usp.points AS seasonScore, u.certified AS certified " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, usp.points AS seasonScore, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "JOIN admin.user_season_points usp ON usp.user_id = u.user_id "+
@@ -31,7 +31,7 @@ public interface UserSeasonPointsRepository extends JpaRepository<UserSeasonPoin
     List<UserInfoProjection> top100UsersPerSeason(@Param("seasonId") Long seasonId);
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
-               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, usp.points AS seasonScore, u.certified AS certified " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, usp.points AS seasonScore, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "JOIN admin.departments d ON d.department_id = u.department_id " +
@@ -43,7 +43,7 @@ public interface UserSeasonPointsRepository extends JpaRepository<UserSeasonPoin
 
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
-               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, usp.points AS seasonScore, u.certified AS certified " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, usp.points AS seasonScore, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "JOIN admin.user_season_points usp ON usp.user_id = u.user_id "+

@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Long countTotalVerifiedUsers();    
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
-               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, u.certified AS certified " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName,CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) " +
@@ -34,7 +34,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
    List<UserInfoProjection> findTop100ByUniscore();
 
    @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
-               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, u.certified AS certified " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId " +
@@ -45,7 +45,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
-               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, u.certified AS certified " +
+               "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId " +
