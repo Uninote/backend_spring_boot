@@ -472,9 +472,9 @@ public class NoteService {
     public NoteDTO getNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
         NoteDTO dto =  convertToDTO(note);
-        UserCourseGrade usg  = userCourseGradeRepository.findByUserIdAndCourseId(note.getUser().getId(), note.getCourse().getId()).orElse(null);
-        if (usg.getGrade() != null) {
-            dto.setGrade(usg.getGrade());
+        Optional<UserCourseGrade> usg  = userCourseGradeRepository.findByUserIdAndCourseId(note.getUser().getId(), note.getCourse().getId());
+        if (usg.isPresent()) {
+            dto.setGrade(usg.get().getGrade());
         }
         dto.setSemester(note.getCourse().getSemester());
         dto.setUsername(note.getUser().getUsername());
