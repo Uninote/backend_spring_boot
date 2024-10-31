@@ -191,7 +191,7 @@ public class BadgeService {
                                 .min(Comparator.comparingInt(BadgeProjection::getRequirement))  
                                 .orElse(null));
         
-                if (topBadge != null && !"Secret".equals(topBadge.getTypeName())) {
+                if ((topBadge != null && !"Secret".equals(topBadge.getTypeName())) || (topBadge != null && "Secret".equals(topBadge.getTypeName()) && topBadge.getUserHasBadge())) {
                     topBadges.add(topBadge);
                 }
             }
