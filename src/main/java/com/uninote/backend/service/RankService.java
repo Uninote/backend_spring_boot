@@ -1,7 +1,9 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.dto.RankDTO;
 import com.uninote.backend.entity.Rank;
 import com.uninote.backend.repository.RankRepository;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,5 +16,9 @@ public class RankService {
     public Rank determineRank(Long uniscore) {
         return rankRepository.findTopByMinScoreLessThanEqualOrderByMinScoreDesc(uniscore)
                 .orElseThrow(() -> new IllegalArgumentException("No appropriate rank found for the given uniscore."));
+    }
+
+    public List<RankDTO> getRanks() {
+        return rankRepository.findAllDto();
     }
 }
