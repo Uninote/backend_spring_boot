@@ -48,7 +48,9 @@ public class InviteService {
         User invitee = userRepository.findById(inviteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Invitee not found"));
 
-
+        if(invite.getInvitee() != null) {
+            throw new IllegalArgumentException("invite already accepted");
+        }
         invite.setInvitee(invitee);
         invite.setDateOfSignUp(LocalDateTime.now());
         userService.updateUniScore(invite.getUser(), 21L);
