@@ -20,6 +20,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -761,5 +762,43 @@ int existsByDepartmentId(@Param("departmentId") Long departmentId);
 List<CourseNameDTO> findCoursesWithNotesByUserId(@Param("userId") Long userId);
 
 
+
+
+@Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, n.isPublic, " +
+       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
+       "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
+       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+       "FROM Note n " +
+       "JOIN n.course c " +
+       "JOIN c.department d " +
+       "JOIN n.user u " +
+       "LEFT JOIN n.noteType tn " +
+       "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id AND ucg.courseId = c.id " +
+       "WHERE n.user.id IN (SELECT n2.user.id FROM Note n2 GROUP BY n2.user.id HAVING COUNT(n2.id) > 3) " +
+       "AND n.user.id IN (SELECT nv.note.user.id FROM NoteView nv GROUP BY nv.note.user.id " +
+       "HAVING COUNT(nv) >= :minCreatorViews) " +
+       "AND n.likes > :minLikes " +
+       "AND n.isPublic = TRUE " +
+       "AND n.deleted = FALSE")
+List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("minCreatorViews") long minCreatorViews);
+
+
+
+
+      @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, n.isPublic, " +
+         "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
+         "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
+         "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
+         "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+         "FROM Note n " +
+         "JOIN n.course c " +
+         "JOIN c.department d " +
+         "JOIN n.user u " +
+         "LEFT JOIN n.noteType tn " +
+         "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id AND ucg.courseId = c.id " +
+         "WHERE n.createdAt > :recentThreshold " +
+         "AND n.isPublic = TRUE AND n.deleted = FALSE")
+   List<NoteDTO> findRecentNotes(@Param("recentThreshold") LocalDateTime recentThreshold);
 }  
 
