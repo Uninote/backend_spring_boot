@@ -16,8 +16,8 @@ public interface SeasonRepository extends JpaRepository<Season, Long> {
     Optional<Season> findByName(String name);
 
 
-    @Query("SELECT s FROM Season s WHERE :currentDate BETWEEN s.startDate AND s.endDate")
-    Optional<Season> findCurrentSeason(LocalDateTime currentDate);
+        @Query("SELECT s FROM Season s WHERE :currentDate BETWEEN s.startDate AND s.endDate")
+        Optional<Season> findCurrentSeason(LocalDateTime currentDate);
 
     @Query("SELECT s FROM Season s WHERE " +
            "(s.startDate < :endDate AND s.endDate > :startDate)")

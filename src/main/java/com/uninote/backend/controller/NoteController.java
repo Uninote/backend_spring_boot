@@ -86,7 +86,7 @@ public class NoteController {
         boolean hasSaved = noteService.hasUserSaved(noteId, userId);
         return ResponseEntity.ok(hasSaved);
     }
-
+            
     @GetMapping("/{id}")
     public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id) {
         try {

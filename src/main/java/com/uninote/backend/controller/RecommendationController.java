@@ -20,7 +20,7 @@ public class RecommendationController {
 
     @GetMapping
     public List<NoteDTO> getRecommendations() {
-        return recommendationService.reRankAndShuffleNotes();
+        return recommendationService.getCachedRecommendations();
     }
 
 

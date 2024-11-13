@@ -3,9 +3,13 @@ package com.uninote.backend.service;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.uninote.backend.dto.NoteDTO;
@@ -21,6 +25,8 @@ public class RecommendationService {
     @Autowired
     private NoteViewRepository noteViewRepository;
 
+    private final ConcurrentHashMap<Long, List<NoteDTO>> recommendationsCache = new ConcurrentHashMap<>();
+
     private final long MIN_VIEWS = 15L;
     private final long MIN_LIKES = 5L;
     private final long RECENT_DAYS_THRESHOLD = 7L;
@@ -30,6 +36,23 @@ public class RecommendationService {
     private final int VIEW_COUNT_WEIGHT = 2;
     private final int RECENCY_WEIGHT = 1;
     private final int LIKES_WEIGHT = 2;
+
+
+    @PostConstruct
+    public void initializeRecommendations() {
+        computeAndCacheRecommendations();
+    }
+
+    private void computeAndCacheRecommendations() {
+        List<NoteDTO> updatedRecommendations = reRankAndShuffleNotes();
+        recommendationsCache.put(1L, updatedRecommendations); 
+    }
+
+    @Scheduled(cron = "0 0 0 * * *") 
+    public void scheduledReRanking() {
+        List<NoteDTO> updatedRecommendations = reRankAndShuffleNotes();
+        recommendationsCache.put(1L, updatedRecommendations); 
+    }
 
     private List<NoteDTO> getModeratedNotes() {
         List<NoteDTO> prolificCreatorNotes = noteRepository.findNotesByGoodCreators(MIN_VIEWS, MIN_LIKES);
@@ -154,6 +177,10 @@ public class RecommendationService {
         shuffledNotes.sort(Comparator.comparingInt(noteScores::get).reversed());
     
         return shuffledNotes;
+    }
+
+    public List<NoteDTO> getCachedRecommendations() {
+        return recommendationsCache.get(1L);
     }
     
     
