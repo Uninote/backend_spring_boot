@@ -800,5 +800,31 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
          "WHERE n.createdAt > :recentThreshold " +
          "AND n.isPublic = TRUE AND n.deleted = FALSE")
    List<NoteDTO> findRecentNotes(@Param("recentThreshold") LocalDateTime recentThreshold);
+
+   @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
+               "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+               "FROM Note n " +
+               "JOIN n.course c " +
+               "JOIN c.department d " +
+               "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id " +
+               "LEFT JOIN n.noteType tn " +
+               "JOIN CourseName cn ON cn.course = c " +
+               "JOIN cn.language lang " + 
+               "JOIN UniversityName un ON un.university = d.university " +
+               "JOIN un.language ul " +
+               "JOIN DepartmentName dn ON dn.department = d " +
+               "JOIN dn.language dl " +
+               "WHERE lang.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "AND n.id IN :noteIds AND n.isPublic = true AND n.deleted = false")
+   List<NoteDTO> findNotesByIds(@Param("noteIds") List<Long> noteIds);
+
+
+
+   @Query("SELECT n.id FROM Note n where n.deleted = false and n.isPublic = true")
+   List<Long> findNonDeletedNoteIds();
 }  
+
+
 

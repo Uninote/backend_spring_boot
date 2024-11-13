@@ -28,4 +28,14 @@ public interface NoteSaveRepository extends JpaRepository<NoteSave, Long> {
     @Query("UPDATE NoteSave ns SET ns.isActive = false WHERE ns.user.id = :userId")
     void setInactiveByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT COUNT(s) FROM NoteSave s WHERE s.userId = :userId AND s.noteId = :noteId")
+    int countSavesByUserAndNote(@Param("userId") Long userId, @Param("noteId") Long noteId);
+
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
+            "FROM NoteSave s WHERE s.userId = :userId AND s.noteId = :noteId AND s.isActive = true")
+    boolean existsByUserIdAndNoteId(@Param("userId") Long userId, @Param("noteId") Long noteId);
+
+    List<NoteSave> findAllByIsActiveTrue();
+
+
 }

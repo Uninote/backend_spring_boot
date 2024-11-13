@@ -143,6 +143,7 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
 
 
         
-
+        @Query("SELECT u.id FROM User u where u.emailVerified = true")
+        List<Long> findUserIds();
 
 }

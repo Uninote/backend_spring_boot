@@ -174,7 +174,7 @@ public class RecommendationService {
             shuffledNotes.addAll(shuffledScoreGroup);
         }
     
-        shuffledNotes.sort(Comparator.comparingInt(noteScores::get).reversed());
+        shuffledNotes.sort(Comparator.comparingInt(noteScores::get).reversed(   ));
     
         return shuffledNotes;
     }

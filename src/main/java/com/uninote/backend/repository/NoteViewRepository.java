@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface NoteViewRepository extends JpaRepository<NoteView, Long> {
     Optional<NoteView> findByNoteIdAndUserId(Long noteId, Long userId);
@@ -40,4 +41,13 @@ List<Object[]> findNotesWithMinAvgViewDuration(@Param("minAvgViewDuration") doub
        "HAVING COUNT(nv.id) < :maxViews")
     List<Object[]> findNotesWithFewViews(@Param("maxViews") long maxViews);
     
+
+    @Query("SELECT nv.note.id FROM NoteView nv WHERE nv.userId = :userId")
+    Set<Long> findNotesViewedByUser(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(v) FROM NoteView v WHERE v.userId = :userId AND v.noteId = :noteId")
+    int countViewsByUserAndNote(@Param("userId") Long userId, @Param("noteId") Long noteId);
+    
 }
+
+
