@@ -25,7 +25,7 @@ public interface UserSeasonPointsRepository extends JpaRepository<UserSeasonPoin
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "JOIN admin.user_season_points usp ON usp.user_id = u.user_id "+
-               " WHERE u.role_id IN (1, 2)  AND usp.season_id= :seasonId " +
+               " WHERE u.role_id IN (1, 2)  AND usp.season_id= :seasonId AND u.email_verified = 1 " +
                "ORDER BY usp.points DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> top100UsersPerSeason(@Param("seasonId") Long seasonId);
@@ -36,7 +36,7 @@ public interface UserSeasonPointsRepository extends JpaRepository<UserSeasonPoin
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "JOIN admin.departments d ON d.department_id = u.department_id " +
                "JOIN admin.user_season_points usp ON usp.user_id = u.user_id "+
-               " WHERE u.role_id IN (1, 2)  AND usp.season_id= :seasonId AND d.university_id = :universityId " +
+               " WHERE u.role_id IN (1, 2)  AND usp.season_id= :seasonId AND d.university_id = :universityId AND u.email_verified = 1 " +
                "ORDER BY usp.points DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> top100UsersPerSeasonAndUniversity(@Param("seasonId") Long seasonId, @Param("universityId") Long universityId);
@@ -47,7 +47,7 @@ public interface UserSeasonPointsRepository extends JpaRepository<UserSeasonPoin
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
                "JOIN admin.user_season_points usp ON usp.user_id = u.user_id "+
-               " WHERE u.role_id IN (1, 2)  AND usp.season_id= :seasonId AND u.department_id = :departmentId " +
+               " WHERE u.role_id IN (1, 2)  AND usp.season_id= :seasonId AND u.department_id = :departmentId AND u.email_verified = 1 " +
                "ORDER BY usp.points DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> top100UsersPerSeasonAndDepartment(@Param("seasonId") Long seasonId, @Param("departmentId") Long departmentId);

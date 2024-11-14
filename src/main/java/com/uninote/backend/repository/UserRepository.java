@@ -27,7 +27,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName,CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
-               "WHERE u.role_id IN (1, 2) " +
+               "WHERE u.role_id IN (1, 2) AND u.email_verified = 1 " +
                "ORDER BY u.uniscore DESC " +
                "FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
@@ -37,7 +37,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
-               "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId " +
+               "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId AND u.email_verified = 1 " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> findTop100ByUniscoreByDepartment(@Param("departmentId") Long departmentId);
@@ -48,7 +48,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +
                "FROM admin.users u " +
                "JOIN admin.ranks r ON u.rank_id = r.rank_id " +
-               " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId " +
+               " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId AND u.email_verified = 1 " +
                "ORDER BY u.uniscore DESC FETCH FIRST 100 ROWS ONLY", 
        nativeQuery = true)
     List<UserInfoProjection> findTop100ByUniscoreByUniversity(@Param("universityId") Long universityId);
