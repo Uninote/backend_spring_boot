@@ -57,7 +57,6 @@ public class SVDRecommendationService {
 
     private boolean matrixLoaded = false;
 
-    @PostConstruct
     public synchronized void initializeUserNoteMatrix() {
         if (matrixLoaded) {
             logger.info("User-note matrix already loaded, skipping initialization.");
