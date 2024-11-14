@@ -2,9 +2,7 @@ package com.uninote.backend.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.uninote.backend.dto.NoteDTO;
-import com.uninote.backend.entity.NoteInteraction;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteView;
@@ -13,15 +11,12 @@ import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.NoteViewRepository;
 import com.uninote.backend.repository.UserRepository;
-
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.PageRequest;
-
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,10 +38,14 @@ public class SVDRecommendationService {
     @Autowired
     private NoteViewRepository noteViewRepository;
 
-    private RealMatrix userNoteMatrix;     
-    private RealMatrix[] svdMatrices;      
-    private List<Long> userIds;            
-    private List<Long> noteIds;            
+    private RealMatrix userNoteMatrix;
+    private RealMatrix[] svdMatrices;
+    private List<Long> userIds;
+    private List<Long> noteIds;
+
+    private Map<Long, Set<Long>> likesMap; // User likes map
+    private Map<Long, Set<Long>> savesMap; // User saves map
+    private Map<Long, Map<Long, Integer>> viewsMap; // User views map
 
     @Scheduled(cron = "0 0 0 * * *")  // Runs daily at midnight
     public void refreshUserNoteMatrix() {
@@ -58,20 +57,20 @@ public class SVDRecommendationService {
             logger.info("Retrieved {} users and {} notes for matrix computation", userIds.size(), noteIds.size());
 
             // Fetch all interactions once and store in maps
-            Map<Long, Set<Long>> likesMap = getUserLikesMap();
-            Map<Long, Set<Long>> savesMap = getUserSavesMap();
-            Map<Long, Map<Long, Integer>> viewsMap = getUserViewsMap();
+            likesMap = getUserLikesMap();
+            savesMap = getUserSavesMap();
+            viewsMap = getUserViewsMap();
 
             userNoteMatrix = buildUserNoteMatrix(userIds, noteIds, likesMap, savesMap, viewsMap);
-            svdMatrices = performSVD(userNoteMatrix); 
+            svdMatrices = performSVD(userNoteMatrix);
             logger.info("Successfully refreshed user-note matrix and SVD matrices");
         } catch (Exception e) {
             logger.error("Error during scheduled matrix refresh", e);
         }
     }
 
-    private RealMatrix buildUserNoteMatrix(List<Long> userIds, List<Long> noteIds, 
-                                           Map<Long, Set<Long>> likesMap, 
+    private RealMatrix buildUserNoteMatrix(List<Long> userIds, List<Long> noteIds,
+                                           Map<Long, Set<Long>> likesMap,
                                            Map<Long, Set<Long>> savesMap,
                                            Map<Long, Map<Long, Integer>> viewsMap) {
         logger.info("Building user-note interaction matrix");
@@ -85,12 +84,12 @@ public class SVDRecommendationService {
 
             for (int j = 0; j < numNotes; j++) {
                 Long noteId = noteIds.get(j);
-                
+
                 // Calculate the interaction score based on fetched maps
                 double score = (likesMap.getOrDefault(userId, Collections.emptySet()).contains(noteId) ? 3 : 0) +
                                (savesMap.getOrDefault(userId, Collections.emptySet()).contains(noteId) ? 2 : 0) +
                                viewsMap.getOrDefault(userId, Collections.emptyMap()).getOrDefault(noteId, 0);
-                
+
                 matrixData[i][j] = score;
             }
         });
@@ -103,11 +102,11 @@ public class SVDRecommendationService {
         logger.info("Fetching all user likes in bulk");
         return noteLikeRepository.findAllByIsActiveTrue().stream()
                 .collect(Collectors.groupingBy(
-                        noteLike -> noteLike.getUser().getId(),  
-                        Collectors.mapping(noteLike -> noteLike.getNote().getId(), Collectors.toSet()) 
+                        noteLike -> noteLike.getUser().getId(),
+                        Collectors.mapping(noteLike -> noteLike.getNote().getId(), Collectors.toSet())
                 ));
     }
-    
+
     private Map<Long, Set<Long>> getUserSavesMap() {
         logger.info("Fetching all user saves in bulk");
         return noteSaveRepository.findAllByIsActiveTrue().stream()
@@ -119,18 +118,16 @@ public class SVDRecommendationService {
 
     private Map<Long, Map<Long, Integer>> getUserViewsMap() {
         logger.info("Fetching all user views in bulk");
-    
+
         return noteViewRepository.findAll().stream()
                 .collect(Collectors.groupingBy(
                         NoteView::getUserId,
                         Collectors.groupingBy(
-                            NoteView::getNoteId,
-                            Collectors.collectingAndThen(Collectors.counting(), Long::intValue) 
+                                NoteView::getNoteId,
+                                Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
                         )
                 ));
     }
-    
-    
 
     private RealMatrix[] performSVD(RealMatrix userNoteMatrix) {
         logger.debug("Performing SVD on user-note matrix");
@@ -143,15 +140,27 @@ public class SVDRecommendationService {
 
         if (userNoteMatrix == null || svdMatrices == null || userIds == null || noteIds == null) {
             logger.warn("User-note matrix or SVD matrices not initialized; refreshing matrices");
-            refreshUserNoteMatrix(); 
+            refreshUserNoteMatrix();
         }
 
         int userIndex = userIds.indexOf(userId);
-        if (userIndex == -1) {
-            logger.warn("User ID {} not found in user-note matrix", userId);
-            return Collections.emptyList();
+        List<Long> recommendedNoteIds;
+
+        if (userIndex == -1 || isUserWithoutData(userIndex)) {
+            logger.info("User has no data; returning popular notes based on interactions.");
+            recommendedNoteIds = getTopInteractedNotesFromMaps(10);
+        } else {
+            recommendedNoteIds = getTopRecommendedNoteIds(userIndex, 10);
         }
 
+        return noteRepository.findNotesByIds(recommendedNoteIds);
+    }
+
+    private boolean isUserWithoutData(int userIndex) {
+        return Arrays.stream(userNoteMatrix.getRow(userIndex)).allMatch(score -> score == 0.0);
+    }
+
+    private List<Long> getTopRecommendedNoteIds(int userIndex, int limit) {
         RealMatrix userFeatures = svdMatrices[0].getRowMatrix(userIndex).multiply(svdMatrices[1]);
         RealMatrix predictedScores = userFeatures.multiply(svdMatrices[2].transpose());
 
@@ -160,14 +169,41 @@ public class SVDRecommendationService {
             noteScores.put(noteIds.get(i), predictedScores.getEntry(0, i));
         }
 
-        List<Long> topNoteIds = noteScores.entrySet().stream()
+        return noteScores.entrySet().stream()
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .map(Map.Entry::getKey)
-                .limit(10)
+                .limit(limit)
                 .collect(Collectors.toList());
+    }
 
-        logger.info("Top recommended notes for user ID {}: {}", userId, topNoteIds);
-        return noteRepository.findNotesByIds(topNoteIds);
+    private List<Long> getTopInteractedNotesFromMaps(int limit) {
+        logger.info("Calculating top-interacted notes from in-memory data");
+
+        Map<Long, Integer> noteInteractionScores = new HashMap<>();
+
+        for (Long noteId : noteIds) {
+            int score = 0;
+
+            for (Set<Long> likedNotes : likesMap.values()) {
+                if (likedNotes.contains(noteId)) score += 3;
+            }
+
+            for (Set<Long> savedNotes : savesMap.values()) {
+                if (savedNotes.contains(noteId)) score += 2;
+            }
+
+            for (Map<Long, Integer> userViews : viewsMap.values()) {
+                score += userViews.getOrDefault(noteId, 0);
+            }
+
+            noteInteractionScores.put(noteId, score);
+        }
+
+        return noteInteractionScores.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+                .map(Map.Entry::getKey)
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
     private List<Long> getAllUserIds() {
