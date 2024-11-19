@@ -17,13 +17,16 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
+import org.springframework.context.event.EventListener;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import javax.annotation.PostConstruct;
 
 
@@ -57,6 +60,9 @@ public class SVDRecommendationService {
 
     private boolean matrixLoaded = false;
 
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Async
     public synchronized void initializeUserNoteMatrix() {
         if (matrixLoaded) {
             logger.info("User-note matrix already loaded, skipping initialization.");
@@ -87,6 +93,7 @@ public class SVDRecommendationService {
             userIds = getAllUserIds();
             noteIds = getAllNoteIds();
             logger.info("Retrieved {} users and {} notes for matrix computation", userIds.size(), noteIds.size());
+
 
             likesMap = getUserLikesMap();
             savesMap = getUserSavesMap();
