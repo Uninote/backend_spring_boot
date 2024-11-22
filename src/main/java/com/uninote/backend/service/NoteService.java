@@ -1103,4 +1103,33 @@ public class NoteService {
     public List<CourseNameDTO> getCoursesWithNotesByUser(Long userId) {
         return noteRepository.findCoursesWithNotesByUserId(userId);
     }
+
+
+
+
+
+
+//open conf
+
+    public String getPdfUrl(Long noteId) {
+        String url  = noteRepository.findPdfUrl(noteId);
+        return url;
+    }
+
+    public NoteDTO getNoteData(Long noteId) {
+        NoteDTO data =  noteRepository.getNoteDataById(noteId).orElseThrow(() -> new IllegalArgumentException("Note not found"));
+        return data;
+
+    }
+
+
+
+
+
+
+
+
 }
+
+
+
