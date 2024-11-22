@@ -482,4 +482,16 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourseByType(
         List<CourseNameDTO> courses = noteService.getCoursesWithNotesByUser(userId);
         return ResponseEntity.ok(courses);
     }
+
+
+
+@GetMapping("/pdf-url/{noteId}") 
+public ResponseEntity<String> getPdfUrl(@PathVariable Long noteId) {    
+    return ResponseEntity.ok(noteService.getPdfUrl(noteId));
+}
+
+@GetMapping("/note-data/{noteId}")
+public NoteDTO getNoteDataById(@PathVariable Long noteId) {
+    return noteService.getNoteData(noteId);
+}
 }

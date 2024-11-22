@@ -143,6 +143,7 @@ public class RecommendationService {
                                 .map(result -> (Long) result[0])
                                 .collect(Collectors.toSet()),
                             noteViewRepository.findNotesWithFewViews(3L).stream()
+                                .limit(50)
                                 .map(result -> (Long) result[0])
                                 .collect(Collectors.toSet()))
                 ));
