@@ -83,6 +83,9 @@ public class SVDRecommendationService {
 
         svdMatrices = performSVD(userNoteMatrix);
         matrixLoaded = true;
+        likesMap = getUserLikesMap();
+        savesMap = getUserSavesMap();
+        viewsMap = getUserViewsMap();
     }
 
     @Scheduled(cron = "0 0 0 * * *")  
