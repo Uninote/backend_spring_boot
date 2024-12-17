@@ -67,7 +67,8 @@ public class Note {
     @JoinColumn(name = "type_id", referencedColumnName = "type_id", nullable = true)
     private NoteType noteType;
 
-
+    @Column(name = "slug_title")
+    private String slugTitle;
 
     public Boolean getDeleted() {
         return deleted;
@@ -215,5 +216,14 @@ public class Note {
 
     public void setNoteType(NoteType noteType) {
         this.noteType = noteType;
+    }
+
+
+    public String getSlugTitle() {
+        return slugTitle;
+    }
+
+    public void setSlugTitle(String slugTitle) {
+        this.slugTitle = slugTitle;
     }
 }

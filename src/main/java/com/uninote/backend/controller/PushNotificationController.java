@@ -41,7 +41,7 @@ public class PushNotificationController {
             subscription,
             "Test Notification",
             "This is a test message",
-            "https://your-app.com/test"
+            "https://uninote.gr"
         );
 
         return ResponseEntity.ok("Notification sent.");

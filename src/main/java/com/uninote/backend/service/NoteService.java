@@ -570,7 +570,7 @@ public class NoteService {
         }
     noteRepository.save(note);
 }
-    public Page<NoteDTO> getPublicNotes(int page, int size, String sortBy, String sortDir) {
+    public Page<NoteDTO> getPublicNotes(int page, String languageCode,int size, String sortBy, String sortDir) {
         
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");            
@@ -589,7 +589,7 @@ public class NoteService {
         Pageable pageable = PageRequest.of(page, size, sort);
     
         
-        return noteRepository.findPublicNotes(pageable);
+        return noteRepository.findPublicNotes(pageable, languageCode);
     }
     
     public List<NoteDTO> getPublicNotesByUserAndUniversity(User user, University university) {
@@ -608,7 +608,7 @@ public class NoteService {
     }
 
 
-    public Page<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester, int page, int size, String sortBy, String sortDir) {
+    public Page<NoteDTO> getPublicNotesByDepartmentAndSemester(Long departmentId, int semester, String languageCode, int page, int size, String sortBy, String sortDir) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -622,10 +622,10 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester, pageable);
+        return noteRepository.findPublicNotesByDepartmentAndSemester(departmentId, semester, languageCode,pageable);
     }
     
-    public Page<NoteDTO> getPublicNotesByDepartment(Department department, int page, int size, String sortBy, String sortDir) {
+    public Page<NoteDTO> getPublicNotesByDepartment(Department department, String languageCode,int page, int size, String sortBy, String sortDir) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -639,30 +639,12 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByDepartment(department, pageable);
-    }
-    
-
-
-    public Page<NoteDTO> getPublicNotesByCourse(Course course, int page, int size, String sortBy, String sortDir) {
-        Map<String, String> validSortFields = new HashMap<>();
-        validSortFields.put("likes", "likes");
-        validSortFields.put("createdAt", "createdAt");
-        validSortFields.put("title", "title");
-    
-        String sortField = validSortFields.getOrDefault(sortBy, "likes");
-    
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
-                    ? Sort.by(sortField).ascending()
-                    : Sort.by(sortField).descending();
-    
-        Pageable pageable = PageRequest.of(page, size, sort);
-    
-        return noteRepository.findPublicNotesByCourse(course, pageable);
+        return noteRepository.findPublicNotesByDepartment(department, languageCode,pageable);
     }
     
 
-    public Page<NoteDTO> getPublicNotesByUniversity(University university, int page, int size, String sortBy, String sortDir) {
+
+    public Page<NoteDTO> getPublicNotesByCourse(Course course, String languageCode,int page, int size, String sortBy, String sortDir) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -676,7 +658,25 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByUniversity(university, pageable);
+        return noteRepository.findPublicNotesByCourse(course, languageCode,pageable);
+    }
+    
+
+    public Page<NoteDTO> getPublicNotesByUniversity(University university, String languageCode,int page, int size, String sortBy, String sortDir) {
+        Map<String, String> validSortFields = new HashMap<>();
+        validSortFields.put("likes", "likes");
+        validSortFields.put("createdAt", "createdAt");
+        validSortFields.put("title", "title");
+    
+        String sortField = validSortFields.getOrDefault(sortBy, "likes");
+    
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                    ? Sort.by(sortField).ascending()
+                    : Sort.by(sortField).descending();
+    
+        Pageable pageable = PageRequest.of(page, size, sort);
+    
+        return noteRepository.findPublicNotesByUniversity(university, languageCode,pageable);
     }
     
 
@@ -968,13 +968,13 @@ public class NoteService {
         return savedNote;
     }
 
-    public List<NoteDTO> getPublicSavedNotesByUser(Long userId) {
-        return noteRepository.findPublicSavedNotesByUserId(userId);   
+    public List<NoteDTO> getPublicSavedNotesByUser(Long userId, String languageCode) {
+        return noteRepository.findPublicSavedNotesByUserId(userId, languageCode);   
     }
 
-    public List<NoteProjection> getTopPublicNotesByUser(Long userId, int limit) {
+    public List<NoteProjection> getTopPublicNotesByUser(Long userId, String languageCode,int limit) {
 
-        return noteRepository.findTopPublicNotesByUser(userId,limit);
+        return noteRepository.findTopPublicNotesByUser(userId,languageCode,limit);
     }
 
 
@@ -988,7 +988,7 @@ public class NoteService {
     }
 
 
-    public Page<NoteDTO> getRecentPublicNotesByDepartment(Department department, int page, int size, String sortBy, String sortDir) {
+    public Page<NoteDTO> getRecentPublicNotesByDepartment(Department department, String languageCode,int page, int size, String sortBy, String sortDir) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -1002,10 +1002,10 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findRecentPublicNotesByDepartment(department,  pageable);
+        return noteRepository.findRecentPublicNotesByDepartment(department,  languageCode,pageable);
     }
 
-    public Page<NoteDTO> getPublicNotesByDepartmentAndSemesterByType(Long departmentId, int semester, int page, int size, String sortBy, String sortDir, Long typeId) {
+    public Page<NoteDTO> getPublicNotesByDepartmentAndSemesterByType(Long departmentId, int semester, String languageCode,int page, int size, String sortBy, String sortDir, Long typeId) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -1019,10 +1019,10 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByDepartmentAndSemesterByType(departmentId, semester, typeId, pageable);
+        return noteRepository.findPublicNotesByDepartmentAndSemesterByType(departmentId, semester, typeId, languageCode,pageable);
     }
     
-    public Page<NoteDTO> getPublicNotesByDepartmentByType(Department department, int page, int size, String sortBy, String sortDir, Long typeId) {
+    public Page<NoteDTO> getPublicNotesByDepartmentByType(Department department, String languageCode,int page, int size, String sortBy, String sortDir, Long typeId) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -1036,12 +1036,12 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByDepartmentByType(department, typeId,pageable);
+        return noteRepository.findPublicNotesByDepartmentByType(department, typeId, languageCode,pageable);
     }
     
 
 
-    public Page<NoteDTO> getPublicNotesByCourseByType(Course course, int page, int size, String sortBy, String sortDir, Long typeId) {
+    public Page<NoteDTO> getPublicNotesByCourseByType(Course course, String languageCode,int page, int size, String sortBy, String sortDir, Long typeId) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -1055,11 +1055,11 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByCourseByType(course, typeId,pageable);
+        return noteRepository.findPublicNotesByCourseByType(course, typeId, languageCode,pageable);
     }
     
 
-    public Page<NoteDTO> getPublicNotesByUniversityByType(University university, int page, int size, String sortBy, String sortDir, Long typeId) {
+    public Page<NoteDTO> getPublicNotesByUniversityByType(University university, String languageCode,int page, int size, String sortBy, String sortDir, Long typeId) {
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");
         validSortFields.put("createdAt", "createdAt");
@@ -1073,11 +1073,11 @@ public class NoteService {
     
         Pageable pageable = PageRequest.of(page, size, sort);
     
-        return noteRepository.findPublicNotesByUniversityByType(university,typeId, pageable);
+        return noteRepository.findPublicNotesByUniversityByType(university, typeId, languageCode,pageable);
     }
 
 
-    public Page<NoteDTO> getPublicNotesByType(int page, int size, String sortBy, String sortDir, Long typeId) {
+    public Page<NoteDTO> getPublicNotesByType(String languageCode,int page, int size, String sortBy, String sortDir, Long typeId) {
         
         Map<String, String> validSortFields = new HashMap<>();
         validSortFields.put("likes", "likes");            
@@ -1096,7 +1096,7 @@ public class NoteService {
         Pageable pageable = PageRequest.of(page, size, sort);
     
         
-        return noteRepository.findPublicNotesByType(pageable, typeId);
+        return noteRepository.findPublicNotesByType(pageable, typeId,languageCode);
     }
 
 
@@ -1116,14 +1116,15 @@ public class NoteService {
         return url;
     }
 
-    public NoteDTO getNoteData(Long noteId) {
-        NoteDTO data =  noteRepository.getNoteDataById(noteId).orElseThrow(() -> new IllegalArgumentException("Note not found"));
+    public NoteDTO getNoteData(Long noteId, String languageCode) {
+        NoteDTO data =  noteRepository.getNoteDataById(noteId, languageCode).orElseThrow(() -> new IllegalArgumentException("Note not found"));
         return data;
 
     }
 
-
-
+    public Boolean slugExists(String slug) {
+        return noteRepository.existsBySlugTitle(slug);
+    }
 
 
 

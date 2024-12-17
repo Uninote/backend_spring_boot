@@ -91,9 +91,9 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
                "AND n.isPublic = true AND n.deleted = false")
-Page<NoteDTO> findPublicNotes(Pageable pageable);
+Page<NoteDTO> findPublicNotes(Pageable pageable, @Param("language_code") String languageCode);
 
     @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.user = :user AND n.course.department = :department")
     List<Note> findPublicNotesByUserAndDepartment(@Param("user") User user, @Param("department") Department department);
@@ -113,9 +113,9 @@ Page<NoteDTO> findPublicNotes(Pageable pageable);
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = language_code " +
                "AND n.isPublic = true AND d = :department AND n.deleted = false")
-Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department department,  Pageable pageable);
+Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department department, @Param("language_code") String languageCode ,Pageable pageable);
 
 
 
@@ -134,9 +134,9 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = language_code " +
                "AND n.isPublic = true AND n.course.department.university = :university AND  n.deleted = false")
-   Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University university, Pageable pageable);
+   Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University university, @Param("language_code") String languageCode, Pageable pageable);
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
@@ -153,9 +153,9 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = language_code " +
                "AND n.isPublic = true AND n.course = :course AND n.deleted = false")
-    Page<NoteDTO> findPublicNotesByCourse(@Param("course") Course course, Pageable pageable);
+    Page<NoteDTO> findPublicNotesByCourse(@Param("course") Course course, @Param("language_code") String language_code, Pageable pageable);
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
@@ -172,9 +172,9 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = language_code " +
                "AND n.isPublic = true AND n.course.department.id = :departmentId AND n.course.semester = :semester AND n.deleted = false")
-    Page<NoteDTO> findPublicNotesByDepartmentAndSemester(@Param("departmentId") Long departmentId, @Param("semester") int semester, Pageable pageable);
+    Page<NoteDTO> findPublicNotesByDepartmentAndSemester(@Param("departmentId") Long departmentId, @Param("semester") int semester, @Param("language_code") String language_code, Pageable pageable);
 
     @Query("SELECT n FROM Note n WHERE n.isPublic = true AND n.user = :user AND n.course.department.university = :university")
     List<Note> findPublicNotesByUserAndUniversity(@Param("user") User user, @Param("university") University university);
@@ -190,9 +190,9 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
 
 
     @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, n.isPublic, " +
-       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
-       "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
-       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
+       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = :languageCode), " +
+       "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code =  :language_code), " +
+       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = :language_code), " +
        "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
        "FROM NoteSave ns " +
        "JOIN ns.note n " +
@@ -202,19 +202,19 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
        "JOIN n.user u " +
        "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
        "WHERE ns.user.id = :userId AND ns.isActive = TRUE AND n.isPublic = TRUE AND n.deleted = false")
-   List<NoteDTO> findPublicSavedNotesByUserId(@Param("userId") Long userId);
+   List<NoteDTO> findPublicSavedNotesByUserId(@Param("userId") Long userId, @Param("language_code") String languageCode);
 
    @Query(value = "SELECT n.note_id AS id, c.course_id AS courseId, u.user_id AS userId, n.title AS title, " +
                "DBMS_LOB.SUBSTR(n.description, 4000, 1) AS description, n.pdf_url AS pdfUrl, n.filename AS filename, " +
                "(SELECT cn.course_name FROM admin.course_names cn " +
                "JOIN admin.languages l ON cn.language_id = l.language_id " +
-               "WHERE cn.course_id = c.course_id AND l.language_code = 'EN') AS courseName, " +
+               "WHERE cn.course_id = c.course_id AND l.language_code = :language_code) AS courseName, " +
                "(SELECT un.university_name FROM admin.university_names un " +
                "JOIN admin.languages l ON un.language_id = l.language_id " +
-               "WHERE un.university_id = d.university_id AND l.language_code = 'EN') AS universityName, " +
+               "WHERE un.university_id = d.university_id AND l.language_code = :language_code) AS universityName, " +
                "(SELECT dn.department_name FROM admin.department_names dn " +
                "JOIN admin.languages l ON dn.language_id = l.language_id " +
-               "WHERE dn.department_id = d.department_id AND l.language_code = 'EN') AS departmentName, " +
+               "WHERE dn.department_id = d.department_id AND l.language_code = :language_code) AS departmentName, " +
                "n.like_count AS likes, u.username AS username, u.profile_image_url AS profileImageUrl, n.created_at AS createdAt " +
                "FROM admin.notes n " +
                "JOIN admin.courses c ON n.course_id = c.course_id " +
@@ -223,7 +223,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "WHERE n.is_public = 1 AND u.user_id = :userId AND n.deleted = 0 " +
                "ORDER BY n.like_count DESC, n.created_at DESC " +
                "FETCH FIRST :limit ROWS ONLY", nativeQuery = true)
-    List<NoteProjection> findTopPublicNotesByUser(@Param("userId") Long userId, @Param("limit") int limit);
+    List<NoteProjection> findTopPublicNotesByUser(@Param("userId") Long userId, @Param("language_code") String language_code,@Param("limit") int limit);
 
     
     @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
@@ -635,9 +635,9 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
                "AND n.isPublic = true AND d = :department AND n   .deleted = false ORDER BY n.createdAt desc")
-   Page<NoteDTO> findRecentPublicNotesByDepartment(@Param("department") Department department,  Pageable pageable);
+   Page<NoteDTO> findRecentPublicNotesByDepartment(@Param("department") Department department, @Param("language_code") String languageCode, Pageable pageable);
 
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
@@ -654,9 +654,10 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' AND n.noteType.typeId = :typeId " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
+               "AND n.noteType.typeId = :typeId " +
                "AND n.isPublic = true AND d = :department AND n.deleted = false ")
-   Page<NoteDTO> findPublicNotesByDepartmentByType(@Param("department") Department department,@Param("typeId") Long typeId,  Pageable pageable);
+   Page<NoteDTO> findPublicNotesByDepartmentByType(@Param("department") Department department,@Param("typeId") Long typeId, @Param("language_code") String languageCode ,Pageable pageable);
 
 
    
@@ -675,9 +676,10 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' AND n.noteType.typeId = :typeId " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " + 
+               "AND n.noteType.typeId = :typeId " +
                "AND n.isPublic = true AND n.course.department.university = :university AND  n.deleted = false")
-   Page<NoteDTO> findPublicNotesByUniversityByType(@Param("university") University university, @Param("typeId") Long typeId,Pageable pageable);
+   Page<NoteDTO> findPublicNotesByUniversityByType(@Param("university") University university, @Param("typeId") Long typeId,@Param("language_code") String languageCode,Pageable pageable);
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
@@ -694,9 +696,10 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' AND n.noteType.typeId = :typeId " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
+               "AND n.noteType.typeId = :typeId " +
                "AND n.isPublic = true AND n.course = :course AND n.deleted = false")
-    Page<NoteDTO> findPublicNotesByCourseByType(@Param("course") Course course, @Param("typeId") Long typeId,Pageable pageable);
+    Page<NoteDTO> findPublicNotesByCourseByType(@Param("course") Course course, @Param("typeId") Long typeId, @Param("language_code") String languageCode,Pageable pageable);
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
     "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
@@ -713,9 +716,10 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
     "JOIN un.language ul " +  
     "JOIN DepartmentName dn ON dn.department = d " +
     "JOIN dn.language dl " +  
-    "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' AND n.noteType.typeId = :typeId " +
+    "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
+    "AND n.noteType.typeId = :typeId " +
     "AND n.isPublic = true AND n.course.department.id = :departmentId AND n.course.semester = :semester AND n.deleted = false")
-    Page<NoteDTO> findPublicNotesByDepartmentAndSemesterByType(@Param("departmentId") Long departmentId, @Param("semester") int semester, @Param("typeId") Long typeId,Pageable pageable);
+    Page<NoteDTO> findPublicNotesByDepartmentAndSemesterByType(@Param("departmentId") Long departmentId, @Param("semester") int semester, @Param("typeId") Long typeId, @Param("language_code") String languageCode,Pageable pageable);
 
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
@@ -733,9 +737,10 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
             "JOIN un.language ul " +  
             "JOIN DepartmentName dn ON dn.department = d " +
             "JOIN dn.language dl " +  
-            "WHERE l.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' AND n.noteType.typeId = :typeId " +
+            "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
+            "AND n.noteType.typeId = :typeId " +
             "AND n.isPublic = true AND n.deleted = false")
-   Page<NoteDTO> findPublicNotesByType(Pageable pageable, @Param("typeId") Long typeId);
+   Page<NoteDTO> findPublicNotesByType(Pageable pageable, @Param("typeId") Long typeId, @Param("language_code") String languageCode);
 
 
 
@@ -816,7 +821,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
                "JOIN un.language ul " +
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +
-               "WHERE lang.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE  ul.code = :language_code AND dl.code = :language_code " +
                "AND n.id IN :noteIds AND n.isPublic = true AND n.deleted = false")
    List<NoteDTO> findNotesByIds(@Param("noteIds") List<Long> noteIds);
 
@@ -845,9 +850,12 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
                "JOIN un.language ul " +
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +
-               "WHERE lang.code = 'EN' AND ul.code = 'EN' AND dl.code = 'EN' " +
+               "WHERE  ul.code = :language_code AND dl.code = :language_code " +
                "AND n.id = :noteId AND n.isPublic = true AND n.deleted = false")
-   Optional<NoteDTO> getNoteDataById(@Param("noteId") Long noteId);
+   Optional<NoteDTO> getNoteDataById(@Param("noteId") Long noteId, @Param("language_code") String languageCode);
+
+
+   boolean existsBySlugTitle(String slug);
 }  
 
 

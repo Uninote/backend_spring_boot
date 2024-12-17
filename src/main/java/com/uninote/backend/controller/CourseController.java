@@ -49,7 +49,7 @@ public class CourseController {
     public ResponseEntity<List<CourseProjection>> getCoursesByDepartmentAndSemester(
             @PathVariable Long departmentId,
             @PathVariable int semesterId,
-            @RequestParam String language) {
+            @RequestParam String language) {    
         List<CourseProjection> courses = courseService.getCourseDetailsByDepartmentAndSemester(departmentId, semesterId, language);
         if (courses.isEmpty()) {
             return ResponseEntity.notFound().build();
