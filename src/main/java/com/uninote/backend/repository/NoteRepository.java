@@ -153,7 +153,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = language_code " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
                "AND n.isPublic = true AND n.course = :course AND n.deleted = false")
     Page<NoteDTO> findPublicNotesByCourse(@Param("course") Course course, @Param("language_code") String language_code, Pageable pageable);
 
@@ -172,7 +172,7 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "JOIN un.language ul " +  
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +  
-               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = language_code " +
+               "WHERE l.code = :language_code AND ul.code = :language_code AND dl.code = :language_code " +
                "AND n.isPublic = true AND n.course.department.id = :departmentId AND n.course.semester = :semester AND n.deleted = false")
     Page<NoteDTO> findPublicNotesByDepartmentAndSemester(@Param("departmentId") Long departmentId, @Param("semester") int semester, @Param("language_code") String language_code, Pageable pageable);
 
