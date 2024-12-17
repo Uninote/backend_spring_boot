@@ -89,4 +89,5 @@ public class DepartmentController {
     public List<String> getSemestersWithQuestions(@PathVariable("departmentId") Long departmentId) {
         return departmentService.getSemestersWithQuestionsByDepartment(departmentId);
     }
+    
     }
