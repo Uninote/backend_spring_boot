@@ -1,5 +1,8 @@
 package com.uninote.backend.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.persistence.*;
 
 @Entity
@@ -14,6 +17,8 @@ public class NoteType {
     @Column(name = "type_name", nullable = false, length = 50)
     private String typeName;
 
+    @OneToMany(mappedBy = "noteType", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<NoteTypeName> typeNames = new ArrayList<>();
 
     public Long getTypeId() {
         return typeId;

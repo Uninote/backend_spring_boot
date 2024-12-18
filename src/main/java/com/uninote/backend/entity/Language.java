@@ -22,7 +22,7 @@ public class Language {
 
      @OneToMany(mappedBy = "language", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UniversityName> universityNames = new HashSet<>();
-    // Getters and setters
+
     public Long getId() {
         return id;
     }
