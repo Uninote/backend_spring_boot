@@ -22,7 +22,7 @@ public class NoteTypeController {
 
     @GetMapping
     public List<NoteTypeName> getNoteTypes(@RequestParam(defaultValue = "EN") String language) {
-        return noteTypeService.getNoteTypesByLanguageCode(languageCode);
+        return noteTypeService.getNoteTypesByLanguageCode(language);
     }
 
     
