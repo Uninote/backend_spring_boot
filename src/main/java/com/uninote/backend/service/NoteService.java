@@ -469,9 +469,9 @@ public class NoteService {
     
         
     @Cacheable("notes")
-    public NoteDTO getNoteById(Long id) {
+    public NoteDTO getNoteById(Long id, String languageCode) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
-        NoteDTO dto =  convertToDTO(note);
+        NoteDTO dto =  convertToDTO(note, languageCode);
         Optional<UserCourseGrade> usg  = userCourseGradeRepository.findByUserIdAndCourseId(note.getUser().getId(), note.getCourse().getId());
         if (usg.isPresent()) {
             dto.setGrade(usg.get().getGrade());
@@ -709,6 +709,43 @@ public class NoteService {
 
         String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
             .filter(universityName -> "EN".equals(universityName.getLanguage().getCode()))
+            .map(UniversityName::getName)
+            .findFirst()
+            .orElse("Unknown University Name");  
+        dto.setUniversityName(englishUniversityName);
+        dto.setCreatedAt(note.getCreatedAt());
+        return dto;
+    }
+
+    private NoteDTO convertToDTO(Note note, String languageCode) {
+        NoteDTO dto = new NoteDTO(
+            note.getId(),
+            note.getCourse().getId(),
+            note.getUser().getId(),
+            note.getTitle(),
+            note.getDescription(),
+            note.getPdfUrl(),
+            note.getFilename(),
+            note.getIsPublic()
+        );
+        
+        dto.setTotalLikes(note.getLikes());
+        String englishCourseName = note.getCourse().getCourseNames().stream()
+            .filter(courseName -> languageCode.equals(courseName.getLanguage().getCode()))
+            .map(CourseName::getName)
+            .findFirst()
+            .orElse("Unknown Course Name");  
+
+        dto.setCourseName(englishCourseName);   
+        String englishDepartmentName = note.getCourse().getDepartment().getDepartmentNames().stream()
+            .filter(departmentName -> languageCode.equals(departmentName.getLanguage().getCode()))
+            .map(DepartmentName::getName)
+            .findFirst()
+            .orElse("Unknown Department Name"); 
+        dto.setDepartmentName(englishDepartmentName);     
+
+        String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
+            .filter(universityName -> languageCode.equals(universityName.getLanguage().getCode()))
             .map(UniversityName::getName)
             .findFirst()
             .orElse("Unknown University Name");  

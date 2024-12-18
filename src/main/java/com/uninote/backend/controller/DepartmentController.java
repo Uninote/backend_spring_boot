@@ -63,10 +63,10 @@ public class DepartmentController {
     @GetMapping("/details-uni-lang")
     public ResponseEntity<List<DepartmentProjection>> getDepartmentsByUniversityIdAndLanguage(
             @RequestParam String universityId,
-            @RequestParam String languageCode) {
+            @RequestParam String language) {
         try {
             Long universityIdLong = Long.parseLong(universityId);
-            List<DepartmentProjection> departmentDetails = departmentService.getDepartmentsByUniversityIdAndLanguage(universityIdLong, languageCode);
+            List<DepartmentProjection> departmentDetails = departmentService.getDepartmentsByUniversityIdAndLanguage(universityIdLong, language);
             return ResponseEntity.ok(departmentDetails);
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().body(null);
