@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.uninote.backend.entity.NoteType;
+import com.uninote.backend.entity.NoteTypeName;
 import com.uninote.backend.repository.NoteTypeRepository;
 
 import java.util.List;
@@ -17,4 +18,8 @@ public class NoteTypeService {
     public List<NoteType> getAllNoteTypes() {
         return noteTypeRepository.findAll();
     }
+
+    public List<NoteTypeName> getNoteTypesByLanguageCode(String languageCode) {
+        return noteTypeRepository.findAllByLanguageCode(languageCode);
+    }   
 }
