@@ -852,7 +852,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
                "JOIN dn.language dl " +
                "WHERE  ul.code = :language_code AND dl.code = :language_code " +
                "AND n.id IN :noteIds AND n.isPublic = true AND n.deleted = false")
-   List<NoteDTO> findNotesByIds(@Param("noteIds") List<Long> noteIds);
+   List<NoteDTO> findNotesByIds(@Param("noteIds") List<Long> noteIds, @Param("language_code") String languageCode);
 
 
 

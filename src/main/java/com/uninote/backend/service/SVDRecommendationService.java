@@ -179,7 +179,7 @@ public class SVDRecommendationService {
         return new RealMatrix[]{svd.getU(), svd.getS(), svd.getV()};
     }
 
-    public List<NoteDTO> getRecommendationsForUser(Long userId) {
+    public List<NoteDTO> getRecommendationsForUser(Long userId, String languageCode) {
         logger.info("Generating recommendations for user ID: {}", userId);
 
         if (userNoteMatrix == null || svdMatrices == null || userIds == null || noteIds == null) {
@@ -198,7 +198,7 @@ public class SVDRecommendationService {
             recommendedNoteIds = getTopRecommendedNoteIds(userIndex, 10);
         }
 
-        return noteRepository.findNotesByIds(recommendedNoteIds);
+        return noteRepository.findNotesByIds(recommendedNoteIds, languageCode);
     }
 
     private boolean isUserWithoutData(int userIndex) {

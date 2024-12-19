@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -21,7 +22,7 @@ public class SVDRecommendationController {
     
 
     @GetMapping("/{userId}")
-    public List<NoteDTO> getRecommendationsForUser(@PathVariable Long userId) {
-        return svdRecommendationService.getRecommendationsForUser(userId);
+    public List<NoteDTO> getRecommendationsForUser(@PathVariable Long userId, @RequestParam(defaultValue = "EN") String language) {
+        return svdRecommendationService.getRecommendationsForUser(userId, language);
     }
 }
