@@ -49,9 +49,9 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
 
     @Query("SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, n.isPublic, " +
-       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
-       "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
-       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
+       "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = :languageCode), " +
+       "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = :languageCode), " +
+       "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = :languageCode), " +
        "n.likes , u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear) " +
        "FROM Note n " +
        "JOIN n.course c " +
@@ -59,7 +59,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
        "JOIN c.department d " +
        "JOIN n.user u " +
        "WHERE n.user.id = :userId AND  n.deleted = false")
-    List<NoteDTO> findByUserId(Long userId);
+    List<NoteDTO> findByUserId(Long userId, @Param("languageCode") String languageCode);
 
     List<Note> findByCourse(Course course);
 

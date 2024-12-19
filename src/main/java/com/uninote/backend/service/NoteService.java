@@ -500,8 +500,8 @@ public class NoteService {
         return dto;
     }
 
-    public List<NoteDTO> getNotesByUser(Long userId) {
-        return noteRepository.findByUserId(userId);
+    public List<NoteDTO> getNotesByUser(Long userId, String languageCode) {
+        return noteRepository.findByUserId(userId, languageCode);
     }
 
     public List<NoteDTO> getNotesByCourse(Course course) {

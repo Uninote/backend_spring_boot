@@ -63,7 +63,7 @@ public class DepartmentController {
     @GetMapping("/details-uni-lang")
     public ResponseEntity<List<DepartmentProjection>> getDepartmentsByUniversityIdAndLanguage(
             @RequestParam String universityId,
-            @RequestParam String language) {
+            @RequestParam(defaultValue =  "EN") String language) {
         try {
             Long universityIdLong = Long.parseLong(universityId);
             List<DepartmentProjection> departmentDetails = departmentService.getDepartmentsByUniversityIdAndLanguage(universityIdLong, language);

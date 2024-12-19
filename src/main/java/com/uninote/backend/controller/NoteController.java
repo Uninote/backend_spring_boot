@@ -101,10 +101,10 @@ public class NoteController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<NoteDTO>> getNotesByUser(@PathVariable Long userId) {
+    public ResponseEntity<List<NoteDTO>> getNotesByUser(@PathVariable Long userId,  @RequestParam(defaultValue =  "EN") String language) {
         try {
             
-            List<NoteDTO> notes = noteService.getNotesByUser(userId);
+            List<NoteDTO> notes = noteService.getNotesByUser(userId, language);
             return ResponseEntity.ok(notes);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
