@@ -881,7 +881,7 @@ public class NoteService {
     }
 
 
-    public NoteSearchResponse searchNotesWithEditDistancePaginated(String keyword, double threshold, int page, int size, String sortBy, String sortDir) {
+    public NoteSearchResponse searchNotesWithEditDistancePaginated(String keyword, double threshold, int page, int size, String sortBy, String sortDir, String languageCode) {
     Map<String, String> validSortFields = new HashMap<>();
     validSortFields.put("likes", "like_count");
     validSortFields.put("createdAt", "createdAt");
@@ -904,7 +904,7 @@ public class NoteService {
     }
 
     // Call the repository method to get the results with the additional fields
-    List<Object[]> res = noteRepository.searchNotesWithPagination(keyword, (float) threshold, start_row, end_row);
+    List<Object[]> res = noteRepository.searchNotesWithPagination(keyword, (float) threshold, start_row, end_row, languageCode);
     List<NoteDTO> dtos = res.stream().map(objects -> {
         NoteDTO noteDTO = new NoteDTO();
 
