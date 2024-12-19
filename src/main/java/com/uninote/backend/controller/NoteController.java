@@ -97,6 +97,7 @@ public class NoteController {
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
+            
         }
     }
 
