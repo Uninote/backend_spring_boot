@@ -837,20 +837,21 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
                "JOIN n.user u " +
                "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id " +
                "LEFT JOIN n.noteType tn " +
+               "LEFT JOIN NoteTypeName tnn ON tnn.typeId = tn.id " +
                "JOIN CourseName cn ON cn.course = c " +
                "JOIN cn.language lang " + 
                "JOIN UniversityName un ON un.university = d.university " +
                "JOIN un.language ul " +
                "JOIN DepartmentName dn ON dn.department = d " +
                "JOIN dn.language dl " +
-               "WHERE  ul.code = :language_code AND dl.code = :language_code " +
+               "WHERE  ul.code = :language_code AND dl.code = :language_code AND tnn.language.code = :language_code " +
                "AND n.id IN :noteIds AND n.isPublic = true AND n.deleted = false")
    List<NoteDTO> findNotesByIds(@Param("noteIds") List<Long> noteIds, @Param("language_code") String languageCode);
 
