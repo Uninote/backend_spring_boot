@@ -218,7 +218,7 @@ Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University univer
        "JOIN c.department d " +
        "JOIN n.user u " +
        "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id "+
-       "WHERE ns.user.id = :userId AND ns.isActive = TRUE AND n.isPublic = TRUE AND n.deleted = false AND tnn.language.code= :langauge_code")
+       "WHERE ns.user.id = :userId AND ns.isActive = TRUE AND n.isPublic = TRUE AND n.deleted = false AND tnn.language.code= :language_code")
    List<NoteDTO> findPublicSavedNotesByUserId(@Param("userId") Long userId, @Param("language_code") String languageCode);
 
    @Query(value = "SELECT n.note_id AS id, c.course_id AS courseId, u.user_id AS userId, n.title AS title, " +
@@ -856,7 +856,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
 
 
-   
+
    @Query("SELECT n.id FROM Note n where n.deleted = false and n.isPublic = true")
    List<Long> findNonDeletedNoteIds();
 
