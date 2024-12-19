@@ -856,6 +856,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
 
 
+   
    @Query("SELECT n.id FROM Note n where n.deleted = false and n.isPublic = true")
    List<Long> findNonDeletedNoteIds();
 
