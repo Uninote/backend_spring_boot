@@ -17,6 +17,7 @@ import com.uninote.backend.entity.NoteClick;
 import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteType;
+import com.uninote.backend.entity.NoteTypeName;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.Season;
 import com.uninote.backend.entity.UniscoreIncreaseType;
@@ -481,13 +482,12 @@ public class NoteService {
         dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
         dto.setCertified(note.getUser().getCertified());
         if (note.getNoteType() != null) {
-            if (note.getNoteType().getTypeId() != null) {
-                dto.setNoteTypeId(note.getNoteType().getTypeId());
-            }
-            if (note.getNoteType().getTypeName() != null) {
-                dto.setNoteType(note.getNoteType().getTypeName());
-            }
+            List<NoteTypeName> tn = note.getNoteType().getTypeNames();
+            dto.setNoteTypeId(note.getNoteType().getTypeId());
+            dto.setNoteType(tn.stream().filter(name -> languageCode.equals(name.getLanguage().getCode())).map(NoteTypeName::getTypeName).findFirst().orElse(null));
         }
+
+        
         
         if (note.getAcademicYear() != null) {
             dto.setAcademicYear(note.getAcademicYear());

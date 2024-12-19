@@ -35,4 +35,12 @@ public class NoteType {
     public void setTypeName(String typeName) {
         this.typeName = typeName;
     }
+
+    public List<NoteTypeName> getTypeNames() {
+        return typeNames;
+    }
+
+    public void setTypeNames(List<NoteTypeName> names) {
+        this.typeNames = names;
+    }
 }
