@@ -49,6 +49,9 @@ public class SVDRecommendationService {
     @Autowired
     private NoteViewRepository noteViewRepository;
 
+    @Autowired
+    private RecommendationService recommendationService;
+
     private RealMatrix userNoteMatrix;
     private RealMatrix[] svdMatrices;
     private List<Long> userIds;
@@ -181,7 +184,8 @@ public class SVDRecommendationService {
 
         if (userNoteMatrix == null || svdMatrices == null || userIds == null || noteIds == null) {
             logger.warn("User-note matrix or SVD matrices not initialized; refreshing matrices");
-            initializeUserNoteMatrix();
+            new Thread(this::initializeUserNoteMatrix).start(); 
+            return recommendationService.getCachedRecommendations();
         }
 
         int userIndex = userIds.indexOf(userId);
