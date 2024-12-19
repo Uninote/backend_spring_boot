@@ -85,10 +85,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
        "JOIN DepartmentName dn ON dn.department = u.department " +
        "JOIN UniversityName un ON un.university = u.university " +
        "JOIN Rank r ON r.id = u.rank.id " +
-       "WHERE dn.language.id = :languageId " +
-       "AND un.language.id = :languageId " +
+       "WHERE dn.language.code = :languageId " +
+       "AND un.language.code = :languageId " +
        "AND u.id = :userId")
-    UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+    UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") String languageId);
 
     @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
       "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername,COALESCE(u.seasonScore, 0) AS seasonScore, " +
@@ -96,10 +96,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
       "un.name AS universityName, " + 
       "u.certified AS certified " +   
       "FROM User u " +   
-      "JOIN DepartmentName dn ON dn.department = u.department AND dn.language.id = :languageId " +
-      "JOIN UniversityName un ON un.university = u.university AND un.language.id = :languageId " +
-      "WHERE u.id = :userId")
-   UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("languageId") Long languageId);
+      "JOIN DepartmentName dn ON dn.department = u.department  " +
+      "JOIN UniversityName un ON un.university = u.university " +
+      "WHERE dn.language.code = :language AND un.language.code = :language "+
+      "AND u.id = :userId")
+   UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("language") String language);
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.department_id ORDER BY u.uniscore DESC) AS rank " +

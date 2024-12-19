@@ -550,13 +550,13 @@ public void softDeleteUserById(Long userId) {
         return userRepository.existsByEmail(email);
     }
 
-    public UserProfileProjection getUserProfileById(Long userId, Long languageId) {
-        return userRepository.findUserProfileById(userId, languageId);
+    public UserProfileProjection getUserProfileById(Long userId, String language) {
+        return userRepository.findUserProfileById(userId, language);
     }
 
 
-     public UserInfoProjection getUserInfo(Long userId) {
-        return userRepository.findUserInfoById(userId,1L);
+     public UserInfoProjection getUserInfo(Long userId, String language) {
+        return userRepository.findUserInfoById(userId,language);
     }
 
     

@@ -188,14 +188,14 @@ public class UserController {
      @GetMapping("/{userId}/profile")
     public ResponseEntity<UserProfileProjection> getUserProfile(
             @PathVariable Long userId, 
-            @RequestParam Long languageId) {
-        UserProfileProjection userProfile = userService.getUserProfileById(userId, languageId);
+            @RequestParam(defaultValue = "EN") String language) {
+        UserProfileProjection userProfile = userService.getUserProfileById(userId, language);
         return ResponseEntity.ok(userProfile);
     }
 
     @GetMapping("/{userId}/info")
-    public ResponseEntity<UserInfoProjection> getUserInfo(@PathVariable Long userId) {
-        UserInfoProjection userInfo = userService.getUserInfo(userId);
+    public ResponseEntity<UserInfoProjection> getUserInfo(@PathVariable Long userId, @RequestParam(defaultValue = "EN") String language) {
+        UserInfoProjection userInfo = userService.getUserInfo(userId, language);
         if (userInfo == null) {
             return ResponseEntity.notFound().build();
         }
