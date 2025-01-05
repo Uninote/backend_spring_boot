@@ -32,13 +32,9 @@ public class TutieService {
     @Autowired
     private ProcessedNoteRepository processedNoteRepository;
 
-    /**
-     * Initializes the service on application startup.
-     * Handles notes stuck in PROCESSING state and reloads PENDING/FAILED notes into the queue.
-     */
+    
     @PostConstruct
     public void initQueueOnStartup() {
-        // Handle notes stuck in PROCESSING state
         List<Note> processingNotes = noteRepository.findByStatus("PROCESSING");
         for (Note note : processingNotes) {
             note.setStatus("FAILED");
@@ -46,7 +42,6 @@ public class TutieService {
             logger.warn("Marked Note ID {} as FAILED (was stuck in PROCESSING state).", note.getId());
         }
 
-        // Load PENDING and FAILED notes into the queue
         List<Note> pendingNotes = noteRepository.findByStatus("PENDING");
         List<Note> failedNotes = noteRepository.findByStatus("FAILED");
 
@@ -58,7 +53,6 @@ public class TutieService {
             noteProcessingQueue.add(note.getId());
         }
 
-        // Start processing if there are notes in the queue
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
@@ -66,10 +60,7 @@ public class TutieService {
         }
     }
 
-    /**
-     * Processes all notes in the queue sequentially.
-     * Runs in a separate thread to avoid blocking the main application.
-     */
+    
     private synchronized void processQueue() {
         if (isProcessing) {
             return;
@@ -94,10 +85,7 @@ public class TutieService {
         }).start();
     }
 
-    /**
-     * Processes a single note by ID.
-     * Updates the note's status and handles API calls and database updates.
-     */
+    
     private void processNoteById(Long noteId) {
         Note note = noteRepository.findById(noteId).orElse(null);
         if (note == null) {
@@ -106,17 +94,13 @@ public class TutieService {
         }
 
         try {
-            // Update note status to PROCESSING
             note.setStatus("PROCESSING");
             noteRepository.save(note);
 
-            // Fetch processed data from external API
             NoteProcessingResult result = fetchSummaryAndQuizzes(noteId);
 
-            // Store processed data in the database
             storeInDatabase(noteId, result);
 
-            // Update note status to PROCESSED
             note.setStatus("PROCESSED");
             noteRepository.save(note);
 
@@ -125,15 +109,12 @@ public class TutieService {
         } catch (Exception e) {
             logger.error("Failed to process Note ID {}: {}", noteId, e.getMessage(), e);
 
-            // Mark note as FAILED
             note.setStatus("FAILED");
             noteRepository.save(note);
         }
     }
 
-    /**
-     * Adds a note to the processing queue and updates its status to PENDING.
-     */
+    
     public void addNoteForProcessing(Long noteId) {
         if (noteId == null) {
             logger.warn("Cannot add null note ID to the processing queue.");
@@ -158,9 +139,7 @@ public class TutieService {
         }
     }
 
-    /**
-     * Fetches the summary and quizzes for a note using an external API.
-     */
+    
     private NoteProcessingResult fetchSummaryAndQuizzes(Long noteId) {
         String url = UriComponentsBuilder.fromHttpUrl(API_BASE_URL)
                 .path("/processNote")
@@ -171,9 +150,7 @@ public class TutieService {
         return restTemplate.getForObject(url, NoteProcessingResult.class);
     }
 
-    /**
-     * Stores the processed summary and quizzes in the database.
-     */
+    
     private void storeInDatabase(Long noteId, NoteProcessingResult result) {
         Note note = noteRepository.findById(noteId).orElse(null);
         if (note == null) {
@@ -190,16 +167,12 @@ public class TutieService {
         logger.info("Stored processed data for Note ID {}", noteId);
     }
 
-    /**
-     * Checks if there are notes left in the queue.
-     */
+    
     public boolean hasNotesToProcess() {
         return !noteProcessingQueue.isEmpty();
     }
 
-    /**
-     * Represents the result of processing a note.
-     */
+
     public static class NoteProcessingResult {
         private String summary;
         private String quizJson;

@@ -888,6 +888,11 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
 
    boolean existsBySlugTitle(String slug);
+
+
+
+   @Query("SELECT n FROM Note n WHERE n.status = :status and deleted = False ")
+   List<Note> findByStatus(String status);
 }  
 
 
