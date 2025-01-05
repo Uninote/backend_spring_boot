@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProcessedNoteRepository extends JpaRepository<ProcessedNote, Long> {
 
+    ProcessedNote findByNoteId(Long noteId);
+
 }

@@ -1,5 +1,7 @@
 package com.uninote.backend.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.ProcessedNote;
 import com.uninote.backend.repository.NoteRepository;
@@ -8,12 +10,21 @@ import com.uninote.backend.repository.ProcessedNoteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
@@ -56,10 +67,42 @@ public class TutieService {
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
-            processQueue();
+            //processQueue();
         }
     }
 
+
+
+    public String getSummaryByNoteId(Long noteId) {
+        try {
+            ProcessedNote processedNote = processedNoteRepository.findByNoteId(noteId);
+            if (processedNote == null) {
+                logger.warn("No processed data found for Note ID {}", noteId);
+                return null;
+            }
+            logger.info("Retrieved summary for Note ID {}", noteId);
+            return processedNote.getSummary();
+        } catch (Exception e) {
+            logger.error("Error retrieving summary for Note ID {}: {}", noteId, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    
+    public String getQuizzesByNoteId(Long noteId) {
+        try {
+            ProcessedNote processedNote = processedNoteRepository.findByNoteId(noteId);
+            if (processedNote == null) {
+                logger.warn("No processed data found for Note ID {}", noteId);
+                return null;
+            }
+            logger.info("Retrieved quizzes for Note ID {}", noteId);
+            return processedNote.getQuizJson();
+        } catch (Exception e) {
+            logger.error("Error retrieving quizzes for Note ID {}: {}", noteId, e.getMessage(), e);
+            return null;
+        }
+    }
     
     private synchronized void processQueue() {
         if (isProcessing) {
@@ -92,27 +135,40 @@ public class TutieService {
             logger.warn("Note ID {} not found in the database.", noteId);
             return;
         }
-
+    
         try {
             note.setStatus("PROCESSING");
             noteRepository.save(note);
-
+    
             NoteProcessingResult result = fetchSummaryAndQuizzes(noteId);
-
+    
+            if (result == null || "NOT_DIGITIZABLE".equals(result.getStatus())) {
+                String reason = result != null ? result.getMessage() : "No additional details provided.";
+                logger.warn("Note ID {} cannot be digitized. Reason: {}", noteId, reason);
+                markNoteAsNonDigitizable(note, reason);
+                return;
+            }
+    
             storeInDatabase(noteId, result);
-
+    
             note.setStatus("PROCESSED");
             noteRepository.save(note);
-
+    
             logger.info("Successfully processed Note ID {}", noteId);
-
+    
         } catch (Exception e) {
             logger.error("Failed to process Note ID {}: {}", noteId, e.getMessage(), e);
-
-            note.setStatus("FAILED");
-            noteRepository.save(note);
+            markNoteAsNonDigitizable(note, "Processing error: " + e.getMessage());
         }
     }
+    
+    
+    private void markNoteAsNonDigitizable(Note note, String reason) {
+        note.setStatus("NON_DIGITIZABLE");
+        noteRepository.save(note);
+        logger.warn("Marked Note ID {} as NON_DIGITIZABLE: {}", note.getId(), reason);
+    }
+    
 
     
     public void addNoteForProcessing(Long noteId) {
@@ -145,10 +201,30 @@ public class TutieService {
                 .path("/processNote")
                 .queryParam("noteId", noteId)
                 .toUriString();
-
-        logger.info("Fetching summary and quizzes for Note ID {}", noteId);
-        return restTemplate.getForObject(url, NoteProcessingResult.class);
+    
+        try {
+            logger.info("Fetching summary and quizzes for Note ID {}", noteId);
+    
+            ResponseEntity<NoteProcessingResult> response = restTemplate.getForEntity(url, NoteProcessingResult.class);
+    
+            if (response.getBody() == null) {
+                logger.warn("Received empty response for Note ID {}", noteId);
+                return null;
+            }
+    
+            NoteProcessingResult result = response.getBody();
+    
+            if ("NOT_DIGITIZABLE".equals(result.getStatus())) {
+                logger.warn("Note ID {} cannot be digitized. Reason: {}", noteId, result.getMessage());
+            }
+    
+            return result;
+        } catch (Exception e) {
+            logger.error("Error fetching summary and quizzes for Note ID {}: {}", noteId, e.getMessage(), e);
+            return null;
+        }
     }
+    
 
     
     private void storeInDatabase(Long noteId, NoteProcessingResult result) {
@@ -173,9 +249,114 @@ public class TutieService {
     }
 
 
+
+    public Map<String, Object> getAnswerAndRelatedNotes(String userPrompt) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("prompt", userPrompt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+
+            String url = API_BASE_URL + "/getAnswerAndNotes";
+            logger.info("Sending user prompt to external service: {}", userPrompt);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonResponse = objectMapper.readTree(response.getBody());
+
+            String answer = jsonResponse.get("answer").asText();
+            List<Long> noteIds = new ArrayList<>();
+            jsonResponse.get("noteIds").forEach(id -> noteIds.add(id.asLong()));
+
+            result.put("answer", answer);
+            result.put("noteIds", noteIds);
+
+            logger.info("Received response from external service: Answer={}, Note IDs={}", answer, noteIds);
+        } catch (Exception e) {
+            logger.error("Error communicating with external service: {}", e.getMessage(), e);
+            result.put("error", "Failed to retrieve data from external service.");
+        }
+        return result;
+    }
+
+
+
+    public Map<String, String> getSummaryAndQuizzesByNoteId(Long noteId) {
+        Map<String, String> result = new HashMap<>();
+        try {
+            ProcessedNote processedNote = processedNoteRepository.findByNoteId(noteId);
+    
+            if (processedNote == null) {
+                logger.warn("No processed data found for Note ID {}", noteId);
+                return null; 
+            }
+    
+            result.put("summary", processedNote.getSummary() != null ? processedNote.getSummary() : "No summary available");
+            result.put("quizzes", processedNote.getQuizJson() != null ? processedNote.getQuizJson() : "No quizzes available");
+    
+            logger.info("Successfully retrieved summary and quizzes for Note ID {}", noteId);
+            return result;
+    
+        } catch (Exception e) {
+            logger.error("Error retrieving summary and quizzes for Note ID {}: {}", noteId, e.getMessage(), e);
+            throw new RuntimeException("Unable to fetch summary and quizzes for Note ID: " + noteId, e);
+        }
+    }
+
+    public int calculateTokens(String prompt) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String API_URL = API_BASE_URL + "/calculate_tokens";
+            Map<String, String> payload = Map.of(
+                "prompt", prompt,
+                "model", "gpt-4" 
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json");
+
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(payload, headers);
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                API_URL,
+                HttpMethod.POST,
+                entity,
+                (Class<Map<String, Object>>) (Class<?>) Map.class
+            );
+
+            return (int) response.getBody().get("token_count");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1; 
+        }
+    }
+    
     public static class NoteProcessingResult {
+        
+        private String status;
+        private String message;
         private String summary;
         private String quizJson;
+        
+
+        public String getStatus() {
+            return status;
+        }
+    
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    
+        public String getMessage() {
+            return message;
+        }
+    
+        public void setMessage(String message) {
+            this.message = message;
+        }
 
         public String getSummary() {
             return summary;
