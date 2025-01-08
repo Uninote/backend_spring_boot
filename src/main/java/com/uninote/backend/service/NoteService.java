@@ -78,6 +78,10 @@ public class NoteService {
 
     @Autowired
     private UniscoreIncreaseLogRepository uniscoreIncreaseLogsRepository;
+    
+    @Autowired
+    private TutieService tutieService;
+
 
     @Autowired
     private UserCourseGradeRepository userCourseGradeRepository;
@@ -1002,6 +1006,7 @@ public class NoteService {
             }
         badgeService.checkBadgesForUser(user.getId()); 
         userService.ceritfyUser(noteDto.getUserId());
+        tutieService.addNoteForProcessing(savedNote.getId());
         return savedNote;
     }
 

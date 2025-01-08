@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.entity.Note;
@@ -10,6 +11,8 @@ import com.uninote.backend.repository.ProcessedNoteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -31,10 +34,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TutieService {
 
     private static final Logger logger = LoggerFactory.getLogger(TutieService.class);
-
+    
     private final ConcurrentLinkedQueue<Long> noteProcessingQueue = new ConcurrentLinkedQueue<>();
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String API_BASE_URL = "https://external-api.com";
+    private static final String API_BASE_URL = "http://127.0.0.1:8000";
     private boolean isProcessing = false;
 
     @Autowired
@@ -43,8 +46,12 @@ public class TutieService {
     @Autowired
     private ProcessedNoteRepository processedNoteRepository;
 
+
+
+
     
-    @PostConstruct
+    
+    @EventListener(ApplicationReadyEvent.class)
     public void initQueueOnStartup() {
         List<Note> processingNotes = noteRepository.findByStatus("PROCESSING");
         for (Note note : processingNotes) {
@@ -67,7 +74,7 @@ public class TutieService {
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
-            //processQueue();
+            processQueue();
         }
     }
 
@@ -197,15 +204,20 @@ public class TutieService {
 
     
     private NoteProcessingResult fetchSummaryAndQuizzes(Long noteId) {
+        String path = String.format("%s","/process");
         String url = UriComponentsBuilder.fromHttpUrl(API_BASE_URL)
-                .path("/processNote")
-                .queryParam("noteId", noteId)
+                .path(path)
                 .toUriString();
     
         try {
             logger.info("Fetching summary and quizzes for Note ID {}", noteId);
-    
-            ResponseEntity<NoteProcessingResult> response = restTemplate.getForEntity(url, NoteProcessingResult.class);
+            Map<String, Long> requestBody = new HashMap<>();
+                requestBody.put("note_id", noteId);
+            ResponseEntity<NoteProcessingResult> response = restTemplate.postForEntity(
+                url,
+                requestBody,
+                NoteProcessingResult.class
+        );
     
             if (response.getBody() == null) {
                 logger.warn("Received empty response for Note ID {}", noteId);
@@ -228,19 +240,25 @@ public class TutieService {
 
     
     private void storeInDatabase(Long noteId, NoteProcessingResult result) {
-        Note note = noteRepository.findById(noteId).orElse(null);
-        if (note == null) {
-            logger.error("Note ID {} not found for storing processed data.", noteId);
-            return;
+        try {
+            Note note = noteRepository.findById(noteId).orElse(null);
+            if (note == null) {
+                logger.error("Note ID {} not found for storing processed data.", noteId);
+                return;
+            }
+
+            ProcessedNote processedNote = new ProcessedNote();
+            processedNote.setNote(note);
+            processedNote.setSummary(result.getSummary());
+            ObjectMapper objectMapper = new ObjectMapper();
+            String quizJsonString = objectMapper.writeValueAsString(result.getQuizJson());
+            processedNote.setQuizJson(quizJsonString);
+            processedNoteRepository.save(processedNote);
+
+            logger.info("Stored processed data for Note ID {}", noteId);
+        } catch (Exception e) {
+            logger.error("Error storing processed data for Note ID {}: {}", noteId, e.getMessage(), e);
         }
-
-        ProcessedNote processedNote = new ProcessedNote();
-        processedNote.setNote(note);
-        processedNote.setSummary(result.getSummary());
-        processedNote.setQuizJson(result.getQuizJson());
-        processedNoteRepository.save(processedNote);
-
-        logger.info("Stored processed data for Note ID {}", noteId);
     }
 
     
@@ -334,13 +352,15 @@ public class TutieService {
         }
     }
     
+
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class NoteProcessingResult {
         
         private String status;
         private String message;
         private String summary;
-        private String quizJson;
-        
+        private List<Map<String, Object>> quizJson;
 
         public String getStatus() {
             return status;
@@ -366,11 +386,11 @@ public class TutieService {
             this.summary = summary;
         }
 
-        public String getQuizJson() {
+        public List<Map<String, Object>> getQuizJson() {
             return quizJson;
         }
-
-        public void setQuizJson(String quizJson) {
+    
+        public void setQuizJson(List<Map<String, Object>> quizJson) {
             this.quizJson = quizJson;
         }
     }
