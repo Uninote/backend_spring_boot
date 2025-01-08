@@ -1,6 +1,7 @@
 package com.uninote.backend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.uninote.backend.entity.UserDailyTokenQuota;
@@ -10,5 +11,7 @@ import java.util.Optional;
 
 @Repository
 public interface UserDailyTokenQuotaRepository extends JpaRepository<UserDailyTokenQuota, Long> {
-    Optional<UserDailyTokenQuota> findByUserIdAndQuotaDate(Long userId, Date quotaDate);
+
+    
+    Optional<UserDailyTokenQuota> findByIdUserIdAndIdQuotaDate(Long userId, Date quotaDate);
 }

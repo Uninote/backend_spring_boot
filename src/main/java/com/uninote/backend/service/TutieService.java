@@ -74,7 +74,7 @@ public class TutieService {
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
-            processQueue();
+            //processQueue();
         }
     }
 
@@ -272,22 +272,23 @@ public class TutieService {
         Map<String, Object> result = new HashMap<>();
         try {
             Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("prompt", userPrompt);
+            requestBody.put("question", userPrompt);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
 
-            String url = API_BASE_URL + "/getAnswerAndNotes";
+            String url = API_BASE_URL + "/answer-question";
             logger.info("Sending user prompt to external service: {}", userPrompt);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
 
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonResponse = objectMapper.readTree(response.getBody());
+            logger.info(jsonResponse.asText());
 
             String answer = jsonResponse.get("answer").asText();
             List<Long> noteIds = new ArrayList<>();
-            jsonResponse.get("noteIds").forEach(id -> noteIds.add(id.asLong()));
+            jsonResponse.get("note_ids").forEach(id -> noteIds.add(id.asLong()));
 
             result.put("answer", answer);
             result.put("noteIds", noteIds);

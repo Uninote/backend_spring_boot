@@ -23,7 +23,7 @@ public class TokenQuotaService {
         LocalDate today = LocalDate.now();
         Date quotaDate = Date.valueOf(today);
 
-        UserDailyTokenQuota quota = tokenQuotaRepository.findByUserIdAndQuotaDate(userId, quotaDate)
+        UserDailyTokenQuota quota = tokenQuotaRepository.findByIdUserIdAndIdQuotaDate(userId, quotaDate)
                 .orElseGet(() -> createNewQuota(userId, quotaDate));
 
         return (quota.getTokensUsed() + tokensNeeded) <= dailyTokenQuota;
@@ -34,7 +34,7 @@ public class TokenQuotaService {
         LocalDate today = LocalDate.now();
         Date quotaDate = Date.valueOf(today);
 
-        UserDailyTokenQuota quota = tokenQuotaRepository.findByUserIdAndQuotaDate(userId, quotaDate)
+        UserDailyTokenQuota quota = tokenQuotaRepository.findByIdUserIdAndIdQuotaDate(userId, quotaDate)
                 .orElseGet(() -> createNewQuota(userId, quotaDate));
 
         quota.setTokensUsed(quota.getTokensUsed() + tokensUsed);
@@ -44,8 +44,8 @@ public class TokenQuotaService {
     
     private UserDailyTokenQuota createNewQuota(Long userId, Date quotaDate) {
         UserDailyTokenQuota quota = new UserDailyTokenQuota();
-        quota.setUserId(userId);
-        quota.setQuotaDate(quotaDate);
+        quota.getId().setUserId(userId);
+        quota.getId().setQuotaDate(quotaDate);
         quota.setTokensUsed(0);
         return tokenQuotaRepository.save(quota);
     }
