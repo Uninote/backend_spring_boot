@@ -51,9 +51,9 @@ public class TutieController {
 
         int tokensNeeded = tutieService.calculateTokens(prompt);
 
-        //if (tokensNeeded ==-1 || !tokenQuotaService.hasSufficientQuota(userId, tokensNeeded)) {
-          //  return ResponseEntity.status(429).body(Map.of("error", "Daily token quota exceeded."));
-        //}
+        if (tokensNeeded ==-1 || !tokenQuotaService.hasSufficientQuota(userId, tokensNeeded)) {
+            return ResponseEntity.status(429).body(Map.of("error", "Daily token quota exceeded."));
+        }
 
         Map<String, Object> response = tutieService.getAnswerAndRelatedNotes(prompt);
 
@@ -61,7 +61,7 @@ public class TutieController {
             return ResponseEntity.internalServerError().body(response);
         }
 
-        //tokenQuotaService.updateTokenUsage(userId, tokensNeeded);
+        tokenQuotaService.updateTokenUsage(userId, tokensNeeded);
 
         return ResponseEntity.ok(response);
     }

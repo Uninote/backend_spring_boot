@@ -6,7 +6,7 @@ import java.sql.Date;
 
 @Entity
 @Table(name = "user_daily_token_quota")
-public class UserDailyTokenQuota {
+public class UserDailyTokenQuota {  
 
     @EmbeddedId
     private UserDailyTokenQuotaId id;
@@ -34,3 +34,4 @@ public class UserDailyTokenQuota {
     }
 }
 
+    

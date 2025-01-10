@@ -3,6 +3,7 @@ package com.uninote.backend.service;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.gax.rpc.InvalidArgumentException;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.ProcessedNote;
 import com.uninote.backend.repository.NoteRepository;
@@ -13,11 +14,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -28,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
@@ -36,6 +40,8 @@ public class TutieService {
     private static final Logger logger = LoggerFactory.getLogger(TutieService.class);
     
     private final ConcurrentLinkedQueue<Long> noteProcessingQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentHashMap<String, Long> taskNoteMap = new ConcurrentHashMap<>();
+
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String API_BASE_URL = "http://127.0.0.1:8000";
     private boolean isProcessing = false;
@@ -74,7 +80,7 @@ public class TutieService {
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
-            //processQueue();
+            processQueue();
         }
     }
 
@@ -126,7 +132,14 @@ public class TutieService {
                         continue;
                     }
 
-                    processNoteById(noteId);
+                    processNoteViaCelery(noteId);
+                    String taskId = findTaskIdForNoteId(noteId);
+
+                if (taskId != null) {
+                    waitForTaskCompletion(taskId);
+                } else {
+                    logger.warn("Task ID not found for Note ID {}", noteId);
+                }
                 }
             } finally {
                 isProcessing = false;
@@ -136,6 +149,67 @@ public class TutieService {
     }
 
     
+    private String findTaskIdForNoteId(Long noteId) {
+        return taskNoteMap.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(noteId))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+    }
+    
+    /**
+     * Polls the task status until it completes.
+     */
+    private void waitForTaskCompletion(String taskId) {
+        boolean isCompleted = false;
+    
+        while (!isCompleted) {
+            try {
+                logger.info("Checking status for Task ID {}", taskId);
+                ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                        API_BASE_URL + "/process-status/" + taskId,
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<Map<String, Object>>() {}
+                );
+    
+                if (response.getBody() != null) {
+                    String status = (String) response.getBody().get("status");
+    
+                    switch (status.toUpperCase()) {
+                        case "SUCCESS":
+                            Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
+                            processTaskResult(taskNoteMap.get(taskId), result);
+                            taskNoteMap.remove(taskId);
+                            isCompleted = true;
+                            logger.info("Task ID {} completed successfully.", taskId);
+                            break;
+    
+                        case "FAILURE":
+                            logger.error("Task ID {} failed. Traceback: {}", taskId, response.getBody().get("traceback"));
+                            Note note = noteRepository.findById(taskNoteMap.get(taskId)).orElseThrow(() -> new IllegalArgumentException("Note not found"));
+                            markNoteAsNonDigitizable(note, "Task failed.");
+                            taskNoteMap.remove(taskId);
+                            isCompleted = true;
+                            break;
+    
+                        default:
+                            logger.info("Task ID {} is still in progress.", taskId);
+                            Thread.sleep(5000); // Wait for 5 seconds before rechecking
+                            break;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error while checking status for Task ID {}: {}", taskId, e.getMessage(), e);
+                try {
+                    Thread.sleep(5000); // Wait before retrying in case of error
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
     private void processNoteById(Long noteId) {
         Note note = noteRepository.findById(noteId).orElse(null);
         if (note == null) {
@@ -175,6 +249,47 @@ public class TutieService {
         noteRepository.save(note);
         logger.warn("Marked Note ID {} as NON_DIGITIZABLE: {}", note.getId(), reason);
     }
+    
+
+    public void processNoteViaCelery(Long noteId) {
+        Note note = noteRepository.findById(noteId).orElse(null);
+        if (note == null) {
+            logger.warn("Note ID {} not found in the database.", noteId);
+            return;
+        }
+    
+        try {
+            note.setStatus("PROCESSING");
+            noteRepository.save(note);
+    
+            String url = API_BASE_URL + "/process";
+            Map<String, Long> requestBody = new HashMap<>();
+            requestBody.put("note_id", noteId);
+    
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Long>> requestEntity = new HttpEntity<>(requestBody, headers);
+    
+            logger.info("Submitting Note ID {} to Celery for processing.", noteId);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, requestEntity, Map.class);
+    
+            if (response.getBody() != null && response.getBody().containsKey("task_id")) {
+                String taskId = (String) response.getBody().get("task_id");
+    
+                taskNoteMap.put(taskId, noteId);
+    
+                logger.info("Mapped Celery Task ID to Note ID {}: {}", noteId, taskId);
+            } else {
+                logger.error("Failed to retrieve Task ID for Note ID {}.", noteId);
+                markNoteAsNonDigitizable(note, "Failed to retrieve Task ID from Celery.");
+            }
+        } catch (Exception e) {
+            logger.error("Error submitting Note ID {} to Celery: {}", noteId, e.getMessage(), e);
+            markNoteAsNonDigitizable(note, "Error submitting task to Celery.");
+        }
+    }
+    
+    
     
 
     
@@ -238,6 +353,56 @@ public class TutieService {
     }
     
 
+    private void processTaskResult(Long noteId, Map<String, Object> result) {
+        Note note = noteRepository.findById(noteId).orElse(null);
+        if (note == null) {
+            logger.error("Note ID {} not found in the database while processing result.", noteId);
+            return;
+        }
+    
+        try {
+            String status = (String) result.get("status");
+            if ("NOT_DIGITIZABLE".equalsIgnoreCase(status)) {
+                String reason = (String) result.getOrDefault("message", "No additional details provided.");
+                logger.warn("Note ID {} cannot be digitized. Reason: {}", noteId, reason);
+                markNoteAsNonDigitizable(note, reason);
+                return;
+            }
+    
+            Map<String, Object> data = (Map<String, Object>) result.get("data");
+            if (data == null) {
+                logger.warn("Task result data is missing for Note ID {}.", noteId);
+                markNoteAsNonDigitizable(note, "Task result contained no data.");
+                return;
+            }
+    
+            String summary = (String) data.getOrDefault("summary", "No summary available.");
+            List<Map<String, Object>> quizzes = (List<Map<String, Object>>) data.getOrDefault("quizJson", new ArrayList<>());
+    
+            if (summary.isEmpty() && quizzes.isEmpty()) {
+                logger.warn("No meaningful data found in the task result for Note ID {}.", noteId);
+                markNoteAsNonDigitizable(note, "Task result contained no meaningful data.");
+                return;
+            }
+    
+            NoteProcessingResult noteProcessingResult = new NoteProcessingResult();
+            noteProcessingResult.setQuizJson(quizzes);
+            noteProcessingResult.setSummary(summary);
+            storeInDatabase(noteId, noteProcessingResult);
+    
+            note.setStatus("PROCESSED");
+            noteRepository.save(note);
+    
+            logger.info("Successfully processed and stored data for Note ID {}", noteId);
+    
+        } catch (Exception e) {
+            logger.error("Error processing result for Note ID {}: {}", noteId, e.getMessage(), e);
+            markNoteAsNonDigitizable(note, "Processing error: " + e.getMessage());
+        }
+    }
+    
+    
+
     
     private void storeInDatabase(Long noteId, NoteProcessingResult result) {
         try {
@@ -266,6 +431,55 @@ public class TutieService {
         return !noteProcessingQueue.isEmpty();
     }
 
+
+    @Scheduled(fixedRate = 3000) // Run every 30 seconds
+    public void checkPendingTaskStatuses() {
+        logger.info("Checking status for pending tasks...");
+
+        for (String taskId : taskNoteMap.keySet()) {
+            checkTaskStatus(taskId);
+        }
+    }
+
+    public void checkTaskStatus(String taskId) {
+        Long noteId = taskNoteMap.get(taskId);
+        if (noteId == null) {
+            logger.warn("No note found for Task ID {}.", taskId);
+            return;
+        }
+    
+        String taskStatusUrl = API_BASE_URL + "/task-status?task_id=" + taskId;
+    
+        try {
+            logger.info("Checking status for Celery Task ID: {}", taskId);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    taskStatusUrl,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+    
+            if (response.getBody() != null) {
+                String status = (String) response.getBody().get("status");
+                if ("SUCCESS".equalsIgnoreCase(status)) {
+                    Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
+                    processTaskResult(noteId, result);
+                    taskNoteMap.remove(taskId);
+                    logger.info("Successfully processed Task ID {} for Note ID {}", taskId, noteId);
+                } else if ("FAILURE".equalsIgnoreCase(status)) {
+                    logger.error("Celery task failed for Note ID {}: {}", noteId, response.getBody().get("traceback"));
+                    Note note = noteRepository.findById(noteId).orElse(null);
+                    markNoteAsNonDigitizable(note, "Task failed");
+                    taskNoteMap.remove(taskId);
+                } else {
+                    logger.info("Task ID {} is still in progress.", taskId);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error checking status for Task ID {}: {}", taskId, e.getMessage(), e);
+        }
+    }
+    
 
 
     public Map<String, Object> getAnswerAndRelatedNotes(String userPrompt) {
