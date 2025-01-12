@@ -43,7 +43,7 @@ public class TutieService {
     private final ConcurrentHashMap<String, Long> taskNoteMap = new ConcurrentHashMap<>();
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String API_BASE_URL = "http://127.0.0.1:8000";
+    private static final String API_BASE_URL = "https://uninote-tutie-95d7811add59.herokuapp.com/";
     private boolean isProcessing = false;
 
     @Autowired
