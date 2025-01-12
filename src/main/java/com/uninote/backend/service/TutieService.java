@@ -59,23 +59,12 @@ public class TutieService {
     
     @EventListener(ApplicationReadyEvent.class)
     public void initQueueOnStartup() {
-        List<Note> processingNotes = noteRepository.findByStatus("PROCESSING");
-        for (Note note : processingNotes) {
-            note.setStatus("FAILED");
-            noteRepository.save(note);
-            logger.warn("Marked Note ID {} as FAILED (was stuck in PROCESSING state).", note.getId());
-        }
+        
 
         List<Note> pendingNotes = noteRepository.findByStatus("PENDING");
         List<Note> failedNotes = noteRepository.findByStatus("FAILED");
-
-        for (Note note : pendingNotes) {
-            noteProcessingQueue.add(note.getId());
-        }
-
-        for (Note note : failedNotes) {
-            noteProcessingQueue.add(note.getId());
-        }
+        
+        noteProcessingQueue.add(160L);
 
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
@@ -157,9 +146,7 @@ public class TutieService {
                 .orElse(null);
     }
     
-    /**
-     * Polls the task status until it completes.
-     */
+    
     private void waitForTaskCompletion(String taskId) {
         boolean isCompleted = false;
     
@@ -378,7 +365,7 @@ public class TutieService {
     
             String summary = (String) data.getOrDefault("summary", "No summary available.");
             List<Map<String, Object>> quizzes = (List<Map<String, Object>>) data.getOrDefault("quizJson", new ArrayList<>());
-    
+            String text = (String) data.getOrDefault("text", "No text available.");
             if (summary.isEmpty() && quizzes.isEmpty()) {
                 logger.warn("No meaningful data found in the task result for Note ID {}.", noteId);
                 markNoteAsNonDigitizable(note, "Task result contained no meaningful data.");
@@ -388,6 +375,7 @@ public class TutieService {
             NoteProcessingResult noteProcessingResult = new NoteProcessingResult();
             noteProcessingResult.setQuizJson(quizzes);
             noteProcessingResult.setSummary(summary);
+            noteProcessingResult.setText(text);
             storeInDatabase(noteId, noteProcessingResult);
     
             note.setStatus("PROCESSED");
@@ -576,6 +564,7 @@ public class TutieService {
         private String message;
         private String summary;
         private List<Map<String, Object>> quizJson;
+        private String text;
 
         public String getStatus() {
             return status;
@@ -607,6 +596,14 @@ public class TutieService {
     
         public void setQuizJson(List<Map<String, Object>> quizJson) {
             this.quizJson = quizJson;
+        }
+
+        public void setText(String text) {
+            this.text =  text;
+        }
+
+        public String getText() {
+            return text;
         }
     }
 }

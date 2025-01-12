@@ -27,6 +27,10 @@ public class ProcessedNote {
     @Column(name = "PROCESSED_TIME", nullable = false, updatable = false)
     private LocalDateTime processedTime = LocalDateTime.now();
 
+
+    @Column(name = "EXTRACTED_TEXT", columnDefinition = "CLOB")
+    private String text;
+
     public Long getProcessedNoteId() {
         return processedNoteId;
     }
@@ -65,5 +69,13 @@ public class ProcessedNote {
 
     public void setProcessedTime(LocalDateTime processedTime) {
         this.processedTime = processedTime;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 }
