@@ -594,6 +594,24 @@ public class TutieService {
     }
     
 
+
+    public Map<String, Object> handleChat(String sessionId, String message) {
+        String fastApiUrl = API_BASE_URL + "chat"; 
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("session_id", sessionId);
+        body.add("message", message);
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
+
+        return response.getBody();
+    }
+
     
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class NoteProcessingResult {

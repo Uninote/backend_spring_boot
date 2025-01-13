@@ -3,8 +3,14 @@ package com.uninote.backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 
 import com.uninote.backend.service.TokenQuotaService;
 import com.uninote.backend.service.TutieService;
@@ -21,7 +27,9 @@ public class TutieController {
 
     @Autowired
     private TokenQuotaService tokenQuotaService;
+
     
+
     @GetMapping("/{noteId}/content")
     public ResponseEntity<Map<String, String>> getSummariesAndQuizzes(@PathVariable Long noteId) {
         try {
@@ -85,6 +93,21 @@ public class TutieController {
         }
     }
     
+    
+
+    @PostMapping("/chat")
+    public ResponseEntity<?> chat(@RequestParam("session_id") String sessionId,
+                                  @RequestParam("message") String message) {
+        try {
+            Map<String, Object> response = tutieService.handleChat(sessionId, message);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "error",
+                    "message", e.getMessage()
+            ));
+        }
+    }
     
 }
 
