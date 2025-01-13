@@ -444,6 +444,7 @@ public class TutieService {
             ObjectMapper objectMapper = new ObjectMapper();
             String quizJsonString = objectMapper.writeValueAsString(result.getQuizJson());
             processedNote.setQuizJson(quizJsonString);
+            processedNote.setText(result.getText());
             processedNoteRepository.save(processedNote);
 
             logger.info("Stored processed data for Note ID {}", noteId);
@@ -611,6 +612,52 @@ public class TutieService {
 
         return response.getBody();
     }
+
+
+
+    public String uploadNoteText(Long noteId) {
+        String fastApiUrl = API_BASE_URL + "upload-note-text";
+    
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+    
+        try {
+            ProcessedNote pn = processedNoteRepository.findByNoteId(noteId);
+            if (pn == null) {
+                throw new IllegalArgumentException("No note found with ID: " + noteId);
+            }
+    
+            String extractedText = pn.getText();
+            if (extractedText == null || extractedText.trim().isEmpty()) {
+                throw new IllegalArgumentException("Extracted text is empty for note ID: " + noteId);
+            }
+    
+            Map<String, String> body = Map.of("text", extractedText);
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(body, headers);
+    
+            ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
+    
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> responseBody = response.getBody();
+                if ("success".equalsIgnoreCase((String) responseBody.get("status"))) {
+                    String sessionId = (String) responseBody.get("session_id");
+                    logger.info("File uploaded successfully. Session ID: {}", sessionId);
+                    return sessionId;
+                } else {
+                    logger.error("File upload failed. Response: {}", responseBody);
+                    throw new RuntimeException("File upload failed: " + responseBody);
+                }
+            } else {
+                logger.error("Unexpected response status: {}", response.getStatusCode());
+                throw new RuntimeException("Unexpected response status: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while uploading file: {}", e.getMessage(), e);
+            throw new RuntimeException("Error occurred while uploading file: " + e.getMessage(), e);
+        }
+    }
+    
+    
 
     
     @JsonIgnoreProperties(ignoreUnknown = true)

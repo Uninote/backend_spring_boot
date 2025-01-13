@@ -92,6 +92,23 @@ public class TutieController {
             ));
         }
     }
+
+    
+    @PostMapping("/upload-note-text")
+    public ResponseEntity<?> uploadNoteText(@RequestParam("noteId") Long noteId) {
+        try {
+            String sessionId = tutieService.uploadNoteText(noteId);
+            return ResponseEntity.ok().body(Map.of(
+                "status", "success",
+                "session_id", sessionId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            ));
+        }
+    }
     
     
 
