@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.uninote.backend.service.TokenQuotaService;
 import com.uninote.backend.service.TutieService;
@@ -66,6 +67,23 @@ public class TutieController {
         return ResponseEntity.ok(response);
     }
 
+
+
+    @PostMapping("/upload-note")
+    public ResponseEntity<?> uploadNoteFile(@RequestParam("file") MultipartFile file) {
+        try {
+            String sessionId = tutieService.uploadNoteFile(file);
+            return ResponseEntity.ok().body(Map.of(
+                "status", "success",
+                "session_id", sessionId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            ));
+        }
+    }
     
     
 }

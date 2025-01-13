@@ -17,12 +17,16 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
@@ -248,7 +252,7 @@ public class TutieService {
         try {
             note.setStatus("PROCESSING");
             noteRepository.save(note);
-    
+            
             String url = API_BASE_URL + "/process";
             Map<String, Long> requestBody = new HashMap<>();
             requestBody.put("note_id", noteId);
@@ -276,7 +280,41 @@ public class TutieService {
         }
     }
     
-    
+     public String uploadNoteFile(MultipartFile file) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", file.getResource());
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    API_BASE_URL + "/upload-note",
+                    HttpMethod.POST,
+                    requestEntity,
+                    Map.class
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> responseBody = response.getBody();
+                if ("success".equalsIgnoreCase((String) responseBody.get("status"))) {
+                    String sessionId = (String) responseBody.get("session_id");
+                    logger.info("File uploaded successfully. Session ID: {}", sessionId);
+                    return sessionId;
+                } else {
+                    logger.error("File upload failed. Response: {}", responseBody);
+                    throw new RuntimeException("File upload failed: " + responseBody);
+                }
+            } else {
+                logger.error("Unexpected response status: {}", response.getStatusCode());
+                throw new RuntimeException("Unexpected response status: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while uploading file: {}", e.getMessage(), e);
+            throw new RuntimeException("Error occurred while uploading file: " + e.getMessage(), e);
+        }
+    }
     
 
     
