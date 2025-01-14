@@ -68,7 +68,8 @@ public class TutieService {
         List<Note> pendingNotes = noteRepository.findByStatus("PENDING");
         List<Note> failedNotes = noteRepository.findByStatus("FAILED");
         
-        noteProcessingQueue.add(160L);
+        pendingNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
+        failedNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
 
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
