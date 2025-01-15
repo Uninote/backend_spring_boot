@@ -57,9 +57,11 @@ public class TutieService {
     private ProcessedNoteRepository processedNoteRepository;
 
 
+    @Autowired
+    private TokenQuotaService tokenQuotaService;
 
+    private final ConcurrentHashMap<String, Long> sessionMap = new ConcurrentHashMap<>();
 
-    
     
     @EventListener(ApplicationReadyEvent.class)
     public void initQueueOnStartup() {
@@ -67,7 +69,8 @@ public class TutieService {
 
         List<Note> pendingNotes = noteRepository.findByStatus("PENDING");
         List<Note> failedNotes = noteRepository.findByStatus("FAILED");
-        
+        failedNotes.addAll(noteRepository.findByStatus("PROCESSING"));
+
         pendingNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
         failedNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
 
@@ -281,7 +284,7 @@ public class TutieService {
         }
     }
     
-     public String uploadNoteFile(MultipartFile file) {
+     public String uploadNoteFile(MultipartFile file, Long userId) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -301,6 +304,7 @@ public class TutieService {
                 Map<String, Object> responseBody = response.getBody();
                 if ("success".equalsIgnoreCase((String) responseBody.get("status"))) {
                     String sessionId = (String) responseBody.get("session_id");
+                    sessionMap.put(sessionId, userId);
                     logger.info("File uploaded successfully. Session ID: {}", sessionId);
                     return sessionId;
                 } else {
@@ -510,7 +514,7 @@ public class TutieService {
     
 
 
-    public Map<String, Object> getAnswerAndRelatedNotes(String userPrompt) {
+    public Map<String, Object> getAnswerAndRelatedNotes(String userPrompt, Long userId) {
         Map<String, Object> result = new HashMap<>();
         try {
             Map<String, String> requestBody = new HashMap<>();
@@ -531,9 +535,10 @@ public class TutieService {
             String answer = jsonResponse.get("answer").asText();
             List<Long> noteIds = new ArrayList<>();
             jsonResponse.get("note_ids").forEach(id -> noteIds.add(id.asLong()));
-
+            int totalTokens = jsonResponse.get("total_tokens").asInt();
+            tokenQuotaService.updateTokenUsage(userId, totalTokens);
             result.put("answer", answer);
-            result.put("noteIds", noteIds);
+            jsonResponse.get("note_ids").forEach(id -> noteIds.add(id.asLong()));
 
             logger.info("Received response from external service: Answer={}, Note IDs={}", answer, noteIds);
         } catch (Exception e) {
@@ -610,13 +615,19 @@ public class TutieService {
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(body, headers);
 
         ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
-
-        return response.getBody();
+        Map<String, Object> responseBody = response.getBody();
+        if (responseBody != null && responseBody.containsKey("response")) {
+            Map<String, Object> innerResponse = (Map<String, Object>) responseBody.get("response");
+            Integer totalTokens = (Integer) innerResponse.get("total_tokens");
+            Long userId = sessionMap.get(sessionId);
+            tokenQuotaService.updateTokenUsage(userId, totalTokens);
+        }
+        return responseBody;
     }
 
 
 
-    public String uploadNoteText(Long noteId) {
+    public String uploadNoteText(Long noteId, Long userId) {
         String fastApiUrl = API_BASE_URL + "upload-note-text";
     
         HttpHeaders headers = new HttpHeaders();
