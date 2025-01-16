@@ -17,6 +17,7 @@ public class UserDailyTokenQuota {
 
     
 
+    
     public UserDailyTokenQuotaId getId() {
         return this.id;
     }

@@ -538,8 +538,7 @@ public class TutieService {
             int totalTokens = jsonResponse.get("total_tokens").asInt();
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
             result.put("answer", answer);
-            jsonResponse.get("note_ids").forEach(id -> noteIds.add(id.asLong()));
-
+            result.put("noteIds", noteIds);
             logger.info("Received response from external service: Answer={}, Note IDs={}", answer, noteIds);
         } catch (Exception e) {
             logger.error("Error communicating with external service: {}", e.getMessage(), e);

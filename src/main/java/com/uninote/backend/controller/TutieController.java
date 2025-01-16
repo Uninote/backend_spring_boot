@@ -38,7 +38,7 @@ public class TutieController {
             if (result == null || result.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Note content not found or cannot be digitized for ID: " + noteId));
-            }
+            }   
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -64,13 +64,13 @@ public class TutieController {
             return ResponseEntity.status(429).body(Map.of("error", "Daily token quota exceeded."));
         }
 
-        Map<String, Object> response = tutieService.getAnswerAndRelatedNotes(prompt);
+        Map<String, Object> response = tutieService.getAnswerAndRelatedNotes(prompt, userId);
 
         if (response.containsKey("error")) {
             return ResponseEntity.internalServerError().body(response);
         }
 
-        tokenQuotaService.updateTokenUsage(userId, tokensNeeded);
+        //tokenQuotaService.updateTokenUsage(userId, tokensNeeded);
 
         return ResponseEntity.ok(response);
     }
@@ -78,9 +78,10 @@ public class TutieController {
 
 
     @PostMapping("/upload-note")
-    public ResponseEntity<?> uploadNoteFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadNoteFile(@RequestParam("file") MultipartFile file,
+                                            @RequestParam("userId") Long userId) {
         try {
-            String sessionId = tutieService.uploadNoteFile(file);
+            String sessionId = tutieService.uploadNoteFile(file, userId);
             return ResponseEntity.ok().body(Map.of(
                 "status", "success",
                 "session_id", sessionId
@@ -95,9 +96,10 @@ public class TutieController {
 
     
     @PostMapping("/upload-note-text")
-    public ResponseEntity<?> uploadNoteText(@RequestParam("noteId") Long noteId) {
+    public ResponseEntity<?> uploadNoteText(@RequestParam("noteId") Long noteId,
+                                            @RequestParam("userId") Long userId) {
         try {
-            String sessionId = tutieService.uploadNoteText(noteId);
+            String sessionId = tutieService.uploadNoteText(noteId, userId);
             return ResponseEntity.ok().body(Map.of(
                 "status", "success",
                 "session_id", sessionId
