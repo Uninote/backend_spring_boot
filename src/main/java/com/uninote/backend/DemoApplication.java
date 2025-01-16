@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;  
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.uninote.backend")
 //@EnableCaching
 @EnableAsync
 public class DemoApplication {
