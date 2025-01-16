@@ -12,7 +12,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;  
 
 
-@SpringBootApplication(scanBasePackages = "com.uninote.backend",exclude = {SecurityAutoConfiguration.class, DataSourceAutoConfiguration.class})
+@SpringBootApplication
 
 //@EnableCaching
 @EnableAsync
