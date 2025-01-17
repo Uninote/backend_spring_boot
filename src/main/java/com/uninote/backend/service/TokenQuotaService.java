@@ -22,7 +22,7 @@ public class TokenQuotaService {
     @Autowired
     private UserDailyTokenQuotaRepository tokenQuotaRepository;
 
-    @Value("${app.daily-token-quota:10000}") 
+    @Value("${app.daily-token-quota:300000}") 
     private int dailyTokenQuota;
 
     public boolean hasSufficientQuota(Long userId, int tokensNeeded) {
