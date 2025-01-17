@@ -652,6 +652,7 @@ public class TutieService {
                 Map<String, Object> responseBody = response.getBody();
                 if ("success".equalsIgnoreCase((String) responseBody.get("status"))) {
                     String sessionId = (String) responseBody.get("session_id");
+                    sessionMap.put(sessionId, userId);
                     logger.info("File uploaded successfully. Session ID: {}", sessionId);
                     return sessionId;
                 } else {

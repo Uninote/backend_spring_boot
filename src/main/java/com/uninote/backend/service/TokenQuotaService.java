@@ -50,6 +50,9 @@ public class TokenQuotaService {
 
     
     private UserDailyTokenQuota createNewQuota(Long userId, Date quotaDate) {
+        if (userId == null || quotaDate == null) {
+            throw new IllegalArgumentException("userId and quotaDate must not be null");
+        }
         UserDailyTokenQuotaId id = new UserDailyTokenQuotaId();
         id.setQuotaDate(quotaDate);
         id.setUserId(userId);
