@@ -73,13 +73,14 @@ public class TutieService {
 
         pendingNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
         failedNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
-
+            
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
             processQueue();
         }
     }
+
 
 
 
@@ -606,19 +607,28 @@ public class TutieService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
+        
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("session_id", sessionId);
         body.add("message", message);
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(body, headers);
+        Long userId = sessionMap.get(sessionId);
 
+        int tokensNeeded = calculateTokens(message);
+        if (tokensNeeded == -1) {
+            return Map.of("status", "error", "message", "Failed to calculate token usage.");
+        }
+
+        if (!tokenQuotaService.hasSufficientQuota(userId, tokensNeeded)) {
+            return Map.of("status", "error", "message", "Daily token quota exceeded.");
+        }
         ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
         Map<String, Object> responseBody = response.getBody();
         if (responseBody != null && responseBody.containsKey("response")) {
             Map<String, Object> innerResponse = (Map<String, Object>) responseBody.get("response");
             Integer totalTokens = (Integer) innerResponse.get("total_tokens");
-            Long userId = sessionMap.get(sessionId);
+            
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
         }
         return responseBody;

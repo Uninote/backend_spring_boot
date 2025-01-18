@@ -115,18 +115,31 @@ public class TutieController {
     
 
     @PostMapping("/chat")
-    public ResponseEntity<?> chat(@RequestParam("session_id") String sessionId,
-                                  @RequestParam("message") String message) {
-        try {
-            Map<String, Object> response = tutieService.handleChat(sessionId, message);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "status", "error",
-                    "message", e.getMessage()
-            ));
+public ResponseEntity<?> chat(@RequestParam("session_id") String sessionId,
+                              @RequestParam("message") String message) {
+    try {
+        Map<String, Object> response = tutieService.handleChat(sessionId, message);
+
+        if ("error".equals(response.get("status"))) {
+            String errorMessage = (String) response.getOrDefault("message", "Unknown error occurred.");
+
+            if (errorMessage.contains("Daily token quota exceeded")) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", "error",
+                "message", "An unexpected error occurred. Please try again later."
+        ));
     }
+}
     
 }
 
