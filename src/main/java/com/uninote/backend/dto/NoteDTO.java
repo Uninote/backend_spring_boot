@@ -189,7 +189,7 @@ public class NoteDTO {
         this.academicYear = academicYear;
         this.certified = certified;
         this.grade = grade;
-        this.isDigitized = (status.equals( "PENDING"));
+        this.isDigitized = (status.equals( "PROCESSED"));
     }
 
 
