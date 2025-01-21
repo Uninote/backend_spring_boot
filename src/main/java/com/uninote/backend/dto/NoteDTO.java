@@ -40,6 +40,7 @@ public class NoteDTO {
     private int semester;
     private Boolean certified;
     private Double grade;
+    private Boolean isDigitized;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -164,6 +165,34 @@ public class NoteDTO {
         this.grade = grade;
                     
     }
+
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+        this.noteType = noteType;
+        this.professor = professor;
+        this.academicYear = academicYear;
+        this.certified = certified;
+        this.grade = grade;
+        this.isDigitized = (status == "PENDING");
+    }
+
+
     public NoteDTO() {};
 
     
@@ -344,5 +373,13 @@ public class NoteDTO {
 
     public Double getGrade() {
         return grade;
+    }
+
+    public void setIsDigitized(Boolean isDigitized) {
+        this.isDigitized =  isDigitized;
+    }
+
+    public Boolean getIsDigitized() {
+        return this.isDigitized;
     }
 }

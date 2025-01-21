@@ -79,7 +79,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -102,7 +102,7 @@ Page<NoteDTO> findPublicNotes(Pageable pageable, @Param("language_code") String 
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -126,10 +126,10 @@ Page<NoteDTO> findPublicNotesByDepartment(@Param("department") Department depart
                "n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
                "n.likes, u.username, u.profileImageUrl, n.createdAt, " +
-               "tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+               "tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
-               "JOIN c.department d " +
+               "JOIN c.department d " +   
                "JOIN n.user u " +
                "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id and ucg.courseId = c.id " +
                "LEFT JOIN n.noteType tn " +
@@ -154,7 +154,7 @@ Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University univer
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -174,7 +174,7 @@ Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University univer
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade  ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -209,7 +209,7 @@ Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University univer
        "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = :language_code), " +
        "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code =  :language_code), " +
        "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = :language_code), " +
-       "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
        "FROM NoteSave ns " +
        "JOIN ns.note n " +
        "LEFT JOIN n.noteType tn " +
@@ -659,7 +659,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -683,7 +683,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
    
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -705,7 +705,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -727,7 +727,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
     "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-    "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade ) " +
+    "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status  ) " +
     "FROM Note n " +
     "JOIN n.course c " +
     "JOIN c.department d " +
@@ -751,7 +751,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
     
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
     "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-    "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+    "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status  ) " +
     "FROM Note n " +
     "JOIN n.course c " +
     "JOIN c.department d " +
@@ -802,7 +802,7 @@ List<CourseNameDTO> findCoursesWithNotesByUserId(@Param("userId") Long userId);
        "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
        "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
        "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
-       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+       "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status  ) " +
        "FROM Note n " +
        "JOIN n.course c " +
        "JOIN c.department d " +
@@ -824,7 +824,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
          "(SELECT cn.name FROM CourseName cn WHERE cn.course = c AND cn.language.code = 'EN'), " +
          "(SELECT un.name FROM UniversityName un WHERE un.university = d.university AND un.language.code = 'EN'), " +
          "(SELECT dn.name FROM DepartmentName dn WHERE dn.department = d AND dn.language.code = 'EN'), " +
-         "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+         "n.likes, u.username, u.profileImageUrl, n.createdAt, tn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
          "FROM Note n " +
          "JOIN n.course c " +
          "JOIN c.department d " +
@@ -837,7 +837,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
@@ -868,7 +868,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
    @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +
