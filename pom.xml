@@ -119,7 +119,7 @@
         <artifactId>ons</artifactId>
         </exclusion>
     </exclusions>
-        
+        <type>pom</type>
     </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
