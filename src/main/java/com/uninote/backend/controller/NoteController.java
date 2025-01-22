@@ -19,7 +19,6 @@ import com.uninote.backend.utils.EncryptionUtil;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
 import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
-import org.checkerframework.common.reflection.qual.GetClass;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

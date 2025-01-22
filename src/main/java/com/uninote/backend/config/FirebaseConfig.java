@@ -1,4 +1,4 @@
-package com.uninote.backend.config;
+/*package com.uninote.backend.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -28,3 +28,4 @@ public class FirebaseConfig {
         return FirebaseApp.getInstance();
     }
 }
+*./
