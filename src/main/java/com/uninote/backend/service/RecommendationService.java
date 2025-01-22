@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +39,7 @@ public class RecommendationService {
     private final int LIKES_WEIGHT = 2;
 
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void initializeRecommendations() {
         computeAndCacheRecommendations();
     }

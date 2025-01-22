@@ -63,7 +63,6 @@ public class SVDRecommendationService {
 
     private boolean matrixLoaded = false;
 
-
     @EventListener(ApplicationReadyEvent.class)
     @Async
     public synchronized void initializeUserNoteMatrix() {
