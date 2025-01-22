@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteViewRepository;
-
+import org.springframework.context.event.EventListener;
 @Service
 public class RecommendationService {
 
