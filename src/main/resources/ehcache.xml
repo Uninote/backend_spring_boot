@@ -1,0 +1,29 @@
+
+<!--ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://www.ehcache.org/ehcache.xsd">
+
+
+        
+         <cache alias="defaultCache">
+            <key-type>java.lang.Long</key-type>
+            <value-type>java.lang.String</value-type>
+            <expiry>
+                <ttl unit="seconds">600</ttl> 
+            </expiry>
+            <heap unit="entries">1000</heap> 
+        </cache>
+
+
+
+
+
+        <cache alias="com.backend.uninote.entity.Note" name = "noteCache">
+            <key-type>java.lang.Long</key-type>
+            <value-type>com.example.Note</value-type>
+            <expiry>
+                <ttl unit="seconds">300</ttl> 
+            </expiry>
+            <heap unit="entries">500</heap> 
+        </cache>
+
+</ehcache-->
