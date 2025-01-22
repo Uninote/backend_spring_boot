@@ -54,11 +54,34 @@
             </exclusion>
         </exclusions>
     </dependency>
-     
+     <dependency>
+        <groupId>com.google.firebase</groupId>
+        <artifactId>firebase-admin</artifactId>
+        <version>9.4.1</version>
+        <exclusions>
+            <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
     
     
 
-   
+    <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5</artifactId>
+        <version>5.2.1</version> <!-- Latest stable version -->
+    </dependency>
+    <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5</artifactId>
+        <version>5.2.1</version> <!-- Latest stable version -->
+    </dependency>
     
     
     
@@ -71,7 +94,11 @@
     </dependency>
 
 
-   
+    <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>1.70</version> <!-- Latest stable version -->
+    </dependency>
 
     
     <dependency>
@@ -79,11 +106,20 @@
         <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.oracle.database.jdbc</groupId>
-        <artifactId>ojdbc11-production</artifactId>
-        <version>21.1.0.0</version>
-        <type>pom</type>
-    </dependency>
+  <groupId>com.oracle.database.jdbc</groupId>
+  <artifactId>ojdbc10</artifactId>
+  <version>${oracle.version}</version>
+  <exclusions>
+    <exclusion>
+      <groupId>com.oracle.database.ha</groupId>
+      <artifactId>simplefan</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>com.oracle.database.ha</groupId>
+      <artifactId>ons</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-websocket</artifactId>
@@ -121,13 +157,32 @@
         <scope>test</scope>
     </dependency-->
 
-    
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.3.232</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <scope>test</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-cache</artifactId>
         <version>3.3.4</version>
     </dependency>
-   
+    <dependency>
+        <groupId>org.ehcache</groupId>
+        <artifactId>ehcache</artifactId>
+    </dependency>
     <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-math3</artifactId>
