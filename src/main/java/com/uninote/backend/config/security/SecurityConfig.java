@@ -2,7 +2,7 @@ package com.uninote.backend.config.security;
 
 import javax.annotation.PostConstruct;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+//import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,10 +30,10 @@ public class SecurityConfig {
 
         return http.build();
     }*/
-    @PostConstruct
+    //@PostConstruct
     public void setupBouncyCastleProvider() {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+        /*if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleProvider());
-        }
+        }*/
     }
 }
