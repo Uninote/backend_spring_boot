@@ -669,28 +669,13 @@ public class TutieService {
         }
         ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
         Map<String, Object> responseBody = response.getBody();
-        if (responseBody == null || !responseBody.containsKey("data")) {
-            throw new IllegalStateException("Invalid response structure from external service");
-        }
-    
-        Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
-        if (data == null || !data.containsKey("response")) {
-            throw new IllegalStateException("Response data missing in external service response");
-        }
-    
-        Map<String, Object> innerResponse = (Map<String, Object>) data.get("response");
-        
-    
-        Integer totalTokens = (Integer) innerResponse.get("total_tokens");
-        if (totalTokens != null) {
+        if (responseBody != null && responseBody.containsKey("response")) {
+            Map<String, Object> innerResponse = (Map<String, Object>) responseBody.get("response");
+            Integer totalTokens = (Integer) innerResponse.get("total_tokens");
+            
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
         }
-    
-        Map<String, Object> eventProperties = new HashMap<>();
-        eventProperties.put("message", message);
-        eventProperties.put("response", innerResponse);
-    
-        mixPanelService.trackEvent(userId, "Chat Response", new JSONObject(eventProperties));
+        
         return responseBody;
     }
 
