@@ -580,7 +580,8 @@ public class TutieService {
             result.put("answer", answer);
             result.put("noteIds", noteIds);
             Map<String, Object> eventProperties = new HashMap<>();
-            eventProperties.put("response_prompt", answer);
+            eventProperties.put("prompt", userPrompt);
+            eventProperties.put("response", answer);
             eventProperties.put("note_ids", noteIds);
             logger.info("Received response from external service: Answer={}, Note IDs={}", answer, noteIds);
 
@@ -674,7 +675,12 @@ public class TutieService {
             Integer totalTokens = (Integer) innerResponse.get("total_tokens");
             
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
+            Map<String, Object> eventProperties = new HashMap<>();
+            eventProperties.put("prompt", message);
+            eventProperties.put("response", innerResponse.getOrDefault("response",""));
+            mixPanelService.trackEvent(userId, "Tutie Chat Response", new JSONObject(eventProperties));
         }
+        
         return responseBody;
     }
 
