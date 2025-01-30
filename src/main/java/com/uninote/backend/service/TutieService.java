@@ -9,6 +9,7 @@ import com.uninote.backend.entity.ProcessedNote;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.ProcessedNoteRepository;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,8 @@ public class TutieService {
     @Autowired
     private ProcessedNoteRepository processedNoteRepository;
 
-
+    @Autowired
+    private MixPanelService mixPanelService;
 
     @Autowired
     private TokenQuotaService tokenQuotaService;
@@ -577,7 +579,12 @@ public class TutieService {
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
             result.put("answer", answer);
             result.put("noteIds", noteIds);
+            Map<String, Object> eventProperties = new HashMap<>();
+            eventProperties.put("response_prompt", answer);
+            eventProperties.put("note_ids", noteIds);
             logger.info("Received response from external service: Answer={}, Note IDs={}", answer, noteIds);
+
+            mixPanelService.trackEvent(userId, "Tutie Search Prompt", new JSONObject(eventProperties));
         } catch (Exception e) {
             logger.error("Error communicating with external service: {}", e.getMessage(), e);
             result.put("error", "Failed to retrieve data from external service.");
