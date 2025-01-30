@@ -128,6 +128,10 @@ public class UserService {
     private SeasonService seasonService;
 
 
+    @Autowired
+    private MixPanelService mixPanelService;
+
+
     private final Map<Long, Object> locks = new ConcurrentHashMap<>();
     
 
@@ -135,7 +139,7 @@ public class UserService {
         return userRepository.countTotalVerifiedUsers();
     }
 
-    public Long loginUserAndUpdateStreak(Long userId) {
+    public Long loginUserAndUpdateStreak(Long userId, String anonymusSessionId) {
 
         locks.putIfAbsent(userId, new Object());
         synchronized (locks.get(userId)) {
@@ -178,6 +182,10 @@ public class UserService {
 
                 });
 
+                CompletableFuture<Void> mixpanelFuture = CompletableFuture.runAsync(() -> {
+                    //mixPanelService.identifyUser(anonymusSessionId, userId);
+
+                });
                 UserLogin userLogin = new UserLogin();  
                 userLogin.setUser(user);
                 userLogin.setLoginTimestamp(LocalDateTime.now());
@@ -192,7 +200,7 @@ public class UserService {
                 }
 
 
-                CompletableFuture<Void> allTasks = CompletableFuture.allOf(notificationFuture,badgeFuture);
+                CompletableFuture<Void> allTasks = CompletableFuture.allOf(notificationFuture,badgeFuture, mixpanelFuture);
                 allTasks.exceptionally(ex -> {
                     System.err.println("An error occurred during asynchronous operations: " + ex.getMessage());
                     return null;

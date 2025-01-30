@@ -96,7 +96,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/login")
-    public ResponseEntity<Long> loginUserAndUpdateStreak(@PathVariable Long id, @RequestParam(required = false) Boolean deviceId) {
+    public ResponseEntity<Long> loginUserAndUpdateStreak(@PathVariable Long id, @RequestParam(required = false) Boolean deviceId, @RequestParam(required = false) String anonymusSessionId) {
 
         Long sessionId;
 
@@ -104,8 +104,9 @@ public class UserController {
             sessionId = userService.loginUserAndUpdateStreak(id,deviceId);
  
         } else {
-            sessionId = userService.loginUserAndUpdateStreak(id);
-
+            
+            sessionId = userService.loginUserAndUpdateStreak(id, anonymusSessionId);
+            
         }
         return ResponseEntity.ok(sessionId);
     }

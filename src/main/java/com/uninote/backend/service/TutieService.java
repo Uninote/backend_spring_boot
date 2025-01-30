@@ -74,11 +74,13 @@ public class TutieService {
 
         pendingNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
         failedNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
-            
+        logger.info("sda");
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
             processQueue();
+        } else {
+            logger.info("No notes found");
         }
     }
 
@@ -161,7 +163,9 @@ public class TutieService {
     
     private void waitForTaskCompletion(String taskId) {
         boolean isCompleted = false;
-    
+        int retryCount = 0;
+        final int maxRetries = 5; // Set a limit for retries to prevent indefinite waiting
+        
         while (!isCompleted) {
             try {
                 logger.info("Checking status for Task ID {}", taskId);
@@ -194,16 +198,34 @@ public class TutieService {
     
                         default:
                             logger.info("Task ID {} is still in progress.", taskId);
-                            Thread.sleep(5000); // Wait for 5 seconds before rechecking
+                            retryCount++;
+                            if (retryCount >= maxRetries) {
+                                logger.error("Task ID {} stuck in progress. Marking as failed after {} retries.", taskId, maxRetries);
+                                Note stuckNote = noteRepository.findById(taskNoteMap.get(taskId)).orElse(null);
+                                markNoteAsNonDigitizable(stuckNote, "Task stuck in progress.");
+                                taskNoteMap.remove(taskId);
+                                isCompleted = true;
+                            } else {
+                                Thread.sleep(5000); // Wait for 5 seconds before rechecking
+                            }
                             break;
                     }
                 }
             } catch (Exception e) {
                 logger.error("Error while checking status for Task ID {}: {}", taskId, e.getMessage(), e);
-                try {
-                    Thread.sleep(5000); // Wait before retrying in case of error
-                } catch (InterruptedException interruptedException) {
-                    Thread.currentThread().interrupt();
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    logger.error("Max retries reached for Task ID {}. Marking as failed.", taskId);
+                    Note errorNote = noteRepository.findById(taskNoteMap.get(taskId)).orElse(null);
+                    markTaskAsFailed(errorNote, taskId, "Error during task status check.");
+                    taskNoteMap.remove(taskId);
+                    isCompleted = true;
+                } else {
+                    try {
+                        Thread.sleep(5000); 
+                    } catch (InterruptedException interruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
         }
@@ -249,6 +271,18 @@ public class TutieService {
         logger.warn("Marked Note ID {} as NON_DIGITIZABLE: {}", note.getId(), reason);
     }
     
+
+    private void markTaskAsFailed(Note note, String taskId, String reason) {
+        if (note != null) {
+            note.setStatus("FAILED");
+            noteRepository.save(note);
+            logger.error("Marked Note ID {} as FAILED due to: {}", note.getId(), reason);
+        } else {
+            logger.warn("Failed to mark task as FAILED. Note not found for Task ID {}", taskId);
+        }
+        taskNoteMap.remove(taskId);
+    }
+
 
     public void processNoteViaCelery(Long noteId) {
         Note note = noteRepository.findById(noteId).orElse(null);

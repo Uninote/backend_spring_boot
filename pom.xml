@@ -92,7 +92,11 @@
         <artifactId>web-push</artifactId>
         <version>5.1.1</version>
     </dependency>
-
+    <dependency>
+        <groupId>com.mixpanel</groupId>
+        <artifactId>mixpanel-java</artifactId>
+        <version>1.5.2</version>
+    </dependency>
 
     <dependency>
         <groupId>org.bouncycastle</groupId>
