@@ -675,7 +675,6 @@ public class TutieService {
             
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
         }
-        
         return responseBody;
     }
 
