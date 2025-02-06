@@ -15,7 +15,7 @@ public interface NoteTypeRepository extends JpaRepository<NoteType,Long>{
     @Query("SELECT DISTINCT tnn FROM NoteType nt " +
            "JOIN nt.typeNames tnn " +
            "JOIN tnn.language l " +
-           "WHERE l.code = :languageCode")
+           "WHERE l.code = :languageCode and nt.typeId != 61")
     List<NoteTypeName> findAllByLanguageCode(@Param("languageCode") String languageCode);
     
 }   
