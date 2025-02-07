@@ -994,6 +994,9 @@ public class NoteService {
             note.setNoteType(noteType);
         }
 
+
+
+
         Note savedNote = noteRepository.save(note);
         boolean hasReceivedFirstLog = uniscoreIncreaseLogsRepository.existsByUserIdAndIncreaseTypeId(user.getId(), 22L);
 
@@ -1170,6 +1173,12 @@ public class NoteService {
 
 
 
+    
+
+    public List<NoteDTO> getTopInteractedNotes(Long userId) {
+        List<NoteDTO> res = noteRepository.findTopInteractedNotesByUser("GR", userId, 0);
+        return res;
+    }
 
 
 }

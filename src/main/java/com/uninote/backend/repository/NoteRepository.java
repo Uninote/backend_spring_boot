@@ -893,7 +893,43 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
    @Query("SELECT n FROM Note n WHERE n.status = :status and deleted = False ")
    List<Note> findByStatus(String status);
-}  
+
+
+
+   @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
+               "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, " +
+               "n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
+               "FROM Note n " +
+               "JOIN n.course c " +
+               "JOIN c.department d " +
+               "JOIN n.user u " +
+               "LEFT JOIN UserCourseGrade ucg ON ucg.userId = u.id AND ucg.courseId = c.id " +
+               "LEFT JOIN n.noteType tn " +
+               "LEFT JOIN NoteTypeName tnn ON tnn.typeId = tn.id " +
+               "JOIN CourseName cn ON cn.course = c " +
+               "JOIN cn.language lang " +
+               "JOIN UniversityName un ON un.university = d.university " +
+               "JOIN un.language ul " +
+               "JOIN DepartmentName dn ON dn.department = d " +
+               "JOIN dn.language dl " +
+               "LEFT JOIN NoteView nv ON nv.note.id = n.id " +
+               "LEFT JOIN NoteLike nl ON nl.note.id = n.id " +
+               "WHERE ul.code = :language_code " +
+               "AND dl.code = :language_code " +
+               "AND tnn.language.code = :language_code " +
+               "AND lang.code = :language_code " +
+               "AND u.id = :userId " +
+               "GROUP BY n.id, c.id, u.id, cn.name, un.name, dn.name, tnn.typeName, ucg.grade " +
+               "HAVING (COALESCE(COUNT(nv.id), 0) + COALESCE(COUNT(nl.id), 0)) > :threshold " +
+               "ORDER BY (COALESCE(COUNT(nv.id), 0) + COALESCE(COUNT(nl.id), 0)) DESC")
+List<NoteDTO> findTopInteractedNotesByUser(
+    @Param("language_code") String language_code,
+    @Param("userId") Long userId,
+    @Param("threshold") int threshold
+);
+
+}
 
 
 
