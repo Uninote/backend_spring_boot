@@ -19,6 +19,8 @@ import com.uninote.backend.utils.EncryptionUtil;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
 import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,10 @@ public class NoteController {
 
     @Autowired
     private UniversityRepository universityRepository;
+
+
+    private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
+
 
     @PostMapping("/encode/{noteId}")
     public ResponseEntity<String> generateToken(@PathVariable Long noteId) {
@@ -514,4 +520,10 @@ public NoteDTO getNoteDataById(@PathVariable Long noteId,
     public Boolean getNoteDataById(@PathVariable String slug) {
         return noteService.slugExists(slug);
     }   
+
+    @GetMapping("/top-interacted/{userId}")
+    public List<NoteDTO> getTopInteractedNotes(@PathVariable Long userId) {
+        logger.info("here");
+        return noteService.getTopInteractedNotes(userId);
+    }
 }

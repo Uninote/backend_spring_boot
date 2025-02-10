@@ -65,11 +65,10 @@ public class TutieService {
 
     private final ConcurrentHashMap<String, Long> sessionMap = new ConcurrentHashMap<>();
 
-    
-    @EventListener(ApplicationReadyEvent.class)
+    @PostConstruct    
     public void initQueueOnStartup() {
         
-
+        logger.info("here");
         List<Note> pendingNotes = noteRepository.findByStatus("PENDING");
         List<Note> failedNotes = noteRepository.findByStatus("FAILED");
         failedNotes.addAll(noteRepository.findByStatus("PROCESSING"));
@@ -166,8 +165,9 @@ public class TutieService {
     private void waitForTaskCompletion(String taskId) {
         boolean isCompleted = false;
         int retryCount = 0;
-        final int maxRetries = 5; // Set a limit for retries to prevent indefinite waiting
-        
+        final int maxRetries = 10000;
+        final int retryDelayMs = 10000; // Retry delay of 10 seconds
+    
         while (!isCompleted) {
             try {
                 logger.info("Checking status for Task ID {}", taskId);
@@ -178,60 +178,80 @@ public class TutieService {
                         new ParameterizedTypeReference<Map<String, Object>>() {}
                 );
     
-                if (response.getBody() != null) {
-                    String status = (String) response.getBody().get("status");
+                if (response.getBody() == null) {
+                    logger.warn("Received null response for Task ID {}", taskId);
+                    handleRetryOrMarkAsFailed(taskId, ++retryCount, maxRetries, "Received null response from API.");
+                    continue;
+                }
     
-                    switch (status.toUpperCase()) {
-                        case "SUCCESS":
-                            Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
-                            processTaskResult(taskNoteMap.get(taskId), result);
-                            taskNoteMap.remove(taskId);
-                            isCompleted = true;
-                            logger.info("Task ID {} completed successfully.", taskId);
-                            break;
+                String status = (String) response.getBody().get("status");
+                if (status == null) {
+                    logger.warn("Status is null for Task ID {}", taskId);
+                    handleRetryOrMarkAsFailed(taskId, ++retryCount, maxRetries, "Null status in API response.");
+                    continue;
+                }
     
-                        case "FAILURE":
-                            logger.error("Task ID {} failed. Traceback: {}", taskId, response.getBody().get("traceback"));
-                            Note note = noteRepository.findById(taskNoteMap.get(taskId)).orElseThrow(() -> new IllegalArgumentException("Note not found"));
-                            markNoteAsNonDigitizable(note, "Task failed.");
-                            taskNoteMap.remove(taskId);
-                            isCompleted = true;
-                            break;
+                switch (status.toUpperCase()) {
+                    case "SUCCESS":
+                        processSuccessfulTask(taskId, response);
+                        isCompleted = true;
+                        break;
+
+                    case "NOT_DIGITIZABLE":
+                        processSuccessfulTask(taskId, response);
+                        isCompleted = true;
+                        break;
+
+                    case "FAILURE":
+                        processFailedTask(taskId, response);
+                        isCompleted = true;
+                        break;
     
-                        default:
-                            logger.info("Task ID {} is still in progress.", taskId);
-                            retryCount++;
-                            if (retryCount >= maxRetries) {
-                                logger.error("Task ID {} stuck in progress. Marking as failed after {} retries.", taskId, maxRetries);
-                                Note stuckNote = noteRepository.findById(taskNoteMap.get(taskId)).orElse(null);
-                                markNoteAsNonDigitizable(stuckNote, "Task stuck in progress.");
-                                taskNoteMap.remove(taskId);
-                                isCompleted = true;
-                            } else {
-                                Thread.sleep(5000); // Wait for 5 seconds before rechecking
-                            }
-                            break;
-                    }
+                    default:
+                        logger.info("Task ID {} is still in progress.", taskId);
+                        handleRetryOrMarkAsFailed(taskId, ++retryCount, maxRetries, null);
+                        break;
                 }
             } catch (Exception e) {
                 logger.error("Error while checking status for Task ID {}: {}", taskId, e.getMessage(), e);
-                retryCount++;
-                if (retryCount >= maxRetries) {
-                    logger.error("Max retries reached for Task ID {}. Marking as failed.", taskId);
-                    Note errorNote = noteRepository.findById(taskNoteMap.get(taskId)).orElse(null);
-                    markTaskAsFailed(errorNote, taskId, "Error during task status check.");
-                    taskNoteMap.remove(taskId);
-                    isCompleted = true;
-                } else {
-                    try {
-                        Thread.sleep(5000); 
-                    } catch (InterruptedException interruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
+                Note note = noteRepository.findById(taskNoteMap.get(taskId)).orElse(null);
+                markTaskAsFailed(note, taskId, e.getMessage());
+                break;
             }
         }
     }
+    
+    private void processSuccessfulTask(String taskId, ResponseEntity<Map<String, Object>> response) {
+        Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
+        processTaskResult(taskNoteMap.get(taskId), result);
+        taskNoteMap.remove(taskId);
+        logger.info("Task ID {} completed successfully.", taskId);
+    }
+    
+    private void processFailedTask(String taskId, ResponseEntity<Map<String, Object>> response) {
+        logger.error("Task ID {} failed. Traceback: {}", taskId, response.getBody().get("traceback"));
+        Note note = noteRepository.findById(taskNoteMap.get(taskId))
+                .orElseThrow(() -> new IllegalArgumentException("Note not found"));
+                markTaskAsFailed(note, taskId,"Task failed.");
+        taskNoteMap.remove(taskId);
+    }
+    
+    private void handleRetryOrMarkAsFailed(String taskId, int retryCount, int maxRetries, String reason) {
+        if (retryCount >= maxRetries) {
+            logger.error("Task ID {} failed after {} retries. {}", taskId, maxRetries, reason != null ? reason : "No specific reason provided.");
+            Note note = noteRepository.findById(taskNoteMap.get(taskId)).orElse(null);
+            markTaskAsFailed(note, taskId, reason);
+            taskNoteMap.remove(taskId);
+        } else {
+            try {
+                Thread.sleep(10000); 
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("Retry sleep interrupted for Task ID {}", taskId);
+            }
+        }
+    }
+    
 
     private void processNoteById(Long noteId) {
         Note note = noteRepository.findById(noteId).orElse(null);
@@ -320,7 +340,7 @@ public class TutieService {
             }
         } catch (Exception e) {
             logger.error("Error submitting Note ID {} to Celery: {}", noteId, e.getMessage(), e);
-            markNoteAsNonDigitizable(note, "Error submitting task to Celery.");
+            markTaskAsFailed(note, null, null);
         }
     }
     
@@ -344,7 +364,7 @@ public class TutieService {
                 Map<String, Object> responseBody = response.getBody();
                 if ("success".equalsIgnoreCase((String) responseBody.get("status"))) {
                     String sessionId = (String) responseBody.get("session_id");
-                    sessionMap.put(sessionId, userId);
+                    sessionMap.put(sessionId, userId);  
                     logger.info("File uploaded successfully. Session ID: {}", sessionId);
                     return sessionId;
                 } else {
@@ -442,7 +462,7 @@ public class TutieService {
             Map<String, Object> data = (Map<String, Object>) result.get("data");
             if (data == null) {
                 logger.warn("Task result data is missing for Note ID {}.", noteId);
-                markNoteAsNonDigitizable(note, "Task result contained no data.");
+                markTaskAsFailed(note, null,null);
                 return;
             }
     
@@ -468,7 +488,7 @@ public class TutieService {
     
         } catch (Exception e) {
             logger.error("Error processing result for Note ID {}: {}", noteId, e.getMessage(), e);
-            markNoteAsNonDigitizable(note, "Processing error: " + e.getMessage());
+            markTaskAsFailed(note, null, null);
         }
     }
     
@@ -585,7 +605,7 @@ public class TutieService {
             eventProperties.put("note_ids", noteIds);
             logger.info("Received response from external service: Answer={}, Note IDs={}", answer, noteIds);
 
-            mixPanelService.trackEvent(userId, "Tutie Search Prompt", new JSONObject(eventProperties));
+            //mixPanelService.trackEvent(userId, "Tutie Search Prompt", new JSONObject(eventProperties));
         } catch (Exception e) {
             logger.error("Error communicating with external service: {}", e.getMessage(), e);
             result.put("error", "Failed to retrieve data from external service.");
@@ -678,7 +698,7 @@ public class TutieService {
             Map<String, Object> eventProperties = new HashMap<>();
             eventProperties.put("prompt", message);
             eventProperties.put("response", innerResponse.getOrDefault("response",""));
-            mixPanelService.trackEvent(userId, "Tutie Chat Response", new JSONObject(eventProperties));
+            //mixPanelService.trackEvent(userId, "Tutie Chat Response", new JSONObject(eventProperties));
         }
         
         return responseBody;

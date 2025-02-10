@@ -1176,7 +1176,9 @@ public class NoteService {
     
 
     public List<NoteDTO> getTopInteractedNotes(Long userId) {
-        List<NoteDTO> res = noteRepository.findTopInteractedNotesByUser("GR", userId, 0);
+        logger.info(String.valueOf(userId));
+        List<NoteDTO> res = noteRepository.findTopInteractedNotesByUser("GR", userId, 10L);
+        res = res.stream().limit(10).toList();
         return res;
     }
 
