@@ -39,6 +39,11 @@ import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
 import com.uninote.backend.repository.UserSessionRepository;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -659,6 +664,8 @@ public void softDeleteUserById(Long userId) {
     }
 
     public GrowthStatisticsDTO fetchGrowthStatistics() {
+        Logger logger = LoggerFactory.getLogger(UserService.class);
+    
         List<Object[]> rawData = userRepository.getGrowthStatisticsNative(
             LocalDate.now().minusDays(7), 
             LocalDate.now().minusMonths(1), 
@@ -666,18 +673,30 @@ public void softDeleteUserById(Long userId) {
             LocalDate.now().minusYears(1)
         );
     
-        if (!rawData.isEmpty()) {
+        if (rawData != null && !rawData.isEmpty()) {
             Object[] row = rawData.get(0);
-            return new GrowthStatisticsDTO(
-                ((Number) row[0]).longValue(),
-                ((Number) row[1]).longValue(),
-                ((Number) row[2]).longValue(),
-                ((Number) row[3]).longValue()
-            );
+            try {
+                double lastWeek = row[0] instanceof Number ? ((Number) row[0]).doubleValue() : 0.0;
+                double lastMonth = row[1] instanceof Number ? ((Number) row[1]).doubleValue() : 0.0;
+                double lastQuarter = row[2] instanceof Number ? ((Number) row[2]).doubleValue() : 0.0;
+                double lastYear = row[3] instanceof Number ? ((Number) row[3]).doubleValue() : 0.0;
+                return new GrowthStatisticsDTO(
+                    Math.round(((Number) row[0]).doubleValue()),
+                    Math.round(((Number) row[1]).doubleValue()),
+                    Math.round(((Number) row[2]).doubleValue()),
+                    Math.round(((Number) row[3]).doubleValue())
+                );
+
+            } catch (Exception e) {
+                logger.error("Error converting growth statistics data", e);
+            }
+        } else {
+            logger.warn("No growth statistics data found.");
         }
     
-        return new GrowthStatisticsDTO(0L, 0L, 0L, 0L);
+        return new GrowthStatisticsDTO(0L,0L,0L,0L);
     }
+    
     
 
 

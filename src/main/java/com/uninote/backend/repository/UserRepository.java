@@ -159,16 +159,18 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
         Long getTotalDeletedUsers();
 
         @Query(value = "SELECT " +
-               "  (SELECT COUNT(*) FROM admin.users u WHERE u.created_at >= :sevenDaysAgo) AS lastWeek, " +
-               "  (SELECT COUNT(*) FROM admin.users u WHERE u.created_at >= :oneMonthAgo) AS lastMonth, " +
-               "  (SELECT COUNT(*) FROM admin.users u WHERE u.created_at >= :threeMonthsAgo) AS lastQuarter, " +
-               "  (SELECT COUNT(*) FROM admin.users u WHERE u.created_at >= :oneYearAgo) AS lastYear " +
-               "FROM dual",
-        nativeQuery = true)
+               "  (SELECT COUNT(*) * 100.0 / total FROM admin.users u WHERE u.created_at >= :sevenDaysAgo) AS lastWeek, " +
+               "  (SELECT COUNT(*) * 100.0 / total FROM admin.users u WHERE u.created_at >= :oneMonthAgo) AS lastMonth, " +
+               "  (SELECT COUNT(*) * 100.0 / total FROM admin.users u WHERE u.created_at >= :threeMonthsAgo) AS lastQuarter, " +
+               "  (SELECT COUNT(*) * 100.0 / total FROM admin.users u WHERE u.created_at >= :oneYearAgo) AS lastYear, " +
+               "  total " +
+               "FROM (SELECT COUNT(*) AS total FROM admin.users) totalData",
+       nativeQuery = true)
 List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenDaysAgo,
                                          @Param("oneMonthAgo") LocalDate oneMonthAgo,
                                          @Param("threeMonthsAgo") LocalDate threeMonthsAgo,
                                          @Param("oneYearAgo") LocalDate oneYearAgo);
+
 
 
 
