@@ -38,6 +38,7 @@ import com.uninote.backend.repository.SeasonRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UserCourseGradeRepository;
+import com.uninote.backend.repository.UserNoteHelpedRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
 
@@ -56,6 +57,7 @@ import com.uninote.backend.converter.Converters.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -85,6 +87,9 @@ public class NoteService {
 
     @Autowired
     private UserCourseGradeRepository userCourseGradeRepository;
+
+    @Autowired
+    private UserNoteHelpedRepository userNoteHelpedRepository;
 
     @Autowired
     private NoteRepository noteRepository;
@@ -1177,6 +1182,9 @@ public class NoteService {
 
     public List<NoteDTO> getTopInteractedNotes(Long userId) {
         logger.info(String.valueOf(userId));
+        if (userNoteHelpedRepository.existsByUserId(userId)){
+            return new ArrayList<>();
+        }
         List<NoteDTO> res = noteRepository.findTopInteractedNotesByUser("GR", userId, 10L);
         res = res.stream().limit(10).collect(Collectors.toList());
         return res;

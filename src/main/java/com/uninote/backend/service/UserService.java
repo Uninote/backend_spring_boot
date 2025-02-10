@@ -139,6 +139,10 @@ public class UserService {
         return userRepository.countTotalVerifiedUsers();
     }
 
+    public Long getTotalUnverifiedUsers() {
+        return userRepository.countTotalUnverifiedUsers();
+    }
+
     public Long loginUserAndUpdateStreak(Long userId, String anonymusSessionId) {
 
         locks.putIfAbsent(userId, new Object());

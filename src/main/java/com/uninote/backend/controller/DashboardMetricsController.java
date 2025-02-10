@@ -27,4 +27,10 @@ public class DashboardMetricsController {
     public Long getTotalScans() {
         return qrViewService.countViews();
     }
+
+
+    @GetMapping("/total-unverified-users")
+    public Long getTotalUnverifiedUsers() {
+        return userService.getTotalUnverifiedUsers();
+    }
 }

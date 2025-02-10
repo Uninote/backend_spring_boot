@@ -20,8 +20,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findById(String id);
 
 
-    @Query(value ="select count(*) from admin.users where email_verified = 1", nativeQuery = true)
+    @Query(value ="select count(*) from admin.users  where email_verified = 1 and role_id != 21", nativeQuery = true)
     Long countTotalVerifiedUsers();    
+
+    @Query(value ="select count(*) from admin.users where email_verified = 0 and role_id != 21", nativeQuery = true)
+    Long countTotalUnverifiedUsers();  
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName,CASE WHEN u.certified = 1 THEN 1 ELSE 0 END AS certified " +

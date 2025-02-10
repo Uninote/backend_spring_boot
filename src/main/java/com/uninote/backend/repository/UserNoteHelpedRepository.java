@@ -19,4 +19,6 @@ public interface UserNoteHelpedRepository extends JpaRepository<UserNoteHelped, 
 
     UserNoteHelped findByUserIdAndNoteId(Long userId, Long noteId);
 
+    boolean existsByUserId(Long userId);
+
 }
