@@ -898,7 +898,7 @@ List<NoteDTO> findNotesByGoodCreators(@Param("minLikes") long minLikes, @Param("
 
    @Query(
     "SELECT new com.uninote.backend.dto.NoteDTO(" +
-    "    n.id, c.id, u.id, n.title, '', n.pdfUrl, n.filename, " +
+    "    n.id, c.id, u.id, n.title, n.description, n.pdfUrl, n.filename, " +
     "    n.isPublic, cn.name, un.name, dn.name, " +
     "    n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, " +
     "    n.professor, n.academicYear, u.certified, ucg.grade, n.status, " +
