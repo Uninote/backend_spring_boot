@@ -1,6 +1,7 @@
 package com.uninote.backend.repository;
 
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,7 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.uninote.backend.dto.GrowthStatisticsDTO;
+import com.uninote.backend.dto.MAUChangeStatisticsDTO;
+import com.uninote.backend.dto.MonthlyActiveUsersDTO;
 import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.dto.UserGrowthDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
@@ -152,6 +157,38 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
 
         @Query(value = "SELECT COUNT(*) FROM ADMIN.USERS WHERE ROLE_ID = 21", nativeQuery = true)
         Long getTotalDeletedUsers();
+
+        @Query(value = "SELECT " +
+               "  (SELECT COUNT(*) FROM users u WHERE u.created_at >= :sevenDaysAgo) AS lastWeek, " +
+               "  (SELECT COUNT(*) FROM users u WHERE u.created_at >= :oneMonthAgo) AS lastMonth, " +
+               "  (SELECT COUNT(*) FROM users u WHERE u.created_at >= :threeMonthsAgo) AS lastQuarter, " +
+               "  (SELECT COUNT(*) FROM users u WHERE u.created_at >= :oneYearAgo) AS lastYear",
+        nativeQuery = true)
+        GrowthStatisticsDTO getGrowthStatistics(@Param("sevenDaysAgo") LocalDate sevenDaysAgo,
+                                        @Param("oneMonthAgo") LocalDate oneMonthAgo,
+                                        @Param("threeMonthsAgo") LocalDate threeMonthsAgo,
+                                        @Param("oneYearAgo") LocalDate oneYearAgo);
+
+
+
+
+
+        @Query("SELECT new com.uninote.backend.dto.UserGrowthDTO(TO_CHAR(u.createdAt, 'YYYY-MM') AS month, COUNT(u) AS totalUsers) " +
+                "FROM User u " +
+                "GROUP BY TO_CHAR(u.createdAt, 'YYYY-MM') " +
+                "ORDER BY month")
+        List<UserGrowthDTO> getUserGrowthOverTime();
+
+        @Query("SELECT new com.uninote.backend.dto.MonthlyActiveUsersDTO(FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM'), COUNT(DISTINCT ul.user.id)) " +
+        "FROM UserLogin ul " +
+        "WHERE ul.loginTimestamp IS NOT NULL " +
+        "GROUP BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') " +
+        "ORDER BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM')")
+        List<MonthlyActiveUsersDTO> getMonthlyActiveUsers();
+
+
+        
+
 
 
 }

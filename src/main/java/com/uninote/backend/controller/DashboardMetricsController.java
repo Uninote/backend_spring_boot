@@ -1,11 +1,20 @@
 package com.uninote.backend.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uninote.backend.dto.GrowthStatisticsDTO;
+import com.uninote.backend.dto.MonthlyActiveUsersDTO;
+import com.uninote.backend.dto.UserGrowthDTO;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.QrViewService;
+import com.uninote.backend.service.UserLoginService;
 import com.uninote.backend.service.UserService;
 
 @RestController
@@ -17,6 +26,9 @@ public class DashboardMetricsController {
 
     @Autowired
     private QrViewService qrViewService;
+
+    @Autowired
+    private UserLoginService userLoginService;
 
     @GetMapping("/total-users")
     public Long getTotalUsers() {
@@ -37,5 +49,29 @@ public class DashboardMetricsController {
     @GetMapping("/deleted-users")
     public Long getDeletedUsers() {
         return userService.getDeletedUsers();
+    }
+
+
+    @GetMapping("/growth-over-time")
+    public ResponseEntity<List<UserGrowthDTO>> getUserGrowthOverTime() {
+        List<UserGrowthDTO> growthData = userService.fetchGrowthOverTime();
+        return ResponseEntity.ok(growthData);
+    }
+
+    @GetMapping("/growth-statistics")
+    public ResponseEntity<GrowthStatisticsDTO> getGrowthStatistics() {
+        GrowthStatisticsDTO statistics = userService.fetchGrowthStatistics();
+        return ResponseEntity.ok(statistics);
+    }
+
+
+    @GetMapping("/monthly-active-users")
+    public List<MonthlyActiveUsersDTO> getMonthlyActiveUsers() {
+        return userService.getMonthlyActiveUsers();
+    }
+
+    @GetMapping("/logins-last-30-days")
+    public List<Map<String, Object>> getLoginsLast30Days() {
+        return userLoginService.getDistinctLoginsPerDay();
     }
 }

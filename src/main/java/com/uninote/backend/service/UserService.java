@@ -2,7 +2,10 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.controller.LoginWebSocketController;
 import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.GrowthStatisticsDTO;
+import com.uninote.backend.dto.MonthlyActiveUsersDTO;
 import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.dto.UserGrowthDTO;
 import com.uninote.backend.dto.UserStatsDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
@@ -654,4 +657,26 @@ public void softDeleteUserById(Long userId) {
     public Long getDeletedUsers() {
        return userRepository.getTotalDeletedUsers();
     }
+
+    public GrowthStatisticsDTO fetchGrowthStatistics() {
+        LocalDate today = LocalDate.now();
+        LocalDate sevenDaysAgo = today.minusDays(7);
+        LocalDate oneMonthAgo = today.minusMonths(1);
+        LocalDate threeMonthsAgo = today.minusMonths(3);
+        LocalDate oneYearAgo = today.minusYears(1);
+
+        return userRepository.getGrowthStatistics(sevenDaysAgo, oneMonthAgo, threeMonthsAgo, oneYearAgo);
+    }
+
+
+    public List<UserGrowthDTO> fetchGrowthOverTime() {
+        List<UserGrowthDTO> growthData = userRepository.getUserGrowthOverTime();
+        return growthData;
+    }
+
+
+    public List<MonthlyActiveUsersDTO> getMonthlyActiveUsers() {
+        return userRepository.getMonthlyActiveUsers();
+    }
+
 }
