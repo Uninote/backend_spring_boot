@@ -14,17 +14,19 @@ import com.uninote.backend.entity.Note;
 @Repository
 public interface NoteMetricRepository extends JpaRepository<Department, Long> {
 
-    @Query("SELECT new com.uninote.backend.dto.NoteMetricDTO(d.id, dn.name, un.name, " +
-       "(COUNT(DISTINCT n.course.id) * 1.0 / COUNT(DISTINCT c.id)) * 100) " +
+    @Query("SELECT new com.uninote.backend.dto.NoteMetricDTO(d.id, dn.fullName, un.fullName, " +
+       "  (COUNT(DISTINCT n.course.id) * 1.0 / COUNT(DISTINCT c.id)) * 100) " +
        "FROM Department d " +
        "JOIN d.courses c " +
        "JOIN d.university u " +
        "JOIN u.universityNames un " +
        "JOIN d.departmentNames dn " +
        "LEFT JOIN Note n ON n.course.id = c.id AND n.deleted = false " +
-       "GROUP BY d.id, dn.name, un.name " +
-       "ORDER BY un.name")
+       "WHERE un.language.code = 'GR' AND dn.language.code = 'GR' " +
+       "GROUP BY d.id, dn.fullName, un.fullName " +
+       "ORDER BY un.fullName")
 List<NoteMetricDTO> findNoteMetrics();
+
 
 
 

@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uninote.backend.dto.GrowthStatisticsDTO;
 import com.uninote.backend.dto.MonthlyActiveUsersDTO;
+import com.uninote.backend.dto.NoteMetricDTO;
 import com.uninote.backend.dto.UserGrowthDTO;
 import com.uninote.backend.repository.UserRepository;
+import com.uninote.backend.service.NoteMetricService;
 import com.uninote.backend.service.QrViewService;
 import com.uninote.backend.service.UserLoginService;
 import com.uninote.backend.service.UserService;
@@ -29,6 +31,9 @@ public class DashboardMetricsController {
 
     @Autowired
     private UserLoginService userLoginService;
+
+    @Autowired
+    private NoteMetricService noteMetricService;
 
     @GetMapping("/total-users")
     public Long getTotalUsers() {
@@ -73,5 +78,10 @@ public class DashboardMetricsController {
     @GetMapping("/logins-last-30-days")
     public List<Map<String, Object>> getLoginsLast30Days() {
         return userLoginService.getDistinctLoginsPerDay();
+    }
+
+    @GetMapping("/notes-per-department")
+    public List<NoteMetricDTO> getNoteMetrics() {
+        return noteMetricService.getNoteMetrics();
     }
 }
