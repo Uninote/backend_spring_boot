@@ -150,4 +150,8 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
         @Query("SELECT u.id FROM User u where u.emailVerified = true")
         List<Long> findUserIds();
 
+        @Query(value = "SELECT COUNT(*) FROM ADMIN.USERS WHERE ROLE_ID = 21", nativeQuery = true)
+        Long getTotalDeletedUsers();
+
+
 }

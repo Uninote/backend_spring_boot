@@ -33,4 +33,9 @@ public class DashboardMetricsController {
     public Long getTotalUnverifiedUsers() {
         return userService.getTotalUnverifiedUsers();
     }
+
+    @GetMapping("/deleted-users")
+    public Long getDeletedUsers() {
+        return userService.getDeletedUsers();
+    }
 }

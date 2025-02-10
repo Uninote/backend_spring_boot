@@ -650,4 +650,8 @@ public void softDeleteUserById(Long userId) {
             userRepository.save(user);
         }
     }
+
+    public Long getDeletedUsers() {
+       return userRepository.getTotalDeletedUsers();
+    }
 }
