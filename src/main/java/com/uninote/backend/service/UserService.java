@@ -659,14 +659,26 @@ public void softDeleteUserById(Long userId) {
     }
 
     public GrowthStatisticsDTO fetchGrowthStatistics() {
-        LocalDate today = LocalDate.now();
-        LocalDate sevenDaysAgo = today.minusDays(7);
-        LocalDate oneMonthAgo = today.minusMonths(1);
-        LocalDate threeMonthsAgo = today.minusMonths(3);
-        LocalDate oneYearAgo = today.minusYears(1);
-
-        return userRepository.getGrowthStatistics(sevenDaysAgo, oneMonthAgo, threeMonthsAgo, oneYearAgo);
+        List<Object[]> rawData = userRepository.getGrowthStatisticsNative(
+            LocalDate.now().minusDays(7), 
+            LocalDate.now().minusMonths(1), 
+            LocalDate.now().minusMonths(3), 
+            LocalDate.now().minusYears(1)
+        );
+    
+        if (!rawData.isEmpty()) {
+            Object[] row = rawData.get(0);
+            return new GrowthStatisticsDTO(
+                ((Number) row[0]).longValue(),
+                ((Number) row[1]).longValue(),
+                ((Number) row[2]).longValue(),
+                ((Number) row[3]).longValue()
+            );
+        }
+    
+        return new GrowthStatisticsDTO(0L, 0L, 0L, 0L);
     }
+    
 
 
     public List<UserGrowthDTO> fetchGrowthOverTime() {
