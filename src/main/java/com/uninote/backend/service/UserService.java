@@ -710,4 +710,14 @@ public void softDeleteUserById(Long userId) {
         return userRepository.getMonthlyActiveUsers();
     }
 
-}
+
+    public List<Map<String, Object>> calculateRetentionRate(String fromDate, String toDate) {
+        return userRepository.getRetentionRate(fromDate, toDate);
+    }
+
+
+    public List<MonthlyActiveUsersDTO> getMonthlyActiveUserPercentage() {
+        return userRepository.getMonthlyActiveUserPercentage();
+    }
+
+}   

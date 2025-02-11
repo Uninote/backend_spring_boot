@@ -3,6 +3,7 @@ package com.uninote.backend.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -192,8 +193,51 @@ List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenD
         List<MonthlyActiveUsersDTO> getMonthlyActiveUsers();
 
 
+        @Query("SELECT new com.uninote.backend.dto.MonthlyActiveUsersDTO(" +
+            "    FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') AS month, " +
+            "    COUNT(DISTINCT ul.user.id) AS activeUsers, " +
+            "    ROUND((COUNT(DISTINCT ul.user.id) * 100.0) / (SELECT COUNT(u.id) FROM User u), 2) AS activeUserPercentage " +
+            ") " +
+            "FROM UserLogin ul " +
+            "WHERE ul.loginTimestamp IS NOT NULL " +
+            "GROUP BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') " +
+            "ORDER BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM')")
+        List<MonthlyActiveUsersDTO> getMonthlyActiveUserPercentage();
+
         
 
 
+        
 
+    @Query(value = 
+        "WITH registration_week AS (" +
+        "    SELECT u.USER_ID, TO_CHAR(u.CREATED_AT, 'YYYY-IW') AS registration_week " +
+        "    FROM admin.users u " +
+        "    WHERE u.CREATED_AT BETWEEN TO_DATE(:fromDate, 'YYYY-MM-DD') AND TO_DATE(:toDate, 'YYYY-MM-DD') " +
+        "), " +
+        "weekly_logins AS (" +
+        "    SELECT ul.USER_ID, TO_CHAR(ul.LOGIN_TIMESTAMP, 'YYYY-IW') AS login_week " +
+        "    FROM admin.user_logins ul " +
+        "    INNER JOIN registration_week rw ON ul.USER_ID = rw.USER_ID " +
+        "), " +
+        "initial_registration AS (" +
+        "    SELECT registration_week, COUNT(DISTINCT USER_ID) AS initial_users " +
+        "    FROM registration_week " +
+        "    GROUP BY registration_week " +
+        ") " +
+        "SELECT rw.registration_week, wl.login_week, COUNT(DISTINCT wl.USER_ID) AS active_users, " +
+        "ROUND((COUNT(DISTINCT wl.USER_ID) * 100.0) / ir.initial_users, 2) AS retention_rate " +
+        "FROM registration_week rw " +
+        "LEFT JOIN weekly_logins wl ON rw.USER_ID = wl.USER_ID " +
+        "LEFT JOIN initial_registration ir ON rw.registration_week = ir.registration_week " +
+        "GROUP BY rw.registration_week, wl.login_week, ir.initial_users " +
+        "ORDER BY rw.registration_week, wl.login_week",
+        nativeQuery = true)
+    List<Map<String, Object>> getRetentionRate(
+        @Param("fromDate") String fromDate,
+        @Param("toDate") String toDate
+    );
+
+
+    
 }

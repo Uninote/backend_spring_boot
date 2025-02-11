@@ -62,7 +62,7 @@ List<Object[]> getNotesCountAndUniqueCreatorsByDepartment(@Param("departmentId")
         @Param("fromDate") String fromDate,
         @Param("toDate") String toDate
     );
-
+    
 
 
 

@@ -1190,6 +1190,15 @@ public class NoteService {
         return res;
     }
 
+    public List<Map<String, Object>> getContentIncreaseMetrics(String fromDate, String toDate) {
+        return noteRepository.getContentIncreaseMetrics(fromDate, toDate);
+    }
+
+
+    public List<Map<String, Object>> getNoteUploadMetrics(String fromDate, String toDate) {
+        return noteRepository.getNoteUploadMetrics(fromDate, toDate);
+    }
+
 
 }
 

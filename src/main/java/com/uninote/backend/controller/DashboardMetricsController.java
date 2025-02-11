@@ -16,6 +16,7 @@ import com.uninote.backend.dto.NoteMetricDTO;
 import com.uninote.backend.dto.UserGrowthDTO;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteMetricService;
+import com.uninote.backend.service.NoteService;
 import com.uninote.backend.service.QrViewService;
 import com.uninote.backend.service.UserLoginService;
 import com.uninote.backend.service.UserService;
@@ -35,6 +36,9 @@ public class DashboardMetricsController {
 
     @Autowired
     private NoteMetricService noteMetricService;
+
+    @Autowired
+    private NoteService noteService;
 
     @GetMapping("/total-users")
     public Long getTotalUsers() {
@@ -98,4 +102,38 @@ public class DashboardMetricsController {
             @RequestParam("toDate") String toDate) {
         return noteMetricService.getWeeklyAverageNoteViews(fromDate, toDate);
     }
+
+
+    @GetMapping("/retention-rate")
+    public List<Map<String, Object>> getRetentionRate(
+            @RequestParam("fromDate") String fromDate,
+            @RequestParam("toDate") String toDate
+    ) {
+        return userService.calculateRetentionRate(fromDate, toDate);
+    }
+
+
+    @GetMapping("/note-upload-metrics")
+    public List<Map<String, Object>> getNoteUploadMetrics(
+            @RequestParam("fromDate") String fromDate,
+            @RequestParam("toDate") String toDate
+    ) {
+        return noteService.getNoteUploadMetrics(fromDate, toDate);
+    }
+
+
+    @GetMapping("/content-increase-metrics")
+    public List<Map<String, Object>> getContentIncreaseMetrics(
+            @RequestParam("fromDate") String fromDate,
+            @RequestParam("toDate") String toDate
+    ) {
+        return noteService.getContentIncreaseMetrics(fromDate, toDate);
+    }
+
+
+    @GetMapping("/monthly-active-user-percentage")
+    public List<MonthlyActiveUsersDTO> getMonthlyActiveUserPercentage() {
+        return userService.getMonthlyActiveUserPercentage();
+    }
+
 }

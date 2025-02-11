@@ -23,6 +23,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -939,7 +940,51 @@ List<NoteDTO> findTopInteractedNotesByUser(
 );
 
 
+   @Query(value = 
+      "SELECT TO_CHAR(n.CREATED_AT, 'YYYY-IW') AS upload_week, " +
+      "COUNT(n.NOTE_ID) AS total_notes_uploaded " +
+      "FROM admin.notes n " +
+      "WHERE n.CREATED_AT BETWEEN TO_DATE(:fromDate, 'YYYY-MM-DD') AND TO_DATE(:toDate, 'YYYY-MM-DD') " +
+      "AND n.DELETED = 0 " +
+      "GROUP BY TO_CHAR(n.CREATED_AT, 'YYYY-IW') " +
+      "ORDER BY upload_week",
+      nativeQuery = true)
+   List<Map<String, Object>> getNoteUploadMetrics(
+      @Param("fromDate") String fromDate,
+      @Param("toDate") String toDate
+   );
 
+
+   @Query(value = 
+        "WITH weekly_notes AS (" +
+        "    SELECT TO_CHAR(n.CREATED_AT, 'YYYY-IW') AS upload_week, " +
+        "           COUNT(n.NOTE_ID) AS notes_uploaded_this_week " +
+        "    FROM admin.notes n " +
+        "    WHERE n.DELETED = 0 " +
+        "    GROUP BY TO_CHAR(n.CREATED_AT, 'YYYY-IW') " +
+        "    ORDER BY upload_week " +
+        "), " +
+        "cumulative_notes AS (" +
+        "    SELECT upload_week, notes_uploaded_this_week, " +
+        "           SUM(notes_uploaded_this_week) OVER (ORDER BY upload_week) AS cumulative_total_notes " +
+        "    FROM weekly_notes " +
+        ") " +
+        "SELECT cn.upload_week, " +
+        "       cn.cumulative_total_notes, " +
+        "       LAG(cn.cumulative_total_notes) OVER (ORDER BY cn.upload_week) AS previous_cumulative_total, " +
+        "       CASE WHEN LAG(cn.cumulative_total_notes) OVER (ORDER BY cn.upload_week) > 0 THEN " +
+        "            ROUND((cn.cumulative_total_notes - " +
+        "                  LAG(cn.cumulative_total_notes) OVER (ORDER BY cn.upload_week)) * 100.0 / " +
+        "                  LAG(cn.cumulative_total_notes) OVER (ORDER BY cn.upload_week), 2) " +
+        "       ELSE 0 END AS cumulative_percentage_increase " +
+        "FROM cumulative_notes cn " +
+        "WHERE cn.upload_week BETWEEN TO_CHAR(TO_DATE(:fromDate, 'YYYY-MM-DD'), 'YYYY-IW') AND TO_CHAR(TO_DATE(:toDate, 'YYYY-MM-DD'), 'YYYY-IW') " +
+        "ORDER BY cn.upload_week",
+        nativeQuery = true)
+    List<Map<String, Object>> getContentIncreaseMetrics(
+        @Param("fromDate") String fromDate,
+        @Param("toDate") String toDate
+    );
 
 }
 
