@@ -84,4 +84,10 @@ public class DashboardMetricsController {
     public List<NoteMetricDTO> getNoteMetrics() {
         return noteMetricService.getNoteMetrics();
     }
+
+
+    @GetMapping("/note-views-last-30-days")
+    public List<Map<String, Object>> getNoteViewsLast30Days() {
+        return noteMetricService.getNoteViewsLast30Days();
+    }
 }
