@@ -40,4 +40,8 @@ public class NoteMetricService {
             return map;
         }).collect(Collectors.toList());
     }
+
+    public List<Map<String, Object>> getWeeklyAverageNoteViews(String fromDate, String toDate) {
+        return noteMetricRepository.findWeeklyAverageNoteViews(fromDate, toDate);
+    }
 }

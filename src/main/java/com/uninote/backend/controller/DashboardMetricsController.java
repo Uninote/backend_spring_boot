@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uninote.backend.dto.GrowthStatisticsDTO;
@@ -89,5 +90,12 @@ public class DashboardMetricsController {
     @GetMapping("/note-views-last-30-days")
     public List<Map<String, Object>> getNoteViewsLast30Days() {
         return noteMetricService.getNoteViewsLast30Days();
+    }
+
+    @GetMapping("/note-views-weekly-average")
+    public List<Map<String, Object>> getNoteViewsWeeklyAverage(
+            @RequestParam("fromDate") String fromDate,
+            @RequestParam("toDate") String toDate) {
+        return noteMetricService.getWeeklyAverageNoteViews(fromDate, toDate);
     }
 }

@@ -1,6 +1,7 @@
 package com.uninote.backend.repository;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -42,6 +43,28 @@ List<Object[]> getNotesCountAndUniqueCreatorsByDepartment(@Param("departmentId")
 
 @Query(value =  "SELECT TRUNC(CREATED_AT) AS day, COUNT(*) AS count FROM admin.NOTE_VIEWS WHERE CREATED_AT >= SYSDATE - 30  GROUP BY TRUNC(CREATED_AT) ORDER BY day", nativeQuery = true)
     List<Object[]> countLast30daysNoteViews();
+
+
+
+
+
+    @Query(value = "SELECT TRUNC(day, 'IW') AS week_start, " +
+               "AVG(daily_views) AS average_views " +
+               "FROM ( " +
+               "    SELECT TRUNC(CREATED_AT) AS day, COUNT(NOTE_VIEW_ID) AS daily_views " +
+               "    FROM admin.note_views " +
+               "    WHERE CREATED_AT BETWEEN TO_TIMESTAMP(:fromDate, 'YYYY-MM-DD') AND TO_TIMESTAMP(:toDate, 'YYYY-MM-DD') " +
+               "    GROUP BY TRUNC(CREATED_AT) " +
+               ") temp " +
+               "GROUP BY TRUNC(day, 'IW') " +
+               "ORDER BY week_start", nativeQuery = true)
+    List<Map<String, Object>> findWeeklyAverageNoteViews(
+        @Param("fromDate") String fromDate,
+        @Param("toDate") String toDate
+    );
+
+
+
 
 }
 
