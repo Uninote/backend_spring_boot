@@ -194,15 +194,18 @@ List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenD
 
 
         @Query("SELECT new com.uninote.backend.dto.MonthlyActiveUsersDTO(" +
-            "    FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') AS month, " +
-            "    COUNT(DISTINCT ul.user.id) AS activeUsers, " +
-            "    ROUND((COUNT(DISTINCT ul.user.id) * 100.0) / (SELECT COUNT(u.id) FROM User u), 2) AS activeUserPercentage " +
-            ") " +
-            "FROM UserLogin ul " +
-            "WHERE ul.loginTimestamp IS NOT NULL " +
-            "GROUP BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') " +
-            "ORDER BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM')")
-        List<MonthlyActiveUsersDTO> getMonthlyActiveUserPercentage();
+       "    FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') AS month, " +
+       "    COUNT(DISTINCT ul.user.id) AS activeUsers, " +
+       "    ROUND((COUNT(DISTINCT ul.user.id) * 100.0) / (" +
+       "        SELECT COUNT(u.id) FROM User u WHERE FUNCTION('TO_CHAR', u.createdAt, 'YYYY-MM') <= FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM')" +
+       "    ), 2) AS activeUserPercentage " +
+       ") " +
+       "FROM UserLogin ul " +
+       "WHERE ul.loginTimestamp IS NOT NULL " +
+       "GROUP BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM') " +
+       "ORDER BY FUNCTION('TO_CHAR', ul.loginTimestamp, 'YYYY-MM')")
+    List<MonthlyActiveUsersDTO> getMonthlyActiveUserPercentage();
+
 
         
 
