@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
+
 @Service
 public class CourseService {
 
@@ -31,6 +33,13 @@ public class CourseService {
     private CourseNameRepository courseNameRepository;
     @Autowired
     private LanguageRepository languageRepository;
+
+
+
+    
+
+
+
     @Autowired
     public CourseService(CourseRepository courseRepository, DepartmentRepository departmentRepository) {
         this.courseRepository = courseRepository;
@@ -97,5 +106,8 @@ public class CourseService {
     public List<CourseProjection> getCoursesWithQuestionsByDepartmentSemesterAndLanguage(Long departmentId, int semester, String language) {
         return courseRepository.findCoursesWithQuestionsByDepartmentSemesterAndLanguage(departmentId, semester, language);
     }
+
+    
+
 
 }

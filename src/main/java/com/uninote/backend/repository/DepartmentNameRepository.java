@@ -24,4 +24,7 @@ public interface DepartmentNameRepository extends JpaRepository<DepartmentName, 
         List<DepartmentName> findDepartmentNamesByUniversityIdAndLanguageCode(
                 @Param("universityId") Long universityId, 
                 @Param("languageCode") String languageCode);
+
+        List<DepartmentName> findByLanguageId(Long languageId);
+        Optional<DepartmentName> findByDepartmentIdAndLanguageId(Long departmentId, Long languageId);
 }
