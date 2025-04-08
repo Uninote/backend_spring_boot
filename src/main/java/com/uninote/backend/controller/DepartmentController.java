@@ -115,7 +115,7 @@ public class DepartmentController {
         return departmentService.getSemestersWithQuestionsByDepartment(departmentId);
     }
 
-    @GetMapping("/departments/{deptId}/similar")
+    @GetMapping("/{deptId}/similar")
     public ResponseEntity<List<Map<String, Object>>> getSimilarDepartments(
         @PathVariable Long deptId,
         @RequestParam(defaultValue = "2") Long languageId  
