@@ -1,6 +1,8 @@
 package com.uninote.backend.service;
 
 import com.uninote.backend.interfaces.SimilarityStrategy;
+import com.uninote.backend.utils.GreekTextNormalizer;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,12 +27,12 @@ public class SimilarityService<T> {
         double threshold,
         int limit
     ) {
-        String targetName = nameExtractor.apply(target);
+        String targetName = GreekTextNormalizer.normalize(nameExtractor.apply(target));
 
         return candidates.stream()
             .filter(c -> !c.equals(target))
             .map(c -> new AbstractMap.SimpleEntry<>(c, stringSimilarity.computeSimilarity(
-                targetName, nameExtractor.apply(c))))
+                targetName, GreekTextNormalizer.normalize(nameExtractor.apply(c)))))
             .filter(e -> e.getValue() > threshold)
             .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
             .limit(limit)

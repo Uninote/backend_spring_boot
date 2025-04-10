@@ -79,7 +79,7 @@ public class TutieService {
         if (!noteProcessingQueue.isEmpty()) {
             logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
                     noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
-            processQueue();
+            //processQueue();
         } else {
             logger.info("No notes found");
         }
@@ -657,7 +657,7 @@ public class TutieService {
                 entity,
                 (Class<Map<String, Object>>) (Class<?>) Map.class
             );
-
+            logger.error("here");
             return (int) response.getBody().get("token_count");
         } catch (Exception e) {
             e.printStackTrace();
@@ -668,8 +668,8 @@ public class TutieService {
 
 
     public Map<String, Object> handleChat(String sessionId, String message) {
+    try {
         String fastApiUrl = API_BASE_URL + "chat"; 
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         
@@ -679,7 +679,6 @@ public class TutieService {
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(body, headers);
         Long userId = sessionMap.get(sessionId);
-
         int tokensNeeded = calculateTokens(message);
         if (tokensNeeded == -1) {
             return Map.of("status", "error", "message", "Failed to calculate token usage.");
@@ -688,21 +687,31 @@ public class TutieService {
         if (!tokenQuotaService.hasSufficientQuota(userId, tokensNeeded)) {
             return Map.of("status", "error", "message", "Daily token quota exceeded.");
         }
+
+        logger.error("userId: {}", userId);
+
         ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
         Map<String, Object> responseBody = response.getBody();
+        logger.error(responseBody.toString());
         if (responseBody != null && responseBody.containsKey("response")) {
             Map<String, Object> innerResponse = (Map<String, Object>) responseBody.get("response");
             Integer totalTokens = (Integer) innerResponse.get("total_tokens");
-            
+
             tokenQuotaService.updateTokenUsage(userId, totalTokens);
+
             Map<String, Object> eventProperties = new HashMap<>();
             eventProperties.put("prompt", message);
-            eventProperties.put("response", innerResponse.getOrDefault("response",""));
-            //mixPanelService.trackEvent(userId, "Tutie Chat Response", new JSONObject(eventProperties));
+            eventProperties.put("response", innerResponse.getOrDefault("response", ""));
+            // mixPanelService.trackEvent(userId, "Tutie Chat Response", new JSONObject(eventProperties));
         }
-        
-        return responseBody;
+
+        return responseBody != null ? responseBody : Map.of("status", "error", "message", "Empty response from chat API.");
+    } catch (Exception e) {
+        logger.error("Error handling chat request for sessionId: " + sessionId, e);
+        return Map.of("status", "error", "message", "An unexpected error occurred.");
     }
+}
+
 
 
 
@@ -733,6 +742,7 @@ public class TutieService {
                 if ("success".equalsIgnoreCase((String) responseBody.get("status"))) {
                     String sessionId = (String) responseBody.get("session_id");
                     sessionMap.put(sessionId, userId);
+                    logger.error("Current sessionMap: " + sessionMap.toString());
                     logger.info("File uploaded successfully. Session ID: {}", sessionId);
                     return sessionId;
                 } else {

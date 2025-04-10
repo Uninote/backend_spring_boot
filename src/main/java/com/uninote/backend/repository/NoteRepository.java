@@ -986,6 +986,10 @@ List<NoteDTO> findTopInteractedNotesByUser(
         @Param("toDate") String toDate
     );
 
+   List<Note> findByCourse_DepartmentAndIsPublicTrueAndDeletedFalse(Department deptB);
+
+   boolean existsByCourse_DepartmentAndIsPublicTrueAndDeletedFalse(Department deptB);
+
 }
 
 

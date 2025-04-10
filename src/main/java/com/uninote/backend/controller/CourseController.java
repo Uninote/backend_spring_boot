@@ -2,9 +2,13 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.dto.CourseDTO;
 import com.uninote.backend.dto.CourseNameDTO;
+import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
+import com.uninote.backend.entity.CourseSimilarity;
 import com.uninote.backend.interfaceProjection.CourseProjection;
 import com.uninote.backend.repository.CourseNameRepository;
+import com.uninote.backend.repository.CourseRepository;
+import com.uninote.backend.repository.CourseSimilarityRepository;
 import com.uninote.backend.service.CourseService;
 import com.uninote.backend.service.SimilarityService;
 
@@ -28,6 +32,11 @@ public class CourseController {
     @Autowired
     private CourseNameRepository courseNameRepository;
 
+    @Autowired
+    private CourseRepository courseRepository;
+    
+    @Autowired
+    private CourseSimilarityRepository courseSimilarityRepository;
 
     @Autowired
     private SimilarityService<CourseName> similarityService;
@@ -89,37 +98,37 @@ public class CourseController {
         return courseService.getCoursesWithQuestionsByDepartmentSemesterAndLanguage(departmentId, semester, language);
     }
     
-    @GetMapping("/{courseId}/similar")
-public ResponseEntity<List<Map<String, Object>>> getRelevantCourses(
-    @PathVariable Long courseId,
-    @RequestParam(defaultValue = "2") Long languageId
-) {
-    CourseName currentName = courseNameRepository.findByCourseIdAndLanguageId(courseId, languageId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course name not found"));
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<List<Map<String, Object>>> getSimilarCourses(
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "2") Long languageId
+    ) {
+        Course course = courseRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Course not found"));
 
-    List<CourseName> allNames = courseNameRepository.findByLanguageIdAndCourse_DepartmentId(
-        languageId, currentName.getCourse().getDepartment().getId()
-    );
+        List<CourseSimilarity> similarities = courseSimilarityRepository
+            .findByCourseA_IdOrderBySimilarityScoreDesc(id);
 
-    List<CourseName> similarNames = similarityService.findSimilarItems(
-        currentName,
-        allNames,
-        c -> c.getName(),
-        0.15,
-        5
-    );
+        List<Map<String, Object>> result = similarities.stream()
+            .map(sim -> {
+                Course courseB = sim.getCourseB();
 
-    List<Map<String, Object>> result = similarNames.stream()
-    .map(cn -> {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", cn.getCourse().getId());
-        map.put("name", cn.getName());
-        return map;
-    }).collect(Collectors.toList());
-    
-    return ResponseEntity.ok(result);
+                String name = "";
+                courseNameRepository.findByCourseIdAndLanguageId(courseB.getId(), languageId)
+                .map(CourseName::getName)
+                .orElse("");
+
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", courseB.getId());
+                map.put("name", name);
+                map.put("score", sim.getSimilarityScore());
+                return map;
+            })
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
 
 
-}
 
 }

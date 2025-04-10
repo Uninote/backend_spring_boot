@@ -4,13 +4,16 @@ import com.uninote.backend.dto.DepartmentDTO;
 import com.uninote.backend.dto.DepartmentNameDTO;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
+import com.uninote.backend.entity.DepartmentSimilarity;
 import com.uninote.backend.interfaceProjection.DepartmentProjection;
 import com.uninote.backend.repository.DepartmentNameRepository;
 import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.DepartmentSimilarityRepository;
 import com.uninote.backend.service.DepartmentNameService;
 import com.uninote.backend.service.DepartmentService;
 import com.uninote.backend.service.SimilarityService;
 
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,8 +47,7 @@ public class DepartmentController {
     @Autowired
     private DepartmentNameService departmentNameService;
 
-    @Autowired
-    private SimilarityService<DepartmentName> similarityService;
+    
     
 
     @GetMapping("/{id}")
@@ -115,37 +117,16 @@ public class DepartmentController {
         return departmentService.getSemestersWithQuestionsByDepartment(departmentId);
     }
 
-    @GetMapping("/{deptId}/similar")
+    @GetMapping("/{id}/similar")
     public ResponseEntity<List<Map<String, Object>>> getSimilarDepartments(
-        @PathVariable Long deptId,
-        @RequestParam(defaultValue = "2") Long languageId  
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "2") Long languageId
     ) {
-        DepartmentName currentName = departmentNameRepository
-            .findByDepartmentIdAndLanguageId(deptId, languageId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department name not found"));
-
-        List<DepartmentName> allNames = departmentNameRepository.findByLanguageId(languageId);
-
-        List<DepartmentName> similarNames = similarityService.findSimilarItems(
-            currentName,
-            allNames,
-            d -> d.getFullName(),
-            0.5,
-            5
-        );
-
-        List<Map<String, Object>> result = similarNames.stream()
-        .map(dn -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", dn.getDepartment().getId());
-            map.put("name", dn.getName());
-            map.put("fullName", dn.getFullName());
-            return map;
-        })
-        .collect(Collectors.toList());
-
+        List<Map<String, Object>> result = departmentService.getSimilarDepartments(id, languageId);
         return ResponseEntity.ok(result);
     }
+
+
 
 
     

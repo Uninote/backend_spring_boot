@@ -6,12 +6,18 @@ import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.DepartmentNameId;
+import com.uninote.backend.entity.DepartmentSimilarity;
 import com.uninote.backend.entity.Language;
+import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.University;
+import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.interfaceProjection.DepartmentProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.DepartmentNameRepository;
 import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.DepartmentSimilarityRepository;
 import com.uninote.backend.repository.LanguageRepository;
+import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.converter.EntityToDTOConverter;
@@ -26,6 +32,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Objects;
+
 
 import javax.transaction.Transactional;
 
@@ -49,6 +57,16 @@ public class DepartmentService {
 
     @Autowired
     private UniversityRepository universityRepository;
+
+    @Autowired
+    private SimilarityService<DepartmentName> similarityService;
+
+
+    @Autowired
+    private DepartmentSimilarityRepository departmentSimilarityRepository;
+
+    @Autowired
+    private NoteRepository noteRepository;
 
     @Autowired
     public DepartmentService(DepartmentRepository departmentRepository) {
@@ -115,6 +133,64 @@ public class DepartmentService {
         String semesters = departmentRepository.findSemestersWithQuestionsByDepartment(departmentId);
         return semesters != null ? Arrays.asList(semesters.split(",")) : new ArrayList<>();
     }
+
+    public List<Map<String, Object>> getSimilarDepartments(Long id, Long languageId) {
+        Department department = departmentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Department not found"));
+    
+        List<DepartmentSimilarity> similarities =
+            departmentSimilarityRepository.findByDepartmentA_IdOrderBySimilarityScoreDesc(id);
+    
+        return similarities.stream()
+            .map(sim -> {
+                Department deptB = sim.getDepartmentB();
+    
+                // Efficiently check if any notes exist for deptB
+                boolean hasNotes = noteRepository.existsByCourse_DepartmentAndIsPublicTrueAndDeletedFalse(deptB);
+                if (!hasNotes) {
+                    return null; // Skip departments with no public, undeleted notes
+                }
+    
+                String name = departmentNameRepository
+                    .findByDepartmentIdAndLanguageId(deptB.getId(), languageId)
+                    .map(DepartmentName::getName)
+                    .orElse("Unnamed");
+                University university =  deptB.getUniversity();
+
+                String fullName = departmentNameRepository
+                    .findByDepartmentIdAndLanguageId(deptB.getId(), languageId)
+                    .map(DepartmentName::getFullName)
+                    .orElse("");
+
+                String uniFullName = university.getUniversityNames()
+                    .stream()
+                    .filter(un -> un.getLanguage().getId().equals(languageId))
+                    .map(UniversityName::getFullName)
+                    .findFirst()
+                    .orElse("");    
+                String uniName = university.getUniversityNames()
+                    .stream()
+                    .filter(un -> un.getLanguage().getId().equals(languageId))
+                    .map(UniversityName::getName)
+                    .findFirst()
+                    .orElse("");    
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", deptB.getId());
+                map.put("name", name);
+                map.put("fullName", fullName);
+                map.put("score", sim.getSimilarityScore());
+                map.put("universityName", uniName);
+                map.put("universityFullName", uniFullName);
+                map.put("universityId", university.getId());
+    
+                return map;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+    
+    
+
 
     
 }
