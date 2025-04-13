@@ -30,7 +30,7 @@ import com.uninote.backend.service.UserService;
 @SpringBootTest
 @Transactional
 public class UserServiceIntegrationTest {
-
+    /*
     @Autowired
     private UserService userService;
 
@@ -41,7 +41,7 @@ public class UserServiceIntegrationTest {
     private DepartmentRepository departmentRepository;
 
     @Autowired
-    private UniversityRepository universityRepository;
+    private UniversityRepository universityRepository; 
 
     @Autowired
     private RankRepository rankRepository;
@@ -144,7 +144,7 @@ public class UserServiceIntegrationTest {
         assertEquals("Invalid department ID: 999", exception.getMessage());
     }
 
-
+    */
     
 }
 

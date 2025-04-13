@@ -26,14 +26,20 @@ public class TokenQuotaService {
     private int dailyTokenQuota;
 
     public boolean hasSufficientQuota(Long userId, int tokensNeeded) {
-        logger.info("CALCULATING USER QUOTA");
-        LocalDate today = LocalDate.now();
-        Date quotaDate = Date.valueOf(today);
+        try {
+            logger.info("CALCULATING USER QUOTA");
+            LocalDate today = LocalDate.now();
+            Date quotaDate = Date.valueOf(today);
 
-        UserDailyTokenQuota quota = tokenQuotaRepository.findByIdUserIdAndIdQuotaDate(userId, quotaDate)
-                .orElseGet(() -> createNewQuota(userId, quotaDate));
-        logger.info("GOT USER QUOTA");
-        return (quota.getTokensUsed() + tokensNeeded) <= dailyTokenQuota;
+            UserDailyTokenQuota quota = tokenQuotaRepository.findByIdUserIdAndIdQuotaDate(userId, quotaDate)
+                    .orElseGet(() -> createNewQuota(userId, quotaDate));
+            logger.info("GOT USER QUOTA");
+
+            return (quota.getTokensUsed() + tokensNeeded) <= dailyTokenQuota;
+        } catch (Exception e) {
+            logger.error("Error while checking user quota for userId: " + userId, e);
+            return false;
+        }
     }
 
     
