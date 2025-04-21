@@ -242,5 +242,7 @@ List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenD
     );
 
 
+    Optional<User> findByFirebaseUid(String firebaseUid);
+
     
 }

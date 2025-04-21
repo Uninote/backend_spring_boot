@@ -1,39 +1,39 @@
 package com.uninote.backend.config.security;
 
-import javax.annotation.PostConstruct;
-
-//import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
-import javax.annotation.PostConstruct;
-import java.security.Security;
+import com.google.firebase.auth.FirebaseAuth;
 
 @Configuration
-public class SecurityConfig {
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    /*private final AuthenticationService authenticationService;
+    private final FirebaseAuth firebaseAuth;
 
-    public SecurityConfig(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    public SecurityConfig(FirebaseAuth firebaseAuth) {
+        this.firebaseAuth = firebaseAuth;
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
-            .authorizeRequests(auth -> auth
-                .antMatchers("/**").authenticated()) // Secures all endpoints
-            .sessionManagement(sessionManagement -> sessionManagement
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
-            .addFilterBefore(new AuthenticationFilter(authenticationService), UsernamePasswordAuthenticationFilter.class); // Add the custom filter
+    public FirebaseAuthenticationFilter firebaseAuthenticationFilter() {
+        return new FirebaseAuthenticationFilter(firebaseAuth);
+    }
 
-        return http.build();
-    }*/
-    //@PostConstruct
-    public void setupBouncyCastleProvider() {
-        /*if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(new BouncyCastleProvider());
-        }*/
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .csrf().disable()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .authorizeRequests()
+                .antMatchers("/login", "/signup", "/public/**").permitAll()  // Add any public endpoints
+                .anyRequest().authenticated();
     }
 }
