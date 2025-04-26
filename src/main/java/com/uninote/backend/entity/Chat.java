@@ -2,6 +2,7 @@ package com.uninote.backend.entity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "CHATS")
@@ -24,7 +25,8 @@ public class Chat {
     private String uuid;
 
     @Column(name = "CREATED_AT")
-    private Timestamp createdAt;
+    private Timestamp createdAt = Timestamp.valueOf(LocalDateTime.now());
+
 
     @Column(name = "UPDATED_AT")
     private Timestamp updatedAt;

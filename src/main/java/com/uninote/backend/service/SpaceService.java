@@ -6,6 +6,7 @@ import com.uninote.backend.entity.SpaceResource;
 import com.uninote.backend.dto.FileResourceDTO;
 import com.uninote.backend.dto.MessageDTO;
 import com.uninote.backend.dto.ResourceDTO;
+import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.dto.YouTubeResourceDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.Resource;
@@ -124,8 +125,8 @@ public class SpaceService {
                 Long resourceId = resource.getId();
 
                 FileResource fileResource = fileResourceRepository.findById(resourceId).orElse(null);
-                if (fileResource != null && fileResource.getSupabaseFileUrl() != null) {
-                    String url = fileResource.getSupabaseFileUrl();
+                if (fileResource != null && fileResource.getFileUrl() != null) {
+                    String url = fileResource.getFileUrl();
                     String fileName = extractFileName(url);
                     //String signedUrl = getSignedUrl(fileName);
 
@@ -212,6 +213,22 @@ public class SpaceService {
         spaceResourceRepository.save(spaceResource);
 
         return resource;
+    }
+
+    public List<SpaceSummaryDTO> getSpacesByUser(String firebaseUid) {
+        User user = userRepository.findByFirebaseUid(firebaseUid)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Space> spaces = spaceRepository.findAllByUser(user);
+
+        return spaces.stream()
+            .map(space -> new SpaceSummaryDTO(
+                space.getId(),
+                space.getTitle(),
+                space.getCreatedAt(),
+                space.getUuid()
+            ))
+            .collect(Collectors.toList());
     }
 
 

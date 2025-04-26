@@ -1,11 +1,18 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.dto.ChatHistoryDto;
+import com.uninote.backend.dto.ResourceChatSummaryDTO;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.ChatService;
 import com.uninote.backend.service.ResourceChatService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +26,9 @@ public class ChatController {
 
     @Autowired
     private ResourceChatService resourceChatService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     public ChatController(ChatService chatService) {
@@ -45,5 +55,24 @@ public class ChatController {
         return ResponseEntity.ok(history);
     }
 
+
+    @GetMapping
+    public ResponseEntity<?> getUserChats() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>("Authorization token missing or invalid.", HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<ResourceChatSummaryDTO> chats = resourceChatService.getAllByUser(user);
+
+        return ResponseEntity.ok(chats);
+    }
 }
 

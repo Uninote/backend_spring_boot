@@ -1,8 +1,12 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.dto.ResourceChatResponseDTO;
+import com.uninote.backend.entity.FileResource;
+import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.entity.YouTubeResource;
 import com.uninote.backend.service.ResourceChatService;
 import com.uninote.backend.service.ResourceService;
 
@@ -31,29 +35,68 @@ public class ResourceChatController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            return new ResponseEntity<>("Authorization token missing or invalid.", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body("Authorization token missing or invalid.");
         }
 
         FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
         String userUid = firebaseAuth.getUid();
 
-        ResourceChat created;
+        try {
+            ResourceChat created;
 
-        switch (type.toLowerCase()) {
-            case "file":
-                if (file == null) return ResponseEntity.badRequest().body("File is required for type=file");
-                created = resourceChatService.createWithFileResource(file, userUid);
-                break;
+            switch (type.toLowerCase()) {
+                case "file":
+                    if (file == null) {
+                        return ResponseEntity.badRequest().body("File is required for type=file");
+                    }
+                    created = resourceChatService.createWithFileResource(file, userUid);
+                    break;
 
-            case "youtube":
-                if (url == null) return ResponseEntity.badRequest().body("youtubeUrl is required for type=youtube");
-                created = resourceChatService.createWithYouTubeResource(url, userUid);
-                break;
+                case "youtube":
+                    if (url == null || url.trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("youtubeUrl is required for type=youtube");
+                    }
+                    created = resourceChatService.createWithYouTubeResource(url, userUid);
+                    break;
 
-            default:
-                return ResponseEntity.badRequest().body("Invalid type. Must be 'file' or 'youtube'.");
+                default:
+                    return ResponseEntity.badRequest().body("Invalid type. Must be 'file' or 'youtube'.");
+            }
+
+            Resource resource = created.getResource(); 
+            String resourceType;
+            String resourceUrl;
+
+            if (resource instanceof YouTubeResource) {
+                resourceType = "youtube";
+                resourceUrl = ((YouTubeResource) resource).getYoutubeUrl();
+            } else if (resource instanceof FileResource) {
+                resourceType = "file";
+                resourceUrl = ((FileResource) resource).getFileUrl();
+            } else {
+                resourceType = "unknown";
+                resourceUrl = null;
+            }
+
+            ResourceChatResponseDTO dto = new ResourceChatResponseDTO(
+                    created.getId(),
+                    created.getChat().getTitle(),
+                    created.getChat().getUuid(),
+                    created.getChat().getCreatedAt(),
+                    created.getChat().getUpdatedAt(),
+                    resource.getSummary(),
+                    resourceUrl,
+                    resourceType
+            );
+
+            return ResponseEntity.ok(dto);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body("Failed to create resource chat: " + e.getMessage());
         }
-
-        return ResponseEntity.ok(created);
     }
+
+
 }

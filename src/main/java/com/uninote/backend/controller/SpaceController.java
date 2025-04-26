@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.service.ResourceService;
@@ -8,6 +9,7 @@ import com.uninote.backend.service.SVDRecommendationService;
 import com.uninote.backend.service.SpaceService;
 
 import java.nio.file.attribute.UserPrincipal;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -119,5 +121,20 @@ public class SpaceController {
         );
 
         return ResponseEntity.ok(resource);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<SpaceSummaryDTO>> getUserSpaces() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        List<SpaceSummaryDTO> spaces = spaceService.getSpacesByUser(userUid);
+        return ResponseEntity.ok(spaces);
     }
 }

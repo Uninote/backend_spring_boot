@@ -8,16 +8,16 @@ import javax.persistence.*;
 public class FileResource extends Resource {
 
     @Column(name = "FILE_URL")
-    private String supabaseFileUrl;
+    private String fileUrl;
 
 
 
-    public String getSupabaseFileUrl() {
-        return supabaseFileUrl;
+    public String getFileUrl() {
+        return fileUrl;
     }
 
-    public void setSupabaseFileUrl(String supabaseFileUrl) {
-        this.supabaseFileUrl = supabaseFileUrl;
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
     }
 
 }

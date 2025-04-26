@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.dto.ResourceChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
 import com.uninote.backend.entity.Resource;
@@ -13,6 +14,10 @@ import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -34,6 +39,8 @@ public class ResourceChatService {
     @Transactional
     public ResourceChat createWithFileResource(MultipartFile file, String userUid) {
         Chat chat = new Chat(); 
+        chat.setUuid(UUID.randomUUID().toString());
+
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
@@ -52,6 +59,8 @@ public class ResourceChatService {
     @Transactional
     public ResourceChat createWithYouTubeResource(String youtubeUrl, String userUid) {
         Chat chat = new Chat(); 
+        chat.setUuid(UUID.randomUUID().toString());
+
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
@@ -64,6 +73,21 @@ public class ResourceChatService {
         resourceChat.setResource(ytResource);
 
         return resourceChatRepository.save(resourceChat);
+    }
+
+    public List<ResourceChatSummaryDTO> getAllByUser(User user) {
+        List<ResourceChat> chats = resourceChatRepository.findAllByChat_User(user);
+        
+        return chats.stream()
+            .map(chat -> new ResourceChatSummaryDTO(
+                chat.getChat().getId(),
+                chat.getChat().getUuid(),
+                chat.getResource().getTitle(),
+                chat.getResource() instanceof FileResource ? "file" : "youtube",
+                chat.getChat().getCreatedAt(),
+                chat.getChat().getTitle()
+            ))
+            .collect(Collectors.toList());
     }
 }
 

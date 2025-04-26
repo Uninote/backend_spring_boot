@@ -76,7 +76,7 @@ public class ChatService {
             dto.setCreatedAt(fr.getCreatedAt());
             dto.setSummary(fr.getSummary());
             dto.setContent(fr.getContent());
-            dto.setSupabaseFileUrl(fr.getSupabaseFileUrl());
+            dto.setSupabaseFileUrl(fr.getFileUrl());
             resourceDTO = dto;
 
         } else if (resource instanceof YouTubeResource) {

@@ -9,6 +9,9 @@ public abstract class ResourceDTO {
     protected String summary;
     protected String content;
     protected String type;
+    protected String chapters;
+    protected String flashcards;
+    protected String quizzes;
 
     // Getters
     public Long getId() {
@@ -35,6 +38,18 @@ public abstract class ResourceDTO {
         return type;
     }
 
+    public String getChapters() {
+        return chapters;
+    }
+
+    public String getFlashcards() {
+        return flashcards;
+    }
+
+    public String getQuizzes() {
+        return quizzes;
+    }
+
     // Setters
     public void setId(Long id) {
         this.id = id;
@@ -58,5 +73,17 @@ public abstract class ResourceDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public void setChapters(String chapters) {
+        this.chapters = chapters;
+    }
+
+    public void setFlashcards(String flashcards) {
+        this.flashcards = flashcards;
+    }
+
+    public void setQuizzes(String quizzes) {
+        this.quizzes = quizzes;
     }
 }

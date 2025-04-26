@@ -22,6 +22,7 @@ public class FirebaseConfig {
             FileInputStream serviceAccount = new FileInputStream("uninote-app-firebase-adminsdk-ailcd-9bdfce261c.json");
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setStorageBucket("uninote-app.appspot.com") 
                     .build();
             FirebaseApp.initializeApp(options); // Initialize FirebaseApp
         }
