@@ -1,6 +1,8 @@
 package com.uninote.backend.entity;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.persistence.*;
 
@@ -9,6 +11,7 @@ import javax.persistence.*;
 @Table(name = "MESSAGES")
 public class Message {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "MESSAGE_ID")
     private Long id;
 
@@ -40,6 +43,9 @@ public class Message {
     @Lob
     @Column(name = "ANNOTATIONS")
     private String annotations;
+
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MessageMedia> media = new ArrayList<>();
 
     public Message() {}
 
@@ -127,5 +133,13 @@ public class Message {
 
     public void setAnnotations(String annotations) {
         this.annotations = annotations;
+    }
+
+    public List<MessageMedia> getMedia() {
+        return media;
+    }
+    
+    public void setMedia(List<MessageMedia> media) {
+        this.media = media;
     }
 }
