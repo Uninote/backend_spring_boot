@@ -27,12 +27,19 @@ import com.uninote.backend.repository.MessageRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
 import com.uninote.backend.repository.SpaceChatRepository;
 
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.data.message.Content;
+
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.FileStore;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +52,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.config.AzureOpenAiConfig;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.repository.ChatRepository;
+import com.uninote.backend.repository.MessageMediaRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +81,12 @@ public class ChatService {
 
     @Autowired
     private SpaceChatRepository spaceChatRepository;
+
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    @Autowired
+    private MessageMediaRepository messageMediaRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 15000;
@@ -291,40 +306,50 @@ public class ChatService {
                 
                 List<Map<String, Object>> currentMsgContent = new ArrayList<>();
                 Map<String, Object> currentMsgText = new HashMap<>();
+                List<Map<String, String>> uploadedMediaMeta = new ArrayList<>();
+
                 currentMsgText.put("type", "text");
                 currentMsgText.put("text", userMessage);
                 currentMsgContent.add(currentMsgText);
                 
-                // Handle uploaded images
-                List<Map<String, String>> uploadedMediaMeta = new ArrayList<>();
-                
                 if (uploadedImages != null && !uploadedImages.isEmpty()) {
                     for (MultipartFile image : uploadedImages) {
                         try {
+                            // Upload to your storage
                             String fileName = "chat_" + baseChat.getId() + "/" + UUID.randomUUID() + "_" + image.getOriginalFilename();
-                            String imageUrl = "";//fileStorageService.uploadFile(image, fileName, baseChat.getId(), "chat_media");
-                            String mediaType = determineMediaType(image.getOriginalFilename());
-                            
-                            Map<String, Object> mediaContent = new HashMap<>();
-                            String key = mediaType + "_url";
-                            mediaContent.put("type", key);
-                            
-                            Map<String, String> urlMap = new HashMap<>();
-                            urlMap.put("url", imageUrl);
-                            mediaContent.put(key, urlMap);
-                            
-                            currentMsgContent.add(mediaContent);
-                            
+                            String uploadedImageUrl = fileStorageService.uploadFile(image, fileName, baseChat.getId(), "chat_media");
+                            logger.info(uploadedImageUrl);
+                            // Determine media type
+                            String mimeType = determineMimeType(image.getOriginalFilename());
+                            String mediaType = mimeType.split("/")[0]; // e.g., "image"
+                
+                            // Build image content for GPT
+                            Map<String, Object> imageContent = new HashMap<>();
+                            imageContent.put("type", mediaType + "_url");
+                
+                            Map<String, String> imageUrlMap = new HashMap<>();
+                            imageUrlMap.put("url", uploadedImageUrl);
+                            imageContent.put(mediaType + "_url", imageUrlMap);
+                
+                            currentMsgContent.add(imageContent); // ⬅️ VERY IMPORTANT: add to chat message content
+                
+                            // Save metadata to save to database later
                             Map<String, String> mediaMeta = new HashMap<>();
-                            mediaMeta.put("url", imageUrl);
+                            mediaMeta.put("url", uploadedImageUrl);
                             mediaMeta.put("type", mediaType);
                             mediaMeta.put("filename", image.getOriginalFilename());
                             uploadedMediaMeta.add(mediaMeta);
+                
                         } catch (Exception e) {
                             logger.warn("Failed to upload/process image: {}", e.getMessage());
                         }
                     }
                 }
+                
+                
+
+                
+                
                 
                 currentUserMsg.put("content", currentMsgContent);
                 chatHistory.add(currentUserMsg);
@@ -333,32 +358,55 @@ public class ChatService {
                 StringBuilder responseBuffer = new StringBuilder();
                 
                 try {
-                    // Get chat model
-                    ChatLanguageModel chatModel = AzureOpenAiChatModel.builder()
-                            .endpoint(azureConfig.getAzureEndpoint())
-                            .apiKey(azureConfig.getAzureApiKey())
-                            .deploymentName(azureConfig.getChatDeployment())
-                            .temperature(0.7)
-                            .build();
-                    
-                    // Stream responses
-                    // Note: This is simplified as the actual streaming would depend on your AI provider's API
-                    String aiResponse = chatModel.generate(convertToLangChainMessages(chatHistory)).content().text();
-                    
-                    // Split into chunks to simulate streaming
-                    String[] chunks = aiResponse.split("(?<=\\G.{50})");
-                    for (String chunk : chunks) {
-                        if (!chunk.isEmpty()) {
-                            responseBuffer.append(chunk);
-                            emitter.send(objectMapper.writeValueAsString(chunk));
-                            Thread.sleep(50); // Simulate streaming delay
+                    String azureUrl = azureConfig.getAzureEndpoint()
+                        + "/openai/deployments/" + azureConfig.getChatDeployment()
+                        + "/chat/completions?api-version=2024-02-15-preview";
+                
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    headers.set("api-key", azureConfig.getAzureApiKey());
+                    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+                
+                    // Build payload
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("messages", buildAzureMessages(chatHistory));
+                    payload.put("temperature", 0.7);
+                    payload.put("stream", false); // if you want chunked, set true
+                    payload.put("max_tokens", 1500);
+                
+                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+                
+                    logger.info("Sending chatHistory to Azure endpoint: {}", azureUrl);
+                
+                    ResponseEntity<JsonNode> response = restTemplate.exchange(
+                        azureUrl,
+                        HttpMethod.POST,
+                        request,
+                        JsonNode.class
+                    );
+                
+                    JsonNode body = response.getBody();
+                    logger.info("Azure response: {}", body);
+                
+                    if (body != null && body.has("choices")) {
+                        String aiResponse = body.get("choices").get(0).get("message").get("content").asText();
+                
+                        // Stream the chunks to the client
+                        String[] chunks = aiResponse.split("(?<=\\G.{50})");
+                        for (String chunk : chunks) {
+                            if (!chunk.isEmpty()) {
+                                responseBuffer.append(chunk);
+                                emitter.send(objectMapper.writeValueAsString(chunk));
+                                Thread.sleep(50); // Simulate typing
+                            }
                         }
                     }
+                
                 } catch (Exception e) {
-                    logger.error("Error in AI chat: {}", e.getMessage());
+                    logger.error("Error calling Azure Chat Completion API: {}", e.getMessage());
                     ObjectNode errorNode = objectMapper.createObjectNode();
                     errorNode.put("status", "error");
-                    errorNode.put("message", "Failed to process chat message: " + e.getMessage());
+                    errorNode.put("message", "Failed to call Azure Chat Completion: " + e.getMessage());
                     try {
                         emitter.send(objectMapper.writeValueAsString(errorNode));
                     } catch (IOException ioException) {
@@ -367,6 +415,7 @@ public class ChatService {
                     emitter.complete();
                     return;
                 }
+                
                 
                 // Process and save the message after streaming
                 String finalResponse = responseBuffer.toString().trim();
@@ -428,16 +477,18 @@ public class ChatService {
                 message.setServiceResponse(textResponse);
                 message.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
                 Message savedMessage = messageRepository.save(message);
-                
+              
+
                 // Save media attachments
                 for (Map<String, String> media : uploadedMediaMeta) {
                     MessageMedia messageMedia = new MessageMedia();
                     messageMedia.setMessage(savedMessage);
-                    messageMedia.setMediaUrl(media.get("url"));
-                    messageMedia.setMediaType(media.get("type"));
+                    messageMedia.setMediaUrl(media.get("url"));  // <-- Correct URL
+                    messageMedia.setMediaType(media.get("type")); // image
                     messageMedia.setOriginalFilename(media.get("filename"));
-                    // Save message media (assuming you have a repository for this)
+                    messageMediaRepository.save(messageMedia);
                 }
+                
                 
                 // Update timestamps
                 baseChat.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
@@ -570,43 +621,132 @@ public class ChatService {
         return "file";
     }
     
-    private List<dev.langchain4j.data.message.ChatMessage> convertToLangChainMessages(List<Map<String, Object>> messages) {
+    /*private List<dev.langchain4j.data.message.ChatMessage> convertToLangChainMessages(List<Map<String, Object>> messages) {
         List<dev.langchain4j.data.message.ChatMessage> langChainMessages = new ArrayList<>();
-        
+
         for (Map<String, Object> message : messages) {
             String role = (String) message.get("role");
             Object content = message.get("content");
-            String textContent = "";
-            
-            // Extract text content from various content formats
+
             if (content instanceof String) {
-                textContent = (String) content;
+                // Simple text content
+                switch (role) {
+                    case "system":
+                        langChainMessages.add(new dev.langchain4j.data.message.SystemMessage((String) content));
+                        break;
+                    case "user":
+                        langChainMessages.add(new dev.langchain4j.data.message.UserMessage((String) content));
+                        break;
+                    case "assistant":
+                        langChainMessages.add(new dev.langchain4j.data.message.AiMessage((String) content));
+                        break;
+                }
             } else if (content instanceof List) {
-                for (Object item : (List<?>) content) {
+                // Mixed content (text and images)
+                List<?> contentList = (List<?>) content;
+                List<Content> contents = new ArrayList<>();
+                
+                for (Object item : contentList) {
                     if (item instanceof Map) {
                         Map<?, ?> contentMap = (Map<?, ?>) item;
-                        if (contentMap.containsKey("type") && "text".equals(contentMap.get("type")) 
-                                && contentMap.containsKey("text")) {
-                            textContent += contentMap.get("text");
+                        String type = (String) contentMap.get("type");
+
+                        if ("text".equals(type) && contentMap.containsKey("text")) {
+                            contents.add(new TextContent((String) contentMap.get("text")));
+                        } else if ("image_url".equals(type) && contentMap.containsKey("image_url")) {
+                            Map<?, ?> imageMap = (Map<?, ?>) contentMap.get("image_url");
+                            String url = (String) imageMap.get("url");
+                            contents.add(new ImageContent(url));
                         }
                     }
                 }
-            }
-            
-            // Create appropriate message type
-            switch (role) {
-                case "system":
-                    langChainMessages.add(new dev.langchain4j.data.message.SystemMessage(textContent));
-                    break;
-                case "user":
-                    langChainMessages.add(new dev.langchain4j.data.message.UserMessage(textContent));
-                    break;
-                case "assistant":
-                    langChainMessages.add(new dev.langchain4j.data.message.AiMessage(textContent));
-                    break;
+                
+                // Create appropriate message with all contents
+                switch (role) {
+                    case "system":
+                        langChainMessages.add(dev.langchain4j.data.message.SystemMessage.from(contents));
+                        break;
+                    case "user":
+                        langChainMessages.add(dev.langchain4j.data.message.UserMessage.from(contents));
+                        break;
+                    case "assistant":
+                        langChainMessages.add(dev.langchain4j.data.message.AiMessage.from(contents));
+                        break;
+                }
             }
         }
-        
+
         return langChainMessages;
+    }*/
+
+    private List<Map<String, Object>> buildAzureMessages(List<Map<String, Object>> chatHistory) {
+        List<Map<String, Object>> azureMessages = new ArrayList<>();
+    
+        for (Map<String, Object> originalMessage : chatHistory) {
+            Map<String, Object> azureMessage = new HashMap<>();
+            azureMessage.put("role", originalMessage.get("role"));
+    
+            Object content = originalMessage.get("content");
+    
+            if (content instanceof String) {
+                // Simple text-only message
+                azureMessage.put("content", List.of(Map.of(
+                    "type", "text",
+                    "text", content
+                )));
+            } else if (content instanceof List) {
+                List<?> contentList = (List<?>) content;
+                List<Map<String, Object>> formattedContents = new ArrayList<>();
+    
+                for (Object item : contentList) {
+                    if (item instanceof Map) {
+                        Map<?, ?> itemMap = (Map<?, ?>) item;
+                        String type = (String) itemMap.get("type");
+    
+                        if ("text".equals(type) && itemMap.containsKey("text")) {
+                            formattedContents.add(Map.of(
+                                "type", "text",
+                                "text", itemMap.get("text")
+                            ));
+                        } else if (type.endsWith("_url") && itemMap.containsKey(type)) {
+                            Map<?, ?> urlMap = (Map<?, ?>) itemMap.get(type);
+                            formattedContents.add(Map.of(
+                                "type", type,
+                                type, Map.of(
+                                    "url", urlMap.get("url")
+                                )
+                            ));
+                        }
+                    }
+                }
+    
+                if (!formattedContents.isEmpty()) {
+                    azureMessage.put("content", formattedContents);
+                }
+            }
+    
+            if (azureMessage.containsKey("content")) {
+                azureMessages.add(azureMessage);
+            }
+        }
+    
+        return azureMessages;
     }
+    
+    
+    
+
+    private String determineMimeType(String filename) {
+        String lowercaseFilename = filename.toLowerCase();
+        if (lowercaseFilename.endsWith(".jpg") || lowercaseFilename.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (lowercaseFilename.endsWith(".png")) {
+            return "image/png";
+        } else if (lowercaseFilename.endsWith(".gif")) {
+            return "image/gif";
+        }
+        return "application/octet-stream"; // fallback
+    }
+    
+    
 }

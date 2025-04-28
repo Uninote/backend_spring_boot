@@ -82,7 +82,7 @@ public class ChatController {
     public SseEmitter addMessageToChat(
             @PathVariable String chatUuid,
             @RequestPart("userMessage") String userMessage,
-            @RequestPart(value = "uploadedImages", required = false) List<MultipartFile> uploadedImages) {
+            @RequestPart(value = "image", required = false) List<MultipartFile> uploadedImages) {
         return chatService.addMessageToChat(chatUuid, userMessage, uploadedImages);
     }
 }
