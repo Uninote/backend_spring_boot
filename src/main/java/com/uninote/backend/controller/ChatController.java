@@ -92,5 +92,12 @@ public class ChatController {
         chatService.clearChat(chatUuid);
         return ResponseEntity.ok("Chat cleared successfully");
     }
+
+
+    @DeleteMapping("/{chatUuid}")
+    public ResponseEntity<String> deleteChat(@PathVariable String chatUuid) {
+        chatService.deleteChat(chatUuid);
+        return ResponseEntity.ok("Chat deleted successfully");
+    }
 }
 

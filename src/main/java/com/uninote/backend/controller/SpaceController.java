@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.dto.SpaceDTO;
 import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.Space;
@@ -36,7 +37,7 @@ public class SpaceController {
     }
 
     @PostMapping
-    public ResponseEntity<Space> createSpace(@RequestParam String title) {
+    public ResponseEntity<SpaceDTO> createSpace(@RequestBody String title) {
         logger.error("here");
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -48,8 +49,12 @@ public class SpaceController {
                 
                 Space space = spaceService.createSpaceAndChat(title, userUid);
                 logger.error("here");
+                SpaceDTO dto = new SpaceDTO(space.getId(), 
+                                            space.getTitle(), 
+                                            space.getUuid(), 
+                                            space.getCreatedAt());
 
-                return new ResponseEntity<>(space, HttpStatus.CREATED);
+                return new ResponseEntity<>(dto, HttpStatus.CREATED);
             } else {
                 return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED); 
             }

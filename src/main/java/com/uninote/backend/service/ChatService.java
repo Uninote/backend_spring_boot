@@ -779,5 +779,34 @@ public class ChatService {
         logger.info("Cleared chat: {}", chatUuid);
     }
 
+
+    @Transactional
+    public void deleteChat(String chatUuid) {
+        logger.info("Deleting chat: {}", chatUuid);
+
+        Chat chat = chatRepository.findByUuid(chatUuid)
+                .orElseThrow(() -> new RuntimeException("Chat with UUID " + chatUuid + " not found"));
+
+        List<Message> messages = messageRepository.findByChatOrderByCreatedAtAsc(chat);
+        for (Message message : messages) {
+            List<MessageMedia> medias = message.getMedia();
+            for (MessageMedia media : medias) {
+                try {
+                    //fileStorageService.deleteFile(media.getMediaUrl());
+                } catch (Exception e) {
+                    logger.warn("Failed to delete file: {}", media.getMediaUrl());
+                }
+
+                messageMediaRepository.delete(media);
+            }
+            messageRepository.delete(message);
+        }
+
+        chatRepository.delete(chat);
+
+        logger.info("Deleted chat: {}", chatUuid);
+    }
+
+
     
 }
