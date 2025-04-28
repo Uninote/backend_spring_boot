@@ -27,6 +27,20 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/spaces")
 public class SpaceController {
 
+    public  static class SpaceCreationRequest {
+        private String title;
+
+        
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getTitle(){
+            return this.title;
+        }
+    } 
+
     private static final Logger logger = LoggerFactory.getLogger(SpaceController.class);
     private final SpaceService spaceService;
 
@@ -37,9 +51,10 @@ public class SpaceController {
     }
 
     @PostMapping
-    public ResponseEntity<SpaceDTO> createSpace(@RequestBody String title) {
+    public ResponseEntity<SpaceDTO> createSpace(@RequestBody SpaceCreationRequest body) {
         logger.error("here");
         try {
+            String title = body.getTitle();
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             logger.error("here");
 

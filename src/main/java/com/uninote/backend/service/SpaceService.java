@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,11 +74,13 @@ public class SpaceService {
         space.setTitle(name);
         space.setUuid(UUID.randomUUID().toString());
         space.setUser(user);
+        space.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
         Space savedSpace = spaceRepository.save(space);
 
         SpaceChat spaceChat = new SpaceChat();
         spaceChat.setSpace(savedSpace); 
         spaceChat.setUser(user);
+        spaceChat.setUuid(UUID.randomUUID().toString());
         spaceChatRepository.save(spaceChat);
 
         savedSpace.getSpaceChats().add(spaceChat);
@@ -110,9 +114,9 @@ public class SpaceService {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            UUID uuid = UUID.fromString(spaceUuid);
+            
 
-            List<SpaceResource> spaceResources = spaceResourceRepository.findAllBySpace_Uuid(uuid);
+            List<SpaceResource> spaceResources = spaceResourceRepository.findAllBySpace_Uuid(spaceUuid);
             if (spaceResources.isEmpty()) {
                 response.put("resources", List.of());
                 return response;
@@ -133,7 +137,7 @@ public class SpaceService {
                     FileResourceDTO dto = new FileResourceDTO();
                     mapCommonFields(dto, resource);
                     //dto.setSupabaseFileUrl(signedUrl);
-                   
+                   dto.setSupabaseFileUrl(url);
 
                     resourceDTOs.add(dto);
                     continue;
@@ -168,6 +172,9 @@ public class SpaceService {
         dto.setCreatedAt(resource.getCreatedAt());
         dto.setSummary(resource.getSummary());
         dto.setContent(resource.getContent());
+        dto.setChapters(resource.getChapters());
+        dto.setFlashcards(resource.getFlashcards());
+        dto.setQuizzes(resource.getQuiz());
     }
 
     private String extractFileName(String url) {

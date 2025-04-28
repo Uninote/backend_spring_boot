@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface SpaceResourceRepository extends JpaRepository<SpaceResource, Long> {
-    List<SpaceResource> findAllBySpace_Uuid(UUID uuid);
+    List<SpaceResource> findAllBySpace_Uuid(String uuid);
 }
