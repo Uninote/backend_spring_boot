@@ -1,25 +1,27 @@
 package com.uninote.backend.service.embedding;
 
+import java.util.List;
 import java.util.Map;
 
 public class PineconeVector {
     private String id;
-    private float[] values;
+    private List<Float> values;
     private Map<String, Object> metadata;
 
     public PineconeVector() {}
 
-    public PineconeVector(String id, float[] values, Map<String, Object> metadata) {
+    public PineconeVector(String id, List<Float> values, Map<String, Object> metadata) {
         this.id = id;
         this.values = values;
         this.metadata = metadata;
     }
+    
 
     public String getId() {
         return id;
     }
 
-    public float[] getValues() {
+    public List<Float> getValues() {
         return values;
     }
 
@@ -31,7 +33,7 @@ public class PineconeVector {
         this.id = id;
     }
 
-    public void setValues(float[] values) {
+    public void setValues(List<Float> values) {
         this.values = values;
     }
 

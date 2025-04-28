@@ -2,6 +2,9 @@ package com.uninote.backend.service.embedding;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.langchain4j.model.embedding.EmbeddingModel;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,16 @@ import java.util.*;
 public class EmbeddingService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final EmbeddingModel embeddingModel;
+
+    private static final String DEFAULT_NAMESPACE = "default";
+
+
+    public EmbeddingService(EmbeddingModel embeddingModel) {
+        this.embeddingModel = embeddingModel;
+    }
+
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${pinecone.api-key}")
@@ -28,8 +41,20 @@ public class EmbeddingService {
         return headers;
     }
 
+    public float[] embed(String text) {
+        try {
+            var result = embeddingModel.embed(text);
+            return result.content().vector();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to embed text: " + e.getMessage(), e);
+        }
+    }
    
     public void upsertVectors(List<PineconeVector> vectors) {
+        upsertVectors(vectors, DEFAULT_NAMESPACE);
+    }
+
+    public void upsertVectors(List<PineconeVector> vectors, String namespace) {
         try {
             Map<String, Object> payload = new HashMap<>();
             List<Map<String, Object>> vectorList = new ArrayList<>();
@@ -43,10 +68,9 @@ public class EmbeddingService {
             }
 
             payload.put("vectors", vectorList);
-            payload.put("namespace", "default"); 
+            payload.put("namespace", namespace != null ? namespace : DEFAULT_NAMESPACE);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, getHeaders());
-
             String url = pineconeIndexUrl + "/vectors/upsert";
 
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
@@ -56,7 +80,6 @@ public class EmbeddingService {
             throw new RuntimeException("Failed to upsert vectors into Pinecone: " + e.getMessage(), e);
         }
     }
-
 
     public JsonNode searchVector(float[] queryVector, Map<String, Object> filter, int topK) {
         try {

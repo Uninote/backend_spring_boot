@@ -2,6 +2,8 @@ package com.uninote.backend.service;
 import com.uninote.backend.config.AzureOpenAiConfig;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.repository.ResourceRepository;
+import com.uninote.backend.service.embedding.EmbeddingService;
+import com.uninote.backend.service.embedding.PineconeVector;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
@@ -22,8 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 
 @Service
 public class LangChainContentService {
@@ -35,6 +42,12 @@ public class LangChainContentService {
     
     @Autowired
     private ResourceRepository resourceRepository;
+
+    @Autowired
+    private ChunkingService chunkingService;
+
+    @Autowired
+    private EmbeddingService embeddingService;
     
     // All-in-one content generator
     @SystemMessage("You are an AI assistant that generates educational content in JSON format.")
@@ -139,7 +152,35 @@ public class LangChainContentService {
                 
                 resource.setGeneratedContent(allContent.toString());
                 logger.info("Successfully generated all content types");
+                List<String> chunks = chunkingService.splitIntoChunks(content);
+                List<PineconeVector> records = new ArrayList<>();
+                int chunkIndex = 0;
+
+                for (String chunk : chunks) {
+                    float[] embedding = embeddingService.embed(chunk);
+        
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("resource_id", resourceId);
+                    metadata.put("chunk_index", chunkIndex);
+                    metadata.put("chunk_text", chunk);
+
+
+                    List<Float> embeddingList = toFloatList(embedding);
+
+                    
+                    PineconeVector vector = new PineconeVector(generateChunkId(resourceId, chunkIndex), embeddingList, metadata);
+
+                    records.add(vector);
+        
+                    chunkIndex++;
+                }
+                try {
+                    embeddingService.upsertVectors(records);
+                } catch (Exception e) {
+                    logger.error("Failed to upsert vectors into Pinecone: {}", e.getMessage(), e);
+                }
                 
+
                 return resourceRepository.save(resource);
             }
         } catch (Exception e) {
@@ -807,4 +848,18 @@ public class LangChainContentService {
     public void generateAllContentAsync(Long resourceId) {
         generateAllContent(resourceId);
     }
+
+
+    private String generateChunkId(Long resourceId, int chunkIndex) {
+        return "resource-" + resourceId + "-chunk-" + chunkIndex;
+    }
+
+    private List<Float> toFloatList(float[] array) {
+        List<Float> list = new ArrayList<>(array.length);
+        for (float value : array) {
+            list.add(value);
+        }
+        return list;
+    }
+    
 }

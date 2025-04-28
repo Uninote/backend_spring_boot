@@ -10,6 +10,7 @@ public class AzureOpenAiConfig {
     private String azureEndpoint;
     private String azureApiKey;
     private String chatDeployment;
+    private String embeddingDeployment;
 
     public String getAzureEndpoint() {
         return azureEndpoint;
@@ -33,5 +34,13 @@ public class AzureOpenAiConfig {
 
     public void setChatDeployment(String chatDeployment) {
         this.chatDeployment = chatDeployment;
+    }
+
+    public String getEmbeddingDeployment() {   
+        return embeddingDeployment;
+    }
+
+    public void setEmbeddingDeployment(String embeddingDeployment) {
+        this.embeddingDeployment = embeddingDeployment;
     }
 }
