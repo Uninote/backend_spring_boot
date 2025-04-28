@@ -748,5 +748,36 @@ public class ChatService {
         return "application/octet-stream"; // fallback
     }
     
+    @Transactional
+    public void clearChat(String chatUuid) {
+        logger.info("Clearing chat: {}", chatUuid);
+
+        Chat chat = chatRepository.findByUuid(chatUuid)
+                .orElseThrow(() -> new RuntimeException("Chat with UUID " + chatUuid + " not found"));
+
+        List<Message> messages = messageRepository.findByChatOrderByCreatedAtAsc(chat);
+
+        for (Message message : messages) {
+            List<MessageMedia> medias = message.getMedia();
+            for (MessageMedia media : medias) {
+                try {
+                    //fileStorageService.deleteFile(media.getMediaUrl());
+                } catch (Exception e) {
+                    logger.warn("Failed to delete file: {}", media.getMediaUrl());
+                }
+
+                messageMediaRepository.delete(media);
+            }
+
+            messageRepository.delete(message);
+        }
+
+        chat.setTitle(null);
+        chat.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        chatRepository.save(chat);
+
+        logger.info("Cleared chat: {}", chatUuid);
+    }
+
     
 }

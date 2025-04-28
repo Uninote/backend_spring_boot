@@ -85,5 +85,12 @@ public class ChatController {
             @RequestPart(value = "image", required = false) List<MultipartFile> uploadedImages) {
         return chatService.addMessageToChat(chatUuid, userMessage, uploadedImages);
     }
+
+
+    @DeleteMapping("/{chatUuid}/clear")
+    public ResponseEntity<String> clearChat(@PathVariable String chatUuid) {
+        chatService.clearChat(chatUuid);
+        return ResponseEntity.ok("Chat cleared successfully");
+    }
 }
 
