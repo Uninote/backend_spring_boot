@@ -54,6 +54,11 @@
             </exclusion>
         </exclusions>
     </dependency>
+        <dependency>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>2.0.27</version>
+    </dependency>
      <dependency>
         <groupId>com.google.firebase</groupId>
         <artifactId>firebase-admin</artifactId>
@@ -69,6 +74,17 @@
             </exclusion>
         </exclusions>
     </dependency>
+    <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5-fluent</artifactId>
+        <version>5.2.1</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5-h2</artifactId>
+        <version>5.2</version>
+    </dependency>
+   
     
     
 
@@ -217,6 +233,43 @@
         <artifactId>lucene-core</artifactId>
         <version>8.11.2</version>
     </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+
+    
+    <!-- Add these dependencies to your pom.xml file for LangChain integration -->
+
+    <!-- LangChain4j Core -->
+    <dependency>
+        <groupId>dev.langchain4j</groupId>
+        <artifactId>langchain4j</artifactId>
+        <version>0.28.0</version>
+    </dependency>
+
+    <!-- LangChain4j Azure OpenAI integration -->
+    <dependency>
+        <groupId>dev.langchain4j</groupId>
+        <artifactId>langchain4j-azure-open-ai</artifactId>
+        <version>0.28.0</version>
+    </dependency>
+
+    <!-- LangChain4j document processors -->
+    <dependency>
+        <groupId>dev.langchain4j</groupId>
+        <artifactId>langchain4j-document-parser-apache-pdfbox</artifactId>
+        <version>0.28.0</version>
+    </dependency>
+
+    <!-- For embedded local models (optional backup) -->
+    <dependency>
+        <groupId>dev.langchain4j</groupId>
+        <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+        <version>0.28.0</version>
+    </dependency>
+
 </dependencies>
 
 
