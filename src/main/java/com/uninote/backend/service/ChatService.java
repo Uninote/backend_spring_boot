@@ -176,6 +176,9 @@ public class ChatService {
             dto.setTitle(yt.getTitle());
             dto.setCreatedAt(yt.getCreatedAt());
             dto.setSummary(yt.getSummary());
+            dto.setChapters(yt.getChapters());
+            dto.setFlashcards(yt.getFlashcards());
+            dto.setQuizzes(yt.getQuiz());
             dto.setContent(yt.getContent());
             dto.setYoutubeUrl(yt.getYoutubeUrl());
 

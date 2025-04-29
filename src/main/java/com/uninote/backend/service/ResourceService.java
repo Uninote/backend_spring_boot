@@ -4,9 +4,11 @@ import com.uninote.backend.entity.*;
 import com.uninote.backend.repository.FileResourceRepository;
 import com.uninote.backend.repository.YouTubeResourceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.google.cloud.storage.BlobId;
@@ -14,16 +16,24 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.firebase.cloud.StorageClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Bucket;
 import com.google.firebase.FirebaseApp;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.UUID;
+import java.net.URLEncoder;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+
 
 @Service
 public class ResourceService {
@@ -41,6 +51,8 @@ public class ResourceService {
 
     @Autowired
     private ContentExtractionService contentExtractionService;
+
+    private static String baseUrl = "https://uninote-python-scripts-7d4abe41edb3.herokuapp.com";
 
 
     public FileResource createFileResource(MultipartFile file) {
@@ -188,9 +200,41 @@ public class ResourceService {
             logger.info("Video ID: {}", videoId);
             
             // Save to database
-            YouTubeResource yt = new YouTubeResource();
-            yt.setYoutubeUrl(youtubeUrl);
-            yt.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+                YouTubeResource yt = new YouTubeResource();
+                yt.setYoutubeUrl(youtubeUrl);
+                yt.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+                String fastApiUrl = baseUrl + "/api/transcript?url=" + videoId;
+                String fullText = "";
+                logger.info(fastApiUrl);
+
+                RestTemplate restTemplate = new RestTemplate();
+                try {
+                ResponseEntity<String> response = restTemplate.getForEntity(fastApiUrl, String.class);
+                logger.info("FastAPI Response Status: {}", response.getStatusCode());
+                logger.info("FastAPI Response Body: {}", response.getBody());
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    String transcriptJson = response.getBody();
+                    logger.info("Fetched transcript from FastAPI: {}", transcriptJson);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode rootNode = objectMapper.readTree(transcriptJson);
+                    fullText = rootNode.path("full_text").asText();
+
+                } else {
+                    logger.error("Failed to fetch transcript. Status code: {}", response.getStatusCodeValue());
+                    throw new RuntimeException("Failed to fetch transcript");
+                }
+                } catch(Exception e) {
+                    logger.error("here"+ e.getMessage());
+                }
+                
+            yt.setContent(fullText);  
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    langChainContentService.generateAllContentAsync(yt.getId());
+                }
+            });
+            
             
             YouTubeResource savedResource = youTubeResourceRepository.save(yt);
             logger.info("=== YOUTUBE RESOURCE CREATION COMPLETE: ID={} ===", savedResource.getId());
