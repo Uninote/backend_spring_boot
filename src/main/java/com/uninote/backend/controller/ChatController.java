@@ -66,7 +66,7 @@ public class ChatController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return new ResponseEntity<>("Authorization token missing or invalid.", HttpStatus.UNAUTHORIZED);
         }
-
+        
         FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
         String userUid = firebaseAuth.getUid();
 

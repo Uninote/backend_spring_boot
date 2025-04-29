@@ -152,33 +152,12 @@ public class LangChainContentService {
                 
                 resource.setGeneratedContent(allContent.toString());
                 logger.info("Successfully generated all content types");
-                List<String> chunks = chunkingService.splitIntoChunks(content);
-                List<PineconeVector> records = new ArrayList<>();
-                int chunkIndex = 0;
-
-                for (String chunk : chunks) {
-                    float[] embedding = embeddingService.embed(chunk);
-        
-                    Map<String, Object> metadata = new HashMap<>();
-                    metadata.put("resource_id", resourceId);
-                    metadata.put("chunk_index", chunkIndex);
-                    metadata.put("chunk_text", chunk);
-
-
-                    List<Float> embeddingList = toFloatList(embedding);
-
-                    
-                    PineconeVector vector = new PineconeVector(generateChunkId(resourceId, chunkIndex), embeddingList, metadata);
-
-                    records.add(vector);
-        
-                    chunkIndex++;
-                }
                 try {
-                    embeddingService.upsertVectors(records);
+                    processEmbeddings(resource);
                 } catch (Exception e) {
-                    logger.error("Failed to upsert vectors into Pinecone: {}", e.getMessage(), e);
+                    logger.error("Embedding processing failed: {}", e.getMessage(), e);
                 }
+
                 
 
                 return resourceRepository.save(resource);
@@ -186,7 +165,6 @@ public class LangChainContentService {
         } catch (Exception e) {
             logger.error("Error in content generation: {}", e.getMessage(), e);
             
-            // Fall back to individual content generation if either approach fails
             logger.info("Falling back to individual content generation");
             return generateAllContentFallback(resourceId);
         }
@@ -629,8 +607,9 @@ public class LangChainContentService {
         generatedContent.put("relations", allRelations);
         
         resource.setGeneratedContent(generatedContent.toString());
-        
-        return resourceRepository.save(resource);
+        resourceRepository.save(resource);
+        processEmbeddings(resource);
+        return resource;
     }
     
     /**
@@ -861,5 +840,48 @@ public class LangChainContentService {
         }
         return list;
     }
+
+
+    public void processEmbeddings(Resource resource) {
+        logger.info("Starting embedding process for resource ID: {}", resource.getId());
     
+        List<String> chunks = chunkingService.splitIntoChunks(resource.getContent());
+        logger.debug("Split content into {} chunks", chunks.size());
+    
+        List<PineconeVector> records = new ArrayList<>();
+        int chunkIndex = 0;
+    
+        for (String chunk : chunks) {
+            logger.info("Processing chunk index {}: {}...", chunkIndex, abbreviate(chunk, 100));
+    
+            try {
+                float[] embedding = embeddingService.embed(chunk);
+                logger.info("Generated embedding for chunk index {}", chunkIndex);
+    
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("resource_id", resource.getId());
+                metadata.put("chunk_index", chunkIndex);
+                metadata.put("chunk_text", chunk);
+    
+                List<Float> embeddingList = toFloatList(embedding);
+                PineconeVector vector = new PineconeVector(generateChunkId(resource.getId(), chunkIndex), embeddingList, metadata);
+                records.add(vector);
+            } catch (Exception e) {
+                logger.error("Failed to process embedding for chunk index {}: {}", chunkIndex, e.getMessage(), e);
+            }
+    
+            chunkIndex++;
+        }
+    
+        try {
+            embeddingService.upsertVectors(records);
+            logger.info("Successfully upserted {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());
+        } catch (Exception e) {
+            logger.error("Failed to upsert vectors into Pinecone: {}", e.getMessage(), e);
+        }
+    }
+    
+    private String abbreviate(String text, int maxLength) {
+        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
+    }
 }

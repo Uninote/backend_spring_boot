@@ -26,6 +26,7 @@ import com.uninote.backend.entity.YouTubeResource;
 import com.uninote.backend.repository.MessageRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
 import com.uninote.backend.repository.SpaceChatRepository;
+import com.uninote.backend.service.embedding.EmbeddingService;
 
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
@@ -87,6 +88,9 @@ public class ChatService {
 
     @Autowired
     private MessageMediaRepository messageMediaRepository;
+
+    @Autowired
+    private EmbeddingService embeddingService;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 15000;
@@ -228,9 +232,10 @@ public class ChatService {
                     if (resourceContent.length() <= MAX_RESOURCE_CHARS) {
                         systemPrompt = createResourceSystemPrompt(resourceTitle, resourceContent);
                     } else {
-                        //List<Map<String, String>> topChunks = ragService.searchSimilarChunks(userMessage, resource.getId(), 5);
-                        String resourcesSummary = "";//formatResourceChunks(topChunks);
-                        systemPrompt = createLargeResourceSystemPrompt(resourceTitle, resourcesSummary);
+                        List<Map<String, String>> topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
+                        logger.info("Number of top chunks retrieved: {}", topChunks.size());
+                        String resourcesSummary = resource.getSummary();
+                        systemPrompt = createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks);
                     }
                 } else {
                     //SpaceChat spaceChat = (SpaceChat) specificChat;
@@ -550,24 +555,34 @@ public class ChatService {
                "5. **Ensure completeness**, provide insights beyond what's explicitly stated.";
     }
     
-    private String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary) {
+    private String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, List<Map<String, String>> chunks) {
+        StringBuilder chunksSection = new StringBuilder();
+        
+        if (chunks != null && !chunks.isEmpty()) {
+            chunksSection.append("### **Excerpts from the Resource**\n");
+            for (int i = 0; i < chunks.size(); i++) {
+                Map<String, String> chunk = chunks.get(i);
+                String chunkText = chunk.getOrDefault("chunk_text", "").trim();
+                if (!chunkText.isEmpty()) {
+                    chunksSection.append("- Excerpt ").append(i + 1).append(": ").append(chunkText).append("\n\n");
+                }
+            }
+        }
+    
         return "You are **Tutie**, the best AI tutor. Your goal is to provide accurate, well-structured, and insightful responses in **Markdown format**.\n\n" +
-               "### **Resource Information (via Embeddings)**\n" +
-               "- This chat is based on a resource titled **'" + resourceTitle + "'**.\n" +
-               resourcesSummary + "\n\n" +
+               "### **Resource Information (Summary)**\n" +
+               "- Title: **'" + resourceTitle + "'**\n" +
+               "- Summary:\n" + resourcesSummary + "\n\n" +
+               chunksSection.toString() +
                "### **Response Guidelines**\n" +
-               "1. **Make sure your response provides value** based on the excerpts.\n" +
-               "2. **Use Markdown** formatting, include clear structure and context.\n" +
-               "3. **Use direct quotes from chunks if applicable.**\n" +
+               "1. **Make sure your response provides value** based on the provided summary and excerpts.\n" +
+               "2. **Use Markdown** formatting with a clear structure and context.\n" +
+               "3. **Use direct quotes from excerpts when applicable.**\n" +
                "4. **Use LaTeX** for any math equations:\n" +
                "   - Inline math should be wrapped in `$...$`\n" +
-               "   - Block-level equations should be wrapped in `$$...$$`\n" +
-               "You have a MathJax render environment.\n" +
-               "- Any LaTeX text between single dollar sign ($) will be rendered as a TeX formula;\n" +
-               "- Use $(tex_formula)$ in-line delimiters to display equations instead of backslash;\n" +
-               "- The render environment only uses $ (single dollarsign) as a container delimiter.\n" +
-               "Example: $x^2 + 3x$ is output for `x² + 3x` to appear as TeX.\n" +
-               "5. **Ensure completeness**, but **do not hallucinate beyond the provided excerpts**.";
+               "   - Block-level math should be wrapped in `$$...$$`\n" +
+               "5. **Ensure completeness**, but **do not hallucinate beyond the provided excerpts**.\n" +
+               "6. **When unsure, state that the information was not available.**";
     }
     
     private String createSpaceSystemPrompt(String resourcesSummary) {
