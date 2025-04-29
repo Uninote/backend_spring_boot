@@ -26,6 +26,7 @@ import com.uninote.backend.entity.YouTubeResource;
 import com.uninote.backend.repository.MessageRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
 import com.uninote.backend.repository.SpaceChatRepository;
+import com.uninote.backend.repository.SpaceResourceRepository;
 import com.uninote.backend.service.embedding.EmbeddingService;
 
 import dev.langchain4j.data.message.ImageContent;
@@ -42,8 +43,10 @@ import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -94,6 +97,9 @@ public class ChatService {
 
     @Autowired
     private EmbeddingService embeddingService;
+
+    @Autowired
+    private SpaceResourceRepository spaceResourceRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 15000;
@@ -235,7 +241,6 @@ public class ChatService {
                 } else {
                     specificChat = spaceChat;
                     logger.info("Handling as SpaceChat");
-                    throw new RuntimeException("Unsupported chat type: " + baseChat.getClass().getName());
                 }
                 
                 // Build chat history
@@ -263,10 +268,18 @@ public class ChatService {
                         systemPrompt = createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks);
                     }
                 } else {
-                    //SpaceChat spaceChat = (SpaceChat) specificChat;
-                    //Space space = spaceChat.getSpace();
-                    //List<Map<String, String>> topChunks = ragService.searchSimilarChunks(userMessage, space.getId(), 5);
-                    String resourcesSummary = "";//formatResourceChunks(topChunks);
+                    spaceChat = (SpaceChat) specificChat;
+                    Space space = spaceChat.getSpace();
+                    Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
+                    List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
+                    for (int i = 0; i < topChunks.size(); i++) {
+                        Map<String, String> chunk = topChunks.get(i);
+                        String chunkText = chunk.getOrDefault("chunk_text", "").replaceAll("\n", " ").trim();
+                        logger.info("Chunk {}: {}", i + 1, abbreviate(chunkText, 200));
+                    }
+                    logger.info("Number of top chunks retrieved: {}", topChunks.size());
+
+                    String resourcesSummary = formatResourceChunks(topChunks);
                     systemPrompt = createSpaceSystemPrompt(resourcesSummary);
                 }
                 
@@ -611,7 +624,8 @@ public class ChatService {
     }
     
     private String createSpaceSystemPrompt(String resourcesSummary) {
-        return "You are Tutie, an AI tutor helping students in a study space. Use the provided chunks only.\n\n" +
+        return "You are Tutie, an AI tutor helping students in a study space, which contains many resources.\n\n" +
+                " Use the provided chunks only.\n\n" +
                resourcesSummary + "\n\n" +
                "Guidelines:\n" +
                "- Be concise and factual\n" +
@@ -801,7 +815,7 @@ public class ChatService {
             List<MessageMedia> medias = message.getMedia();
             for (MessageMedia media : medias) {
                 try {
-                    //fileStorageService.deleteFile(media.getMediaUrl());
+                    fileStorageService.deleteFile(media.getMediaUrl());
                 } catch (Exception e) {
                     logger.warn("Failed to delete file: {}", media.getMediaUrl());
                 }
@@ -853,5 +867,8 @@ public class ChatService {
     }
     
 
-    
+    private String abbreviate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
+    }
 }

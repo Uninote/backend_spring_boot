@@ -31,4 +31,28 @@ public class FileStorageService {
             throw new RuntimeException("Failed to upload file to Firebase Storage", e);
         }
     }
+
+    public void deleteFile(String fileUrl) {
+        try {
+            String bucketName = StorageClient.getInstance().bucket().getName();
+            
+            String baseUrl = String.format("https://firebasestorage.googleapis.com/v0/b/%s/o/", bucketName);
+            if (!fileUrl.startsWith(baseUrl)) {
+                throw new IllegalArgumentException("Invalid file URL for this storage bucket.");
+            }
+            
+            String encodedPath = fileUrl.substring(baseUrl.length(), fileUrl.indexOf("?alt=media"));
+            String filePath = java.net.URLDecoder.decode(encodedPath, StandardCharsets.UTF_8.name());
+            
+            boolean deleted = StorageClient.getInstance().bucket().get(filePath).delete();
+            
+            if (!deleted) {
+                throw new RuntimeException("Failed to delete file from Firebase Storage: " + filePath);
+            }
+    
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete file from Firebase Storage", e);
+        }
+    }
+    
 }

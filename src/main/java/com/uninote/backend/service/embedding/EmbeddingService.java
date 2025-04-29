@@ -129,5 +129,37 @@ public class EmbeddingService {
     
         return chunks;
     }
+
+    public List<Map<String, String>> searchSimilarChunksAcrossResources(String query, Set<Long> resourceIds, int topK) {
+        float[] queryVector = embed(query);
+    
+        Map<String, Object> filter = Map.of(
+            "resource_id", Map.of("$in", resourceIds)
+        );
+    
+        JsonNode result = searchVector(queryVector, filter, topK);
+    
+        List<Map<String, String>> chunks = new ArrayList<>();
+    
+        if (result.has("matches")) {
+            for (JsonNode match : result.get("matches")) {
+                Map<String, String> chunkData = new HashMap<>();
+                JsonNode metadata = match.get("metadata");
+    
+                if (metadata != null && metadata.has("chunk_text")) {
+                    chunkData.put("chunk_text", metadata.get("chunk_text").asText());
+                }
+    
+                if (metadata != null && metadata.has("resource_id")) {
+                    chunkData.put("resource_id", metadata.get("resource_id").asText());
+                }
+    
+                chunks.add(chunkData);
+            }
+        }
+    
+        return chunks;
+    }
+    
     
 }
