@@ -19,6 +19,7 @@ public class Resource {
     private String title;
 
     @Column(name = "CONTENT")
+    @Basic(fetch = FetchType.LAZY)
     @Lob
     private String content;
 

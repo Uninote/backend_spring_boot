@@ -64,6 +64,9 @@ import java.time.LocalDateTime;
 @Service
 public class ChatService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
+
+
     private final RestTemplate restTemplate = new RestTemplate();
     @Autowired
     private MessageRepository messageRepository;
@@ -125,14 +128,26 @@ public class ChatService {
 
 
     public ChatHistoryDto getChatHistory(String chatUuid) {
-        ResourceChat resourceChat = resourceChatRepository.findByChat_Uuid(chatUuid)
-            .orElseThrow(() -> new RuntimeException("ResourceChat not found"));
+        log.info("Fetching chat history for chatUuid: {}", chatUuid);
+        long startTime = System.currentTimeMillis();
 
+        ResourceChat resourceChat = resourceChatRepository.findByChat_Uuid(chatUuid)
+            .orElseThrow(() -> {
+                log.error("ResourceChat not found for UUID: {}", chatUuid);
+                return new RuntimeException("ResourceChat not found");
+            });
+        log.info("Found resource of type: {}");
+        long queryTime = System.currentTimeMillis();
+        log.info("Database query took {} ms", queryTime - startTime);
         Resource resource = resourceChat.getResource();
+        log.info("Found resource of type: {}", resource.getClass().getSimpleName());
+
         ResourceDTO resourceDTO;
 
         if (resource instanceof FileResource) {
             FileResource fr = (FileResource) resource;
+            log.info("Mapping FileResource with id: {}", fr.getId());
+
             FileResourceDTO dto = new FileResourceDTO();
             dto.setId(fr.getId());
             dto.setTitle(fr.getTitle());
@@ -143,10 +158,13 @@ public class ChatService {
             dto.setFlashcards(fr.getFlashcards());
             dto.setChapters(fr.getChapters());
             dto.setQuizzes(fr.getQuiz());
+
             resourceDTO = dto;
 
         } else if (resource instanceof YouTubeResource) {
             YouTubeResource yt = (YouTubeResource) resource;
+            log.info("Mapping YouTubeResource with id: {}", yt.getId());
+
             YouTubeResourceDTO dto = new YouTubeResourceDTO();
             dto.setId(yt.getId());
             dto.setTitle(yt.getTitle());
@@ -154,19 +172,26 @@ public class ChatService {
             dto.setSummary(yt.getSummary());
             dto.setContent(yt.getContent());
             dto.setYoutubeUrl(yt.getYoutubeUrl());
+
             resourceDTO = dto;
 
         } else {
+            log.error("Unsupported resource type: {}", resource.getClass().getSimpleName());
             throw new IllegalStateException("Unsupported resource type: " + resource.getClass().getSimpleName());
         }
 
-        List<MessageDTO> messageDtos = messageRepository.findAllByChatIdOrderByCreatedAtAsc(resourceChat.getChat().getId())
+        Long chatId = resourceChat.getChat().getId();
+        log.info("Fetching messages for chatId: {}", chatId);
+
+        List<MessageDTO> messageDtos = messageRepository.findAllByChatIdOrderByCreatedAtAsc(chatId)
             .stream()
             .map(m -> new MessageDTO(m))
             .collect(Collectors.toList());
 
+        log.info("Retrieved {} messages for chatId: {}", messageDtos.size(), chatId);
+
         return new ChatHistoryDto(
-            resourceChat.getChat().getId(),
+            chatId,
             resource.getTitle(),
             resourceDTO,
             messageDtos
@@ -822,6 +847,11 @@ public class ChatService {
         logger.info("Deleted chat: {}", chatUuid);
     }
 
+    private String safeSubstring(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() <= maxLength ? text : text.substring(0, maxLength);
+    }
+    
 
     
 }

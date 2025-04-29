@@ -17,6 +17,7 @@ public class ResourceChat {
 
     @ManyToOne
     @JoinColumn(name = "RESOURCE_ID", nullable = false)
+    @Basic(fetch = FetchType.LAZY)
     private Resource resource;
 
     public ResourceChat() {}
