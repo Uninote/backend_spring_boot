@@ -1,5 +1,6 @@
 package com.uninote.backend.controller;
 
+import com.uninote.backend.config.ContentAccessPolicy;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.NoteDTO;
@@ -19,18 +20,27 @@ import com.uninote.backend.utils.EncryptionUtil;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
 import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
+import org.springframework.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/notes")
@@ -94,8 +104,26 @@ public class NoteController {
     }
             
     @GetMapping("/{id}")
-    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id, @RequestParam(defaultValue = "EN") String language) {
+    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id, @RequestParam(defaultValue = "EN") String language, HttpServletRequest request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAnonymus = (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken);
+            if (isAnonymus) {
+                HttpSession session =  request.getSession(true);
+                LocalDate lastViewDate = (LocalDate) session.getAttribute("anonymousLastViewDate");
+                LocalDate today = LocalDate.now();
+                if (lastViewDate == null || !lastViewDate.equals(today)) {
+                    session.setAttribute("anonymousViewCount", 0);
+                    session.setAttribute("anonymousLastViewDate", today);
+                }
+                Integer anonymousViews = (Integer) session.getAttribute("anonymousViewCount");
+                anonymousViews = (anonymousViews == null) ? 0 : anonymousViews;
+                if (anonymousViews >= ContentAccessPolicy.MAX_FREE_NOTE_VIEWS) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); 
+                }
+                session.setAttribute("anonymousViewCount", anonymousViews + 1);
+
+            }
             NoteDTO note = noteService.getNoteById(id, language);
             return ResponseEntity.ok(note);
         } catch (IllegalArgumentException e) {
