@@ -42,8 +42,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
             .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeRequests()
-                .antMatchers("/login", "/signup", "/public/**").permitAll()  // Add any public endpoints
-                .anyRequest().authenticated();
+                .antMatchers("/chat/**", "/spaces/**").authenticated()
+                .anyRequest().permitAll(); 
+
     }
 
 
