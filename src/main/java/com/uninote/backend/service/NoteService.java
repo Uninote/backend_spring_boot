@@ -1203,6 +1203,10 @@ public class NoteService {
         return noteRepository.getNoteUploadMetrics(fromDate, toDate);
     }
 
+    public Long countNotesByUserId(Long id) {
+        return noteRepository.countNotesByUserId(id);
+    }
+
 
 }
 

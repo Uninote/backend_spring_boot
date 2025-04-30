@@ -1,6 +1,8 @@
 package com.uninote.backend.controller;
 
+import com.google.api.gax.rpc.InvalidArgumentException;
 import com.uninote.backend.config.ContentAccessPolicy;
+import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.NoteDTO;
@@ -15,6 +17,7 @@ import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteService;
+import com.uninote.backend.service.NoteViewService;
 import com.uninote.backend.service.UserService;
 import com.uninote.backend.utils.EncryptionUtil;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
@@ -61,6 +64,11 @@ public class NoteController {
     @Autowired
     private UniversityRepository universityRepository;
 
+    @Autowired
+    private ContentAccessPolicy contentAccessPolicy;
+
+    @Autowired
+    private NoteViewService noteViewService;
 
     private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
 
@@ -107,8 +115,10 @@ public class NoteController {
     public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id, @RequestParam(defaultValue = "EN") String language, HttpServletRequest request) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAnonymus = (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken);
+            boolean isAnonymus = (auth == null || !auth.isAuthenticated());
             if (isAnonymus) {
+                logger.error("here");
+
                 HttpSession session =  request.getSession(true);
                 LocalDate lastViewDate = (LocalDate) session.getAttribute("anonymousLastViewDate");
                 LocalDate today = LocalDate.now();
@@ -118,13 +128,32 @@ public class NoteController {
                 }
                 Integer anonymousViews = (Integer) session.getAttribute("anonymousViewCount");
                 anonymousViews = (anonymousViews == null) ? 0 : anonymousViews;
-                if (anonymousViews >= ContentAccessPolicy.MAX_FREE_NOTE_VIEWS) {
+                if (contentAccessPolicy.isAccessAllowedForAnonymous(anonymousViews)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); 
                 }
+
                 session.setAttribute("anonymousViewCount", anonymousViews + 1);
 
-            }
-            NoteDTO note = noteService.getNoteById(id, language);
+            }  else {
+                logger.error("here auth");
+
+                FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) auth;
+                logger.error("here");
+
+                String userUid = firebaseAuth.getUid();
+                logger.error(userUid);
+                User user = userRepository.findByFirebaseUid(userUid)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid user UID: " + userUid));
+
+                Long uploadedNotes = noteService.countNotesByUserId(id);
+                int viewCountToday = noteViewService.getTodayViewCount(user.getId());
+
+                if (!contentAccessPolicy.isAccessAllowedForUser(viewCountToday, uploadedNotes)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+
+                }
+                NoteDTO note = noteService.getNoteById(id, language);
             return ResponseEntity.ok(note);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);

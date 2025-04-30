@@ -42,7 +42,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
             .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeRequests()
-                .antMatchers("/chat/**", "/spaces/**").authenticated()
+                .antMatchers("/notes/**","/chat/**", "/spaces/**").authenticated()
                 .anyRequest().permitAll(); 
 
     }
@@ -56,6 +56,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             "http://localhost:3000",
             "https://*.ngrok-free.app",
             "https://uninote.gr",
+            "https://uninote.gr/*",
             "https://www.uninote.gr",
             "https://uninote-creators-portal.vercel.app",
             "https://uninote-creators-portal-eiz6j2q68-uninotes-projects.vercel.app",

@@ -91,6 +91,11 @@ public class NoteViewService {
     }
 
 
+        public int getTodayViewCount(Long id) {
+                return noteViewRepository.countDistinctNoteIdsByUserViewedToday(id);
+        }
+
+
    
     
 }
