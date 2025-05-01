@@ -155,7 +155,7 @@ Page<NoteDTO> findPublicNotesByUniversity(@Param("university") University univer
 
     @Query(value = "SELECT new com.uninote.backend.dto.NoteDTO(n.id, c.id, u.id, n.title, n.description, n.pdfUrl, " +
                "n.filename, n.isPublic, cn.name, un.name, dn.name, " +
-               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status ) " +
+               "n.likes, u.username, u.profileImageUrl, n.createdAt, tnn.typeName, n.professor, n.academicYear, u.certified, ucg.grade, n.status, n.uuid ) " +
                "FROM Note n " +
                "JOIN n.course c " +
                "JOIN c.department d " +

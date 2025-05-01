@@ -41,6 +41,7 @@ public class NoteDTO {
     private Boolean certified;
     private Double grade;
     private Boolean isDigitized;
+    private String uuid;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -193,6 +194,31 @@ public class NoteDTO {
         this.isDigitized = (status.equals( "PROCESSED"));
     }
 
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status, String uuid) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+        this.noteType = noteType;
+        this.professor = professor;
+        this.academicYear = academicYear;
+        this.certified = certified;
+        this.grade = grade;
+        this.isDigitized = (status.equals( "PROCESSED"));
+        this.uuid = uuid;
+    }
 
     public NoteDTO(
         Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
@@ -410,5 +436,13 @@ public class NoteDTO {
 
     public Boolean getIsDigitized() {
         return this.isDigitized;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getUuid() {
+        return this.uuid;
     }
 }
