@@ -526,4 +526,78 @@ public NoteDTO getNoteDataById(@PathVariable Long noteId,
         logger.info("here");
         return noteService.getTopInteractedNotes(userId);
     }
+
+    @GetMapping
+    public ResponseEntity<?> getNotes(
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long universityId,
+            @RequestParam(required = false) Integer semester,
+            @RequestParam(defaultValue = "true") boolean publicOnly,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "likes") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "EN") String language) {
+
+        try {
+            if (publicOnly) {
+                if (courseId != null) {
+                    Course course = courseRepository.findById(courseId)
+                            .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+                    return ResponseEntity.ok(noteService.getPublicNotesByCourse(course, language, page, size, sortBy, sortDir));
+                }
+                
+                if (departmentId != null && semester != null) {
+                    return ResponseEntity.ok(noteService.getPublicNotesByDepartmentAndSemester(
+                            departmentId, semester, language, page, size, sortBy, sortDir));
+                }
+                
+                if (departmentId != null) {
+                    Department department = new Department();
+                    department.setId(departmentId);
+                    return ResponseEntity.ok(noteService.getPublicNotesByDepartment(
+                            department, language, page, size, sortBy, sortDir));
+                }
+                
+                if (universityId != null) {
+                    University university = universityRepository.findById(universityId)
+                            .orElseThrow(() -> new IllegalArgumentException("University not found"));
+                    return ResponseEntity.ok(noteService.getPublicNotesByUniversity(
+                            university, language, page, size, sortBy, sortDir));
+                }
+                
+                return ResponseEntity.ok(noteService.getPublicNotes(page, language, size, sortBy, sortDir));
+            } 
+            else {
+                if (courseId != null) {
+                    Course course = new Course();
+                    course.setId(courseId);
+                    return ResponseEntity.ok(noteService.getNotesByCourse(course));
+                }
+                
+                if (departmentId != null && semester != null) {
+                    return ResponseEntity.ok(noteService.getNotesByDepartmentAndSemester(departmentId, semester));
+                }
+                
+                if (departmentId != null) {
+                    return ResponseEntity.ok(noteService.getNotesByDepartment(departmentId));
+                }
+                
+                if (universityId != null) {
+                    return ResponseEntity.ok(noteService.getNotesByUniversity(universityId));
+                }
+                
+                if (semester != null) {
+                    return ResponseEntity.ok(noteService.getNotesBySemester(semester));
+                }
+                
+                return ResponseEntity.badRequest().body("At least one filter parameter must be provided");
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred: " + e.getMessage());
+        }
+    }
 }
