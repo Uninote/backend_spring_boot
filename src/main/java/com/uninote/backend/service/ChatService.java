@@ -13,12 +13,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.uninote.backend.dto.ChatHistoryDto;
 import com.uninote.backend.dto.FileResourceDTO;
 import com.uninote.backend.dto.MessageDTO;
+import com.uninote.backend.dto.NoteResourceDTO;
 import com.uninote.backend.dto.ResourceDTO;
 import com.uninote.backend.dto.YouTubeResourceDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
 import com.uninote.backend.entity.Message;
 import com.uninote.backend.entity.MessageMedia;
+import com.uninote.backend.entity.NoteResource;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.SpaceChat;
@@ -167,22 +169,23 @@ public class ChatService {
 
             resourceDTO = dto;
 
-        } else if (resource instanceof YouTubeResource) {
-            YouTubeResource yt = (YouTubeResource) resource;
-            log.info("Mapping YouTubeResource with id: {}", yt.getId());
+        } else if (resource instanceof NoteResource) {
+            NoteResource nr = (NoteResource) resource;
+            log.info("Mapping YouTubeResource with id: {}", nr.getId());
 
-            YouTubeResourceDTO dto = new YouTubeResourceDTO();
-            dto.setId(yt.getId());
-            dto.setTitle(yt.getTitle());
-            dto.setCreatedAt(yt.getCreatedAt());
-            dto.setSummary(yt.getSummary());
-            dto.setChapters(yt.getChapters());
-            dto.setFlashcards(yt.getFlashcards());
-            dto.setQuizzes(yt.getQuiz());
-            dto.setContent(yt.getContent());
-            dto.setYoutubeUrl(yt.getYoutubeUrl());
+            NoteResourceDTO dto = new NoteResourceDTO();
+            dto.setId(nr.getId());
+            dto.setTitle(nr.getTitle());
+            dto.setCreatedAt(nr.getCreatedAt());
+            dto.setSummary(nr.getSummary());
+            dto.setChapters(nr.getChapters());
+            dto.setFlashcards(nr.getFlashcards());
+            dto.setQuizzes(nr.getQuiz());
+            dto.setContent(nr.getContent());
+            dto.setFileUrl(nr.getNote().getPdfUrl());
 
             resourceDTO = dto;
+            
 
         } else {
             log.error("Unsupported resource type: {}", resource.getClass().getSimpleName());

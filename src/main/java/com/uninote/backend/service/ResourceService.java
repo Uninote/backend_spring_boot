@@ -2,8 +2,10 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.entity.*;
 import com.uninote.backend.repository.FileResourceRepository;
+import com.uninote.backend.repository.NoteResourceRepository;
 import com.uninote.backend.repository.YouTubeResourceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
@@ -22,10 +24,19 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Bucket;
 import com.google.firebase.FirebaseApp;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.UUID;
+
+import javax.transaction.Transactional;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 
 
@@ -51,6 +62,9 @@ public class ResourceService {
 
     @Autowired
     private ContentExtractionService contentExtractionService;
+
+    @Autowired
+    private NoteResourceRepository noteResourceRepository;
 
     private static String baseUrl = "https://uninote-python-scripts-7d4abe41edb3.herokuapp.com";
 
@@ -288,4 +302,87 @@ public class ResourceService {
         
         throw new IllegalArgumentException("Invalid YouTube URL format");
     }
+
+    @Transactional
+    public NoteResource createNoteResource(Note note) {
+        NoteResource noteResource = new NoteResource();
+        noteResource.setNote(note);
+    
+        NoteResource savedResource = noteResourceRepository.save(noteResource);
+    
+        try {
+            MultipartFile file = downloadPdfAsMultipartFile(note.getPdfUrl());
+    
+            contentExtractionService.extractContent(file, savedResource);
+    
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    langChainContentService.generateAllContentAsync(savedResource.getId());
+                }
+            });
+    
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to download or process PDF from URL: " + note.getPdfUrl(), e);
+        }
+    
+        return savedResource;
+    }
+    
+
+    private MultipartFile downloadPdfAsMultipartFile(String pdfUrl) throws IOException {
+        URL url = new URL(pdfUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+    
+        try (InputStream inputStream = connection.getInputStream()) {
+            byte[] fileBytes = inputStream.readAllBytes();
+            
+            return new MultipartFile() {
+                @Override
+                public String getName() {
+                    return "file";
+                }
+    
+                @Override
+                public String getOriginalFilename() {
+                    return "note.pdf";
+                }
+    
+                @Override
+                public String getContentType() {
+                    return "application/pdf";
+                }
+    
+                @Override
+                public boolean isEmpty() {
+                    return fileBytes.length == 0;
+                }
+    
+                @Override
+                public long getSize() {
+                    return fileBytes.length;
+                }
+    
+                @Override
+                public byte[] getBytes() throws IOException {
+                    return fileBytes;
+                }
+    
+                @Override
+                public InputStream getInputStream() throws IOException {
+                    return new ByteArrayInputStream(fileBytes);
+                }
+    
+                @Override
+                public void transferTo(File dest) throws IOException, IllegalStateException {
+                    try (FileOutputStream fos = new FileOutputStream(dest)) {
+                        fos.write(fileBytes);
+                    }
+                }
+            };
+        }
+    }
+
+    
 }

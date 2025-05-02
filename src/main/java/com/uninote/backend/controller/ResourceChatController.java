@@ -30,7 +30,8 @@ public class ResourceChatController {
     public ResponseEntity<?> createResourceChat(
             @RequestParam String type,
             @RequestParam(required = false) MultipartFile file,
-            @RequestParam(required = false) String url
+            @RequestParam(required = false) String url,
+            @RequestParam(required = false) Long noteId
     ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -59,9 +60,17 @@ public class ResourceChatController {
                     }
                     created = resourceChatService.createWithYouTubeResource(url, userUid);
                     break;
+                case "note":
+                    if(noteId == null) {
+                        return ResponseEntity.badRequest().body("notId is required for type=note");
+                    }
+                    created = resourceChatService.createWithNote(noteId, userUid);
+                    break;
+
+                    
 
                 default:
-                    return ResponseEntity.badRequest().body("Invalid type. Must be 'file' or 'youtube'.");
+                    return ResponseEntity.badRequest().body("Invalid type. Must be 'file' or 'youtube' or 'note'.");
             }
 
             Resource resource = created.getResource(); 

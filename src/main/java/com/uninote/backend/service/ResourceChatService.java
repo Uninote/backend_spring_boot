@@ -3,11 +3,14 @@ package com.uninote.backend.service;
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
+import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteResource;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.YouTubeResource;
 import com.uninote.backend.repository.ChatRepository;
+import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
 import com.uninote.backend.repository.UserRepository;
 
@@ -35,6 +38,9 @@ public class ResourceChatService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private NoteRepository noteRepository;
 
     @Transactional
     public ResourceChat createWithFileResource(MultipartFile file, String userUid) {
@@ -89,5 +95,43 @@ public class ResourceChatService {
             ))
             .collect(Collectors.toList());
     }
+
+    public ResourceChat createWithNote(Long noteId, String userUid) {
+        Chat chat = new Chat(); 
+        chat.setUuid(UUID.randomUUID().toString());
+
+        User user = userRepository.findByFirebaseUid(userUid)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
+        chat.setUser(user);
+        chat = chatRepository.save(chat);
+        Note note = noteRepository.getById(noteId);
+        NoteResource nr = resourceService.createNoteResource(note);
+        ResourceChat resourceChat = new ResourceChat();
+        resourceChat.setChat(chat);
+        resourceChat.setResource(nr);
+
+        return resourceChatRepository.save(resourceChat);    }
+
+
+    @Transactional
+    public ResourceChat createWithNoteResource(Note note, String userUid) {
+        Chat chat = new Chat(); 
+        chat.setUuid(UUID.randomUUID().toString());
+
+        User user = userRepository.findByFirebaseUid(userUid)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
+        chat.setUser(user);
+
+        chat = chatRepository.save(chat);
+
+        NoteResource noteResource = resourceService.createNoteResource(note);
+
+        ResourceChat resourceChat = new ResourceChat();
+        resourceChat.setChat(chat);
+        resourceChat.setResource(noteResource);
+
+        return resourceChatRepository.save(resourceChat);
+    }
+
 }
 
