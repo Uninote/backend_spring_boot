@@ -792,9 +792,10 @@ int existsByDepartmentId(@Param("departmentId") Long departmentId);
        "FROM Note n " +
        "JOIN n.course c " +
        "JOIN c.courseNames cn " +
+       "JOIN cn.language l " +
        "WHERE n.user.id = :userId AND "+
-       "n.deleted = false")
-List<CourseNameDTO> findCoursesWithNotesByUserId(@Param("userId") Long userId);
+       "n.deleted = false AND l.code = :languageCode")
+List<CourseNameDTO> findCoursesWithNotesByUserId(@Param("userId") Long userId, @Param("languageCode") String languageCode);
 
 
 

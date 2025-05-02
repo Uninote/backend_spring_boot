@@ -1150,8 +1150,8 @@ public class NoteService {
     }
 
 
-    public List<CourseNameDTO> getCoursesWithNotesByUser(Long userId) {
-        return noteRepository.findCoursesWithNotesByUserId(userId);
+    public List<CourseNameDTO> getCoursesWithNotesByUser(Long userId, String languageCode) {
+        return noteRepository.findCoursesWithNotesByUserId(userId, languageCode);
     }
 
 

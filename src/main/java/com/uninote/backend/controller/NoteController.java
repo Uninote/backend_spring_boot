@@ -497,8 +497,8 @@ public ResponseEntity<Page<NoteDTO>> getPublicNotesByCourseByType(
 
 
 @GetMapping("/user/{userId}/course-notes")
-    public ResponseEntity<List<CourseNameDTO>> getCoursesWithNotesByUser(@PathVariable Long userId) {
-        List<CourseNameDTO> courses = noteService.getCoursesWithNotesByUser(userId);
+    public ResponseEntity<List<CourseNameDTO>> getCoursesWithNotesByUser(@PathVariable Long userId, @RequestParam(defaultValue =  "EN") String languageCode) {
+        List<CourseNameDTO> courses = noteService.getCoursesWithNotesByUser(userId, languageCode);
         return ResponseEntity.ok(courses);
     }
 
