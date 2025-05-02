@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.azure.ai.openai.models.ChatCompletionsJsonResponseFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.uninote.backend.dto.ChatHistoryDto;
@@ -31,12 +32,14 @@ import com.uninote.backend.repository.SpaceChatRepository;
 import com.uninote.backend.repository.SpaceResourceRepository;
 import com.uninote.backend.service.embedding.EmbeddingService;
 
-import dev.langchain4j.data.message.ImageContent;
-import dev.langchain4j.data.message.TextContent;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.data.message.Content;
+import dev.langchain4j.model.azure.AzureOpenAiChatModel;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.AiMessage;
+
+import com.azure.ai.openai.models.ChatCompletionsJsonResponseFormat;
 
 
 import java.io.IOException;
@@ -53,6 +56,8 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+
+
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.config.AzureOpenAiConfig;
@@ -104,7 +109,7 @@ public class ChatService {
     private SpaceResourceRepository spaceResourceRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
-    private static final int MAX_RESOURCE_CHARS = 15000;
+    private static final int MAX_RESOURCE_CHARS = 150000;
 
 
     public List<Message> getChatMessagesByChat(Chat chat) {
@@ -209,8 +214,6 @@ public class ChatService {
             messageDtos
         );
     }
-
-
     @Transactional
     public SseEmitter addMessageToChat(String chatUuid, String userMessage, List<MultipartFile> uploadedImages) {
         logger.info("Adding message to chat: {}", chatUuid);
@@ -224,15 +227,12 @@ public class ChatService {
         
         executor.execute(() -> {
             try {
-                // Find the chat by UUID
                 Chat baseChat = chatRepository.findByUuid(chatUuid)
                         .orElseThrow(() -> new RuntimeException("Chat with UUID " + chatUuid + " not found"));
                 
                 ResourceChat resourceChat = resourceChatRepository.findById(baseChat.getId()).orElse(null);
-
                 SpaceChat spaceChat = null;
                 if (resourceChat == null) {
-                    // No ResourceChat found, try SpaceChat
                     spaceChat = spaceChatRepository.findById(baseChat.getId()).orElse(null);
                 }
                 
@@ -240,222 +240,152 @@ public class ChatService {
                     throw new RuntimeException("No associated ResourceChat or SpaceChat found for chat UUID: " + chatUuid);
                 }
                 
+                String systemPrompt;
                 Object specificChat;
                 if (resourceChat != null) {
                     specificChat = resourceChat;
                     logger.info("Handling as ResourceChat");
+                    systemPrompt = buildResourceChatSystemPrompt(resourceChat, userMessage);
                 } else {
                     specificChat = spaceChat;
                     logger.info("Handling as SpaceChat");
+                    systemPrompt = buildSpaceChatSystemPrompt(spaceChat, userMessage);
                 }
                 
-                // Build chat history
-                List<Map<String, Object>> chatHistory = new ArrayList<>();
-                
-                String systemPrompt;
-                if (specificChat.getClass().getName().endsWith("ResourceChat")) {
-                    // Use reflection to access the resource
-                    Resource resource = null;
-                    try {
-                        Method getResourceMethod = specificChat.getClass().getMethod("getResource");
-                        resource = (Resource) getResourceMethod.invoke(specificChat);
-                    } catch (Exception e) {
-                        logger.error("Error accessing resource method", e);
-                    }
-                    String resourceTitle = resource != null ? resource.getTitle() : "Unknown Resource";
-                    String resourceContent = resource != null ? resource.getContent() : "No content available";
-                    
-                    if (resourceContent.length() <= MAX_RESOURCE_CHARS) {
-                        systemPrompt = createResourceSystemPrompt(resourceTitle, resourceContent);
-                    } else {
-                        List<Map<String, String>> topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
-                        logger.info("Number of top chunks retrieved: {}", topChunks.size());
-                        String resourcesSummary = resource.getSummary();
-                        systemPrompt = createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks);
-                    }
-                } else {
-                    spaceChat = (SpaceChat) specificChat;
-                    Space space = spaceChat.getSpace();
-                    Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
-                    List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
-                    for (int i = 0; i < topChunks.size(); i++) {
-                        Map<String, String> chunk = topChunks.get(i);
-                        String chunkText = chunk.getOrDefault("chunk_text", "").replaceAll("\n", " ").trim();
-                        logger.info("Chunk {}: {}", i + 1, abbreviate(chunkText, 200));
-                    }
-                    logger.info("Number of top chunks retrieved: {}", topChunks.size());
-
-                    String resourcesSummary = formatResourceChunks(topChunks);
-                    systemPrompt = createSpaceSystemPrompt(resourcesSummary);
-                }
-                
-                // Check if this is the first message in the chat
                 boolean isFirstMessage = messageRepository.countByChat(baseChat) == 0;
                 
                 if (isFirstMessage) {
                     systemPrompt += createFirstMessagePrompt();
                 }
                 
-                // Add system message to chat history
-                Map<String, Object> systemMessage = new HashMap<>();
-                systemMessage.put("role", "system");
+                ChatLanguageModel chatModel;
                 
-                List<Map<String, Object>> systemContent = new ArrayList<>();
-                Map<String, Object> textContent = new HashMap<>();
-                textContent.put("type", "text");
-                textContent.put("text", systemPrompt);
-                systemContent.add(textContent);
+                if (isFirstMessage) {
+                    chatModel = AzureOpenAiChatModel.builder()
+                            .endpoint(azureConfig.getAzureEndpoint())
+                            .apiKey(azureConfig.getAzureApiKey())
+                            .deploymentName(azureConfig.getChatDeployment())
+                            .temperature(0.7)
+                            .maxTokens(1500)
+                            .responseFormat(new ChatCompletionsJsonResponseFormat())
+                            .build();
+                } else {
+                    chatModel = AzureOpenAiChatModel.builder()
+                            .endpoint(azureConfig.getAzureEndpoint())
+                            .apiKey(azureConfig.getAzureApiKey())
+                            .deploymentName(azureConfig.getChatDeployment())
+                            .temperature(0.7)
+                            .maxTokens(1500)
+                            .build();
+                }
                 
-                systemMessage.put("content", systemContent);
-                chatHistory.add(systemMessage);
+                List<dev.langchain4j.data.message.ChatMessage> messageHistory = new ArrayList<>();
                 
-                // Add previous messages to chat history
+                messageHistory.add(dev.langchain4j.data.message.SystemMessage.from(systemPrompt));
+                
                 List<Message> previousMessages = messageRepository.findAllByChatIdOrderByCreatedAtAsc(baseChat.getId());
                 for (Message message : previousMessages) {
                     message.getMedia().size();
+                    
                     if (message.getUserMessage() != null) {
-                        Map<String, Object> userMsg = new HashMap<>();
-                        userMsg.put("role", "user");
-                        
-                        List<Map<String, Object>> msgContent = new ArrayList<>();
-                        Map<String, Object> msgText = new HashMap<>();
-                        msgText.put("type", "text");
-                        msgText.put("text", message.getUserMessage());
-                        msgContent.add(msgText);
-                        
-                        // Add message media
-                        List<MessageMedia> medias = message.getMedia();
-                        for (MessageMedia media : medias) {
-                            Map<String, Object> mediaContent = new HashMap<>();
-                            String key = media.getMediaType() + "_url";
-                            mediaContent.put("type", key);
-                            
-                            Map<String, String> urlMap = new HashMap<>();
-                            urlMap.put("url", media.getMediaUrl());
-                            mediaContent.put(key, urlMap);
-                            
-                            msgContent.add(mediaContent);
-                        }
-                        
-                        userMsg.put("content", msgContent);
-                        chatHistory.add(userMsg);
+                        messageHistory.add(dev.langchain4j.data.message.UserMessage.from(message.getUserMessage()));
                     }
                     
                     if (message.getServiceResponse() != null) {
-                        Map<String, Object> aiMsg = new HashMap<>();
-                        aiMsg.put("role", "assistant");
-                        aiMsg.put("content", message.getServiceResponse());
-                        chatHistory.add(aiMsg);
+                        messageHistory.add(dev.langchain4j.data.message.AiMessage.from(message.getServiceResponse()));
                     }
                 }
                 
-                // Add current user message to chat history
-                Map<String, Object> currentUserMsg = new HashMap<>();
-                currentUserMsg.put("role", "user");
+                messageHistory.add(dev.langchain4j.data.message.UserMessage.from(userMessage));
                 
-                List<Map<String, Object>> currentMsgContent = new ArrayList<>();
-                Map<String, Object> currentMsgText = new HashMap<>();
                 List<Map<String, String>> uploadedMediaMeta = new ArrayList<>();
-
-                currentMsgText.put("type", "text");
-                currentMsgText.put("text", userMessage);
-                currentMsgContent.add(currentMsgText);
-                
                 if (uploadedImages != null && !uploadedImages.isEmpty()) {
                     for (MultipartFile image : uploadedImages) {
                         try {
-                            // Upload to your storage
                             String fileName = "chat_" + baseChat.getId() + "/" + UUID.randomUUID() + "_" + image.getOriginalFilename();
                             String uploadedImageUrl = fileStorageService.uploadFile(image, fileName, baseChat.getId(), "chat_media");
-                            logger.info(uploadedImageUrl);
-                            // Determine media type
+                            logger.info("Uploaded image URL: {}", uploadedImageUrl);
+                            
                             String mimeType = determineMimeType(image.getOriginalFilename());
-                            String mediaType = mimeType.split("/")[0]; // e.g., "image"
-                
-                            // Build image content for GPT
-                            Map<String, Object> imageContent = new HashMap<>();
-                            imageContent.put("type", mediaType + "_url");
-                
-                            Map<String, String> imageUrlMap = new HashMap<>();
-                            imageUrlMap.put("url", uploadedImageUrl);
-                            imageContent.put(mediaType + "_url", imageUrlMap);
-                
-                            currentMsgContent.add(imageContent); // ⬅️ VERY IMPORTANT: add to chat message content
-                
-                            // Save metadata to save to database later
+                            String mediaType = mimeType.split("/")[0]; 
+                            
                             Map<String, String> mediaMeta = new HashMap<>();
                             mediaMeta.put("url", uploadedImageUrl);
                             mediaMeta.put("type", mediaType);
                             mediaMeta.put("filename", image.getOriginalFilename());
                             uploadedMediaMeta.add(mediaMeta);
-                
                         } catch (Exception e) {
                             logger.warn("Failed to upload/process image: {}", e.getMessage());
                         }
                     }
                 }
                 
-                
-
-                
-                
-                
-                currentUserMsg.put("content", currentMsgContent);
-                chatHistory.add(currentUserMsg);
-                
-                // Make API calls to get AI response
+        
                 StringBuilder responseBuffer = new StringBuilder();
                 
+                String finalResponse;
+                String textResponse = "";
+                String aiGeneratedTitle = baseChat.getTitle();
+                List<String> sources = new ArrayList<>();
+                Map<String, Object> annotations = new HashMap<>();
+                
                 try {
-                    String azureUrl = azureConfig.getAzureEndpoint()
-                        + "/openai/deployments/" + azureConfig.getChatDeployment()
-                        + "/chat/completions?api-version=2024-02-15-preview";
-                
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-                    headers.set("api-key", azureConfig.getAzureApiKey());
-                    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-                
-                    // Build payload
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put("messages", buildAzureMessages(chatHistory));
-                    payload.put("temperature", 0.7);
-                    payload.put("stream", false); // if you want chunked, set true
-                    payload.put("max_tokens", 1500);
-                
-                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-                
-                    logger.info("Sending chatHistory to Azure endpoint: {}", azureUrl);
-                
-                    ResponseEntity<JsonNode> response = restTemplate.exchange(
-                        azureUrl,
-                        HttpMethod.POST,
-                        request,
-                        JsonNode.class
-                    );
-                
-                    JsonNode body = response.getBody();
-                    logger.info("Azure response: {}", body);
-                
-                    if (body != null && body.has("choices")) {
-                        String aiResponse = body.get("choices").get(0).get("message").get("content").asText();
-                
-                        // Stream the chunks to the client
-                        String[] chunks = aiResponse.split("(?<=\\G.{50})");
-                        for (String chunk : chunks) {
-                            if (!chunk.isEmpty()) {
-                                responseBuffer.append(chunk);
-                                emitter.send(objectMapper.writeValueAsString(chunk));
-                                Thread.sleep(50); // Simulate typing
-                            }
+                    dev.langchain4j.data.message.AiMessage aiMessage = chatModel.generate(messageHistory).content();
+                    finalResponse = aiMessage.text();
+                    
+                    String[] chunks = finalResponse.split("(?<=\\G.{50})");
+                    for (String chunk : chunks) {
+                        if (!chunk.isEmpty()) {
+                            responseBuffer.append(chunk);
+                            emitter.send(objectMapper.writeValueAsString(chunk));
+                            Thread.sleep(30); 
                         }
                     }
-                
+                    
+                    if (isFirstMessage) {
+                        try {
+                            String jsonString = finalResponse;
+                            
+                            if (finalResponse.contains("```json")) {
+                                jsonString = finalResponse.substring(
+                                    finalResponse.indexOf("```json") + 7, 
+                                    finalResponse.lastIndexOf("```")
+                                ).trim();
+                            } else if (finalResponse.contains("```")) {
+
+                                jsonString = finalResponse.substring(
+                                    finalResponse.indexOf("```") + 3, 
+                                    finalResponse.lastIndexOf("```")
+                                ).trim();
+                            }
+                            
+                            jsonString = jsonString.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
+                            
+                            JsonNode responseJson = objectMapper.readTree(jsonString);
+                            logger.info(responseJson.toString());
+                            
+                            aiGeneratedTitle = responseJson.has("title") ? responseJson.get("title").asText() : baseChat.getTitle();
+                            textResponse = responseJson.has("response") ? responseJson.get("response").asText() : "";
+                            
+                            if (responseJson.has("sources") && responseJson.get("sources").isArray()) {
+                                JsonNode sourcesNode = responseJson.get("sources");
+                                for (int i = 0; i < sourcesNode.size(); i++) {
+                                    sources.add(sourcesNode.get(i).asText());
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.error("Failed to parse JSON response: {}", e.getMessage());
+                            logger.error("Problem response text: {}", finalResponse);
+                            textResponse = finalResponse;
+                        }
+                    } else {
+                        textResponse = finalResponse;
+                    }
                 } catch (Exception e) {
-                    logger.error("Error calling Azure Chat Completion API: {}", e.getMessage());
+                    logger.error("Error generating chat completion: {}", e.getMessage());
                     ObjectNode errorNode = objectMapper.createObjectNode();
                     errorNode.put("status", "error");
-                    errorNode.put("message", "Failed to call Azure Chat Completion: " + e.getMessage());
+                    errorNode.put("message", "Failed to generate chat completion: " + e.getMessage());
                     try {
                         emitter.send(objectMapper.writeValueAsString(errorNode));
                     } catch (IOException ioException) {
@@ -463,45 +393,6 @@ public class ChatService {
                     }
                     emitter.complete();
                     return;
-                }
-                
-                
-                // Process and save the message after streaming
-                String finalResponse = responseBuffer.toString().trim();
-                String textResponse = "";
-                String aiGeneratedTitle = baseChat.getTitle();
-                List<String> sources = new ArrayList<>();
-                Map<String, Object> annotations = new HashMap<>();
-                
-                if (isFirstMessage) {
-                    try {
-                        // Extract the JSON from the response if it's wrapped in code blocks
-                        String jsonString = finalResponse.replace("```json", "").replace("```", "").trim();
-                        JsonNode responseJson = objectMapper.readTree(jsonString);
-                        
-                        aiGeneratedTitle = responseJson.has("title") ? responseJson.get("title").asText() : baseChat.getTitle();
-                        textResponse = responseJson.has("response") ? responseJson.get("response").asText() : "";
-                        
-                        if (responseJson.has("sources") && responseJson.get("sources").isArray()) {
-                            JsonNode sourcesNode = responseJson.get("sources");
-                            for (int i = 0; i < sourcesNode.size(); i++) {
-                                sources.add(sourcesNode.get(i).asText());
-                            }
-                        }
-                        
-                        if (responseJson.has("annotations")) {
-                            JsonNode annotationsNode = responseJson.get("annotations");
-                            // Convert the annotations node to a Map
-                            if (annotationsNode.isObject()) {
-                                annotations = objectMapper.convertValue(annotationsNode, Map.class);
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.error("Failed to parse JSON response: {}", e.getMessage());
-                        textResponse = finalResponse;
-                    }
-                } else {
-                    textResponse = finalResponse;
                 }
                 
                 if (textResponse.trim().isEmpty()) {
@@ -512,42 +403,35 @@ public class ChatService {
                     aiGeneratedTitle = baseChat.getTitle() != null ? baseChat.getTitle() : "General Assistance";
                 }
                 
-                // Update chat title if this is the first message
                 if (isFirstMessage && aiGeneratedTitle != null) {
                     baseChat.setTitle(aiGeneratedTitle);
                     chatRepository.save(baseChat);
                     logger.info("AI-generated chat title: {}", aiGeneratedTitle);
                 }
                 
-                // Save the message and media
                 Message message = new Message();
                 message.setChat(baseChat);
                 message.setUserMessage(userMessage);
                 message.setServiceResponse(textResponse);
                 message.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
                 Message savedMessage = messageRepository.save(message);
-              
-
+                
                 // Save media attachments
                 for (Map<String, String> media : uploadedMediaMeta) {
                     MessageMedia messageMedia = new MessageMedia();
                     messageMedia.setMessage(savedMessage);
-                    messageMedia.setMediaUrl(media.get("url"));  // <-- Correct URL
-                    messageMedia.setMediaType(media.get("type")); // image
+                    messageMedia.setMediaUrl(media.get("url"));
+                    messageMedia.setMediaType(media.get("type")); 
                     messageMedia.setOriginalFilename(media.get("filename"));
                     messageMediaRepository.save(messageMedia);
                 }
                 
-                
-                // Update timestamps
                 baseChat.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
                 if (specificChat instanceof SpaceChat) {
                     spaceChat.getSpace().setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
-                    // Save space
                 }
                 chatRepository.save(baseChat);
                 
-                // Send final complete response
                 Map<String, Object> finalPayload = new HashMap<>();
                 finalPayload.put("user_message", userMessage);
                 
@@ -580,8 +464,40 @@ public class ChatService {
         
         return emitter;
     }
+
+private String buildResourceChatSystemPrompt(ResourceChat resourceChat, String userMessage) {
+    Resource resource = resourceChat.getResource();
+    String resourceTitle = resource != null ? resource.getTitle() : "Unknown Resource";
+    String resourceContent = resource != null ? resource.getContent() : "No content available";
     
-    // Helper methods
+    if (resourceContent.length() <= MAX_RESOURCE_CHARS) {
+        return createResourceSystemPrompt(resourceTitle, resourceContent);
+    } else {
+        List<Map<String, String>> topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
+        logger.info("Number of top chunks retrieved: {}", topChunks.size());
+        String resourcesSummary = resource.getSummary();
+        return createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks);
+    }
+}
+
+private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessage) {
+    Space space = spaceChat.getSpace();
+    Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
+    List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
+    
+    for (int i = 0; i < topChunks.size(); i++) {
+        Map<String, String> chunk = topChunks.get(i);
+        String chunkText = chunk.getOrDefault("chunk_text", "").replaceAll("\n", " ").trim();
+        logger.info("Chunk {}: {}", i + 1, abbreviate(chunkText, 200));
+    }
+    
+    logger.info("Number of top chunks retrieved: {}", topChunks.size());
+    String resourcesSummary = formatResourceChunks(topChunks);
+    return createSpaceSystemPrompt(resourcesSummary);
+}
+
+// Keep your existing helper methods like createResourceSystemPrompt, 
+// createLargeResourceSystemPrompt, etc. unchanged
     
     private String createResourceSystemPrompt(String resourceTitle, String resourceContent) {
         return "You are **Tutie**, the best AI tutor. Your goal is to provide accurate, well-structured, and insightful responses in **Markdown format**.\n\n" +
