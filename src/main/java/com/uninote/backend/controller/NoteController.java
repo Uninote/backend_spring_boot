@@ -533,6 +533,7 @@ public NoteDTO getNoteDataById(@PathVariable Long noteId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Long universityId,
             @RequestParam(required = false) Integer semester,
+            @RequestParam(required = false) Long typeId,
             @RequestParam(defaultValue = "true") boolean publicOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -541,6 +542,41 @@ public NoteDTO getNoteDataById(@PathVariable Long noteId,
             @RequestParam(defaultValue = "EN") String language) {
 
         try {
+            // Handle type filtering if typeId is provided
+            if (typeId != null && publicOnly) {
+                // Process by type with various filters
+                if (courseId != null) {
+                    Course course = courseRepository.findById(courseId)
+                            .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+                    return ResponseEntity.ok(noteService.getPublicNotesByCourseByType(
+                            course, language, page, size, sortBy, sortDir, typeId));
+                }
+                
+                if (departmentId != null && semester != null) {
+                    return ResponseEntity.ok(noteService.getPublicNotesByDepartmentAndSemesterByType(
+                            departmentId, semester, language, page, size, sortBy, sortDir, typeId));
+                }
+                
+                if (departmentId != null) {
+                    Department department = new Department();
+                    department.setId(departmentId);
+                    return ResponseEntity.ok(noteService.getPublicNotesByDepartmentByType(
+                            department, language, page, size, sortBy, sortDir, typeId));
+                }
+                
+                if (universityId != null) {
+                    University university = universityRepository.findById(universityId)
+                            .orElseThrow(() -> new IllegalArgumentException("University not found"));
+                    return ResponseEntity.ok(noteService.getPublicNotesByUniversityByType(
+                            university, language, page, size, sortBy, sortDir, typeId));
+                }
+                
+                // If no specific entity filter but typeId exists
+                return ResponseEntity.ok(noteService.getPublicNotesByType(
+                        language, page, size, sortBy, sortDir, typeId));
+            }
+            
+            // Original logic for public notes
             if (publicOnly) {
                 if (courseId != null) {
                     Course course = courseRepository.findById(courseId)
@@ -569,6 +605,7 @@ public NoteDTO getNoteDataById(@PathVariable Long noteId,
                 
                 return ResponseEntity.ok(noteService.getPublicNotes(page, language, size, sortBy, sortDir));
             } 
+            // Non-public notes
             else {
                 if (courseId != null) {
                     Course course = new Course();
