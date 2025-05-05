@@ -42,10 +42,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
             .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeRequests()
-                .antMatchers("/notes/**","/chat/**", "/spaces/**").authenticated()
-                .anyRequest().permitAll(); 
-
+                .antMatchers("/chat/**", "/spaces/**").authenticated()
+                .antMatchers("/notes/**").permitAll()
+                .anyRequest().permitAll();
     }
+
 
 
 

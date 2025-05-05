@@ -112,56 +112,61 @@ public class NoteController {
     }
             
     @GetMapping("/{id}")
-    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id, @RequestParam(defaultValue = "EN") String language, HttpServletRequest request) {
+    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id,
+                                            @RequestParam(defaultValue = "EN") String language,
+                                            HttpServletRequest request) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAnonymus = (auth == null || !auth.isAuthenticated());
-            if (isAnonymus) {
-                logger.error("here");
+            boolean isAnonymous = (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal()));
 
-                HttpSession session =  request.getSession(true);
-                LocalDate lastViewDate = (LocalDate) session.getAttribute("anonymousLastViewDate");
+            if (isAnonymous) {
+                HttpSession session = request.getSession(true);
                 LocalDate today = LocalDate.now();
+                LocalDate lastViewDate = (LocalDate) session.getAttribute("anonymousLastViewDate");
+
                 if (lastViewDate == null || !lastViewDate.equals(today)) {
                     session.setAttribute("anonymousViewCount", 0);
                     session.setAttribute("anonymousLastViewDate", today);
                 }
+
                 Integer anonymousViews = (Integer) session.getAttribute("anonymousViewCount");
                 anonymousViews = (anonymousViews == null) ? 0 : anonymousViews;
-                if (contentAccessPolicy.isAccessAllowedForAnonymous(anonymousViews)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); 
+
+                if (!contentAccessPolicy.isAccessAllowedForAnonymous(anonymousViews)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                 }
 
                 session.setAttribute("anonymousViewCount", anonymousViews + 1);
-
-            }  else {
+            } else {
                 logger.error("here auth");
-
                 FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) auth;
-                logger.error("here");
-
                 String userUid = firebaseAuth.getUid();
-                logger.error(userUid);
+
                 User user = userRepository.findByFirebaseUid(userUid)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid user UID: " + userUid));
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid user UID: " + userUid));
 
                 Long uploadedNotes = noteService.countNotesByUserId(id);
                 int viewCountToday = noteViewService.getTodayViewCount(user.getId());
+                logger.error(uploadedNotes.toString());
+                logger.error(String.valueOf(viewCountToday));
+
 
                 if (!contentAccessPolicy.isAccessAllowedForUser(viewCountToday, uploadedNotes)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                 }
+                noteViewService.trackView(id, user.getId());
+            }
 
-                }
-                NoteDTO note = noteService.getNoteById(id, language);
+            NoteDTO note = noteService.getNoteById(id, language);
             return ResponseEntity.ok(note);
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
-            
         }
     }
+
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<NoteDTO>> getNotesByUser(@PathVariable Long userId,  @RequestParam(defaultValue =  "EN") String language) {
