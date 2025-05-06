@@ -43,7 +43,7 @@ public class NoteViewService {
     @Autowired
     private UniscoreIncreaseTypeRepository uniscoreIncreaseTypeRepository;
 
-    public  Long trackView(Long noteId, Long userId, Long sessionId) {
+    public  Long trackView(Long noteId, Long userId) {
         
 
 
@@ -59,7 +59,6 @@ public class NoteViewService {
                 noteView = new NoteView();
                 noteView.setNoteId(noteId);
                 noteView.setUserId(userId);
-                noteView.setSessionId(sessionId);
                 noteView.setCreatedAt(LocalDateTime.now());; 
             
             CompletableFuture.runAsync(() -> {
@@ -89,6 +88,11 @@ public class NoteViewService {
         
         return updatedNoteView.getId();
     }
+
+
+        public int getTodayViewCount(Long id) {
+                return noteViewRepository.countDistinctNoteIdsByUserViewedToday(id);
+        }
 
 
    

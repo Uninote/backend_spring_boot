@@ -51,6 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.uninote.backend.config.ContentAccessPolicy;
 import com.uninote.backend.converter.Converters;
 import com.uninote.backend.converter.Converters.*;
 
@@ -144,6 +145,9 @@ public class NoteService {
 
     @Autowired
     private SeasonService seasonService;
+
+    @Autowired
+    private ContentAccessPolicy contentAccessPolicy;
 
     private RealMatrix ratingsMatrix;
     private static final double CLICK_WEIGHT = 0.05;
@@ -1197,6 +1201,10 @@ public class NoteService {
 
     public List<Map<String, Object>> getNoteUploadMetrics(String fromDate, String toDate) {
         return noteRepository.getNoteUploadMetrics(fromDate, toDate);
+    }
+
+    public Long countNotesByUserId(Long id) {
+        return noteRepository.countNotesByUserId(id);
     }
 
 

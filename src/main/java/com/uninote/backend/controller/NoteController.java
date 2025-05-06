@@ -1,5 +1,8 @@
 package com.uninote.backend.controller;
 
+import com.google.api.gax.rpc.InvalidArgumentException;
+import com.uninote.backend.config.ContentAccessPolicy;
+import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.NoteDTO;
@@ -14,23 +17,33 @@ import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteService;
+import com.uninote.backend.service.NoteViewService;
 import com.uninote.backend.service.UserService;
 import com.uninote.backend.utils.EncryptionUtil;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
 import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
+import org.springframework.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/notes")
@@ -51,6 +64,11 @@ public class NoteController {
     @Autowired
     private UniversityRepository universityRepository;
 
+    @Autowired
+    private ContentAccessPolicy contentAccessPolicy;
+
+    @Autowired
+    private NoteViewService noteViewService;
 
     private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
 
@@ -94,17 +112,61 @@ public class NoteController {
     }
             
     @GetMapping("/{id}")
-    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id, @RequestParam(defaultValue = "EN") String language) {
+    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id,
+                                            @RequestParam(defaultValue = "EN") String language,
+                                            HttpServletRequest request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAnonymous = (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal()));
+
+            if (isAnonymous) {
+                HttpSession session = request.getSession(true);
+                LocalDate today = LocalDate.now();
+                LocalDate lastViewDate = (LocalDate) session.getAttribute("anonymousLastViewDate");
+
+                if (lastViewDate == null || !lastViewDate.equals(today)) {
+                    session.setAttribute("anonymousViewCount", 0);
+                    session.setAttribute("anonymousLastViewDate", today);
+                }
+
+                Integer anonymousViews = (Integer) session.getAttribute("anonymousViewCount");
+                anonymousViews = (anonymousViews == null) ? 0 : anonymousViews;
+
+                if (!contentAccessPolicy.isAccessAllowedForAnonymous(anonymousViews)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+
+                session.setAttribute("anonymousViewCount", anonymousViews + 1);
+            } else {
+                logger.error("here auth");
+                FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) auth;
+                String userUid = firebaseAuth.getUid();
+
+                User user = userRepository.findByFirebaseUid(userUid)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid user UID: " + userUid));
+
+                Long uploadedNotes = noteService.countNotesByUserId(id);
+                int viewCountToday = noteViewService.getTodayViewCount(user.getId());
+                logger.error(uploadedNotes.toString());
+                logger.error(String.valueOf(viewCountToday));
+
+
+                if (!contentAccessPolicy.isAccessAllowedForUser(viewCountToday, uploadedNotes)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+                noteViewService.trackView(id, user.getId());
+            }
+
             NoteDTO note = noteService.getNoteById(id, language);
             return ResponseEntity.ok(note);
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
-            
         }
     }
+
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<NoteDTO>> getNotesByUser(@PathVariable Long userId,  @RequestParam(defaultValue =  "EN") String language) {

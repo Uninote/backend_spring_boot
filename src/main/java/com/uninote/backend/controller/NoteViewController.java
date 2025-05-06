@@ -23,14 +23,8 @@ public class NoteViewController {
     private UserSessionService userSessionService;
 
     @PostMapping("/{noteId}/view/{userId}")
-    public ResponseEntity<Long> trackView(@PathVariable Long noteId, @PathVariable Long userId, @RequestParam(required = false) Long sessionId) {
-        if (sessionId == null || !userSessionService.isSessionValid(sessionId)) {
-            sessionId = userSessionService.findLastSessionForUser(userId);
-            if (sessionId == null) {
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-        }   
-        Long noteViewId =  noteViewService.trackView(noteId, userId, sessionId);
+    public ResponseEntity<Long> trackView(@PathVariable Long noteId, @PathVariable Long userId, @RequestParam(required = false) Long sessionId) {  
+        Long noteViewId =  noteViewService.trackView(noteId, userId);
     
         return ResponseEntity.ok(noteViewId);    
     }
