@@ -12,6 +12,7 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.exceptions.ErrorResponse;
 import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.UniversityRepository;
@@ -39,7 +40,9 @@ import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -112,7 +115,7 @@ public class NoteController {
     }
             
     @GetMapping("/{id}")
-    public ResponseEntity<NoteDTO> getNoteById(@PathVariable Long id,
+    public ResponseEntity<?> getNoteById(@PathVariable Long id,
                                             @RequestParam(defaultValue = "EN") String language,
                                             HttpServletRequest request) {
         try {
@@ -133,7 +136,12 @@ public class NoteController {
                 anonymousViews = (anonymousViews == null) ? 0 : anonymousViews;
 
                 if (!contentAccessPolicy.isAccessAllowedForAnonymous(anonymousViews)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                    Map<String, String> error = new HashMap<>();
+                    error.put("message", "Access denied: daily view limit reached");
+
+                    return ResponseEntity
+                            .status(HttpStatus.FORBIDDEN)
+                            .body(error);                
                 }
 
                 session.setAttribute("anonymousViewCount", anonymousViews + 1);
@@ -152,7 +160,12 @@ public class NoteController {
 
 
                 if (!contentAccessPolicy.isAccessAllowedForUser(viewCountToday, uploadedNotes)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                    Map<String, String> error = new HashMap<>();
+                    error.put("message", "Access denied: daily view limit reached");
+
+                    return ResponseEntity
+                            .status(HttpStatus.FORBIDDEN)
+                            .body(error);
                 }
                 noteViewService.trackView(id, user.getId());
             }
