@@ -1,6 +1,7 @@
 package com.uninote.backend.entity;
-import java.time.LocalDateTime;
+
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "subscriptions")
@@ -10,22 +11,37 @@ public class Subscription {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "stripe_subscription_id")
     private String stripeSubscriptionId;
+
+    @Column(name = "stripe_customer_id")
     private String stripeCustomerId;
+
+    @Column(name = "plan_name")
     private String planName;
+
+    @Column(name = "status")
     private String status;
 
+    @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
+
+    @Column(name = "end_date", nullable = true)
     private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "duration_type")
-    private SubscriptionDuration durationType;
+    @Column(name = "duration", nullable = true)
+    private SubscriptionDuration duration;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan", nullable = false)
+    private SubscriptionPlan plan;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -83,12 +99,20 @@ public class Subscription {
         this.endDate = endDate;
     }
 
-    public SubscriptionDuration getDurationType() {
-        return durationType;
+    public SubscriptionDuration getDuration() {
+        return duration;
     }
 
-    public void setDurationType(SubscriptionDuration durationType) {
-        this.durationType = durationType;
+    public void setDuration(SubscriptionDuration duration) {
+        this.duration = duration;
+    }
+
+    public SubscriptionPlan getPlan() {
+        return plan;
+    }
+
+    public void setPlan(SubscriptionPlan plan) {
+        this.plan = plan;
     }
 
     public User getUser() {

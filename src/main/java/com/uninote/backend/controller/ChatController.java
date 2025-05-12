@@ -1,12 +1,16 @@
 package com.uninote.backend.controller;
 
+import com.azure.ai.openai.models.ChatResponseMessage;
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.dto.ChatHistoryDto;
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
+import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.ChatService;
 import com.uninote.backend.service.ResourceChatService;
+import com.uninote.backend.service.UsageLimitService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,6 +36,12 @@ public class ChatController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ChatRepository chatRepository;
+
+    @Autowired
+    private UsageLimitService usageLimitService;
 
     @Autowired
     public ChatController(ChatService chatService) {
@@ -79,12 +89,32 @@ public class ChatController {
     }
 
     @PostMapping(value = "/{chatUuid}/message", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public SseEmitter addMessageToChat(
+    public ResponseEntity<SseEmitter> addMessageToChat(
             @PathVariable String chatUuid,
             @RequestPart("userMessage") String userMessage,
             @RequestPart(value = "image", required = false) List<MultipartFile> uploadedImages) {
-        return chatService.addMessageToChat(chatUuid, userMessage, uploadedImages);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Chat chat = chatRepository.findByUuid(chatUuid)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+        usageLimitService.checkDailyMessageLimit(user, chat);
+
+        SseEmitter emitter = chatService.addMessageToChat(chatUuid, userMessage, uploadedImages);
+        return ResponseEntity.ok(emitter);
     }
+
 
 
     @DeleteMapping("/{chatUuid}/clear")

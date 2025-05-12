@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.Message;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.uninote.backend.dto.MessageDTO;
@@ -39,5 +40,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
 
     int countByChat(Chat baseChat);
+
+    long countByChat_UserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
 
 }

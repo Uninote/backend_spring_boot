@@ -102,6 +102,9 @@ public class User {
     @Column(name = "email_verified", nullable = true)
     private boolean emailVerified = false;
 
+    @Column(name = "stripe_customer_id", nullable = true)
+    private String stripeCustomerId;
+
 
     @PrePersist
     protected void onCreate() {
@@ -340,6 +343,14 @@ public class User {
 
     public void setCertified(Boolean certified) {
         this.certified = certified;
+    }
+
+    public String getStripeCustomerId() {
+        return stripeCustomerId;
+    }
+
+    public void setStripeCustomerId(String stripeCustomerId) {
+        this.stripeCustomerId = stripeCustomerId;
     }
 
 }

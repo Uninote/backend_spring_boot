@@ -7,8 +7,10 @@ import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.YouTubeResource;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.ResourceChatService;
 import com.uninote.backend.service.ResourceService;
+import com.uninote.backend.service.UsageLimitService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,12 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/chat")
 public class ResourceChatController {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private UsageLimitService usageLimitService;
 
     @Autowired
     private ResourceChatService resourceChatService;
@@ -42,6 +50,10 @@ public class ResourceChatController {
 
         FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
         String userUid = firebaseAuth.getUid();
+        User user = userRepository.findByFirebaseUid(userUid)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        usageLimitService.checkDailyChatLimit(user);
+
 
         try {
             ResourceChat created;
