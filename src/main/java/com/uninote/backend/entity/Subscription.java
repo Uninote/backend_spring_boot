@@ -1,13 +1,13 @@
 package com.uninote.backend.entity;
-/* *0mport java.time.LocalDateTime;
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "subscriptions")
 public class Subscription {
 
     @Id
-    @GeneratedValue(strategy = GenerationType7IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String stripeSubscriptionId;
@@ -99,4 +99,3 @@ public class Subscription {
         this.user = user;
     }
 }
-*/

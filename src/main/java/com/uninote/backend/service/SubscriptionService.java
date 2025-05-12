@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-/* 
+
 import com.uninote.backend.entity.Subscription;
 import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.User;
@@ -47,12 +47,16 @@ public class SubscriptionService {
         return subscriptionRepository.save(subscription);
     }
 
-    private LocalDateTime calculateEndDate(LocalDateTime start, SubscriptionDuration duration) {
-        return switch (duration) {
-            case ONE_DAY -> start.plusDays(1);
-            case ONE_MONTH -> start.plusMonths(1);
-            case ONE_YEAR -> start.plusYears(1);
-        };
+   private LocalDateTime calculateEndDate(LocalDateTime start, SubscriptionDuration duration) {
+        if (duration == SubscriptionDuration.ONE_DAY) {
+            return start.plusDays(1);
+        } else if (duration == SubscriptionDuration.ONE_MONTH) {
+            return start.plusMonths(1);
+        } else if (duration == SubscriptionDuration.ONE_YEAR) {
+            return start.plusYears(1);
+        } else {
+            throw new IllegalArgumentException("Unknown subscription duration: " + duration);
+        }
     }
+
 }
-*/

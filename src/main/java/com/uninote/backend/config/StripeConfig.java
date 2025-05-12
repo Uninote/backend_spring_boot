@@ -5,7 +5,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-/*import com.stripe.Stripe;
+import com.stripe.Stripe;
 
 @Configuration
 public class StripeConfig {
@@ -17,4 +17,3 @@ public class StripeConfig {
         Stripe.apiKey = stripeSecretKey;
     }
 }
-*/

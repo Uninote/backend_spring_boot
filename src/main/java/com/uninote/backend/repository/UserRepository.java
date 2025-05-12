@@ -247,5 +247,8 @@ List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenD
 
     List<User> findByEmailVerifiedFalse();
 
+
+    Optional<User> findByEmail(String email);
+
     
 }
