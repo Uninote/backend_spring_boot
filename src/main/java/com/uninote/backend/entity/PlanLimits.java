@@ -4,7 +4,7 @@ public class PlanLimits {
 
     public static int getDailyChatLimit(SubscriptionPlan plan) {
         if (plan == SubscriptionPlan.FREE) {
-            return 1;
+            return 0;
         } else if (plan == SubscriptionPlan.BASIC) {
             return 10;
         } else {

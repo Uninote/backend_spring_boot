@@ -30,7 +30,7 @@ public class Subscription {
     private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "duration", nullable = true)
+    @Column(name = "duration_type", nullable = true)
     private SubscriptionDuration duration;
 
     @Enumerated(EnumType.STRING)

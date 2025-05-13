@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Service
 public class UsageLimitService {
@@ -24,13 +25,14 @@ public class UsageLimitService {
     @Autowired
     private MessageRepository messageRepository;
 
-    private LocalDateTime getStartOfDay() {
-        return LocalDate.now().atStartOfDay();
+    private Date getStartOfDay() {
+        return java.sql.Timestamp.valueOf(LocalDate.now().atStartOfDay());
     }
 
-    private LocalDateTime getEndOfDay() {
-        return getStartOfDay().plusDays(1);
+    private Date getEndOfDay() {
+        return java.sql.Timestamp.valueOf(LocalDate.now().plusDays(1).atStartOfDay());
     }
+
 
     public void checkDailyChatLimit(User user) {
         SubscriptionPlan plan = getCurrentPlan(user);
