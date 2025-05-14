@@ -249,7 +249,7 @@ public class NoteDTO {
 
     public NoteDTO(
         Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
-        String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status, Long likeCount, Long viewCount, String content  ) {
+        String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status, String uuid,String content  ) {
         this.noteId = noteId;
         this.courseId = courseId;
         this.userId = userId;
