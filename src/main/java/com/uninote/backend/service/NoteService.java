@@ -50,6 +50,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.uninote.backend.config.ContentAccessPolicy;
 import com.uninote.backend.converter.Converters;
@@ -88,6 +90,9 @@ public class NoteService {
 
     @Autowired
     private UserCourseGradeRepository userCourseGradeRepository;
+
+    @Autowired
+    private ContentExtractionService contentExtractionService;
 
     @Autowired
     private UserNoteHelpedRepository userNoteHelpedRepository;
@@ -1018,7 +1023,16 @@ public class NoteService {
             }
         badgeService.checkBadgesForUser(user.getId()); 
         userService.ceritfyUser(noteDto.getUserId());
-        tutieService.addNoteForProcessing(savedNote.getId());
+        //tutieService.addNoteForProcessing(savedNote.getId());
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        contentExtractionService.extractContentFromNote(savedNote.getId());
+                    }
+            });
+            
+        }
         return savedNote;
     }
 

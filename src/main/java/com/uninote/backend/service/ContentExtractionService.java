@@ -2,7 +2,10 @@ package com.uninote.backend.service;
 
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.FileResource;
+import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteResource;
 import com.uninote.backend.entity.YouTubeResource;
+import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.ResourceRepository;
 import com.uninote.backend.service.extractor.ContentExtractor;
 
@@ -21,6 +24,9 @@ import java.util.Optional;
 public class ContentExtractionService {
 
     private static final Logger logger = LoggerFactory.getLogger(ContentExtractionService.class);
+
+    @Autowired
+    private NoteRepository noteRepository;
     
     @Autowired
     private ResourceRepository resourceRepository;
@@ -47,6 +53,11 @@ public class ContentExtractionService {
      */
     public Resource extractContent(MultipartFile file, Resource resource) {
         logger.info("Extracting content from file: {}", file.getOriginalFilename());
+        if (resource instanceof NoteResource){
+            NoteResource nr = (NoteResource) resource;
+            nr.setContent(nr.getNote().getContent());
+            return resourceRepository.save(nr);
+        }
         
         // Find an appropriate extractor
         ContentExtractor extractor = findExtractor(file);
@@ -221,4 +232,32 @@ public class ContentExtractionService {
         
         return null;
     }
+
+    public void extractContentFromNote(Long noteId) {
+        logger.info("Extracting content from note with ID: {}", noteId);
+
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note not found with ID: " + noteId));
+
+        String url = note.getPdfUrl();
+        String filename = note.getFilename();
+
+        if (url == null || filename == null) {
+            throw new RuntimeException("Note does not have a valid URL or filename for content extraction");
+        }
+
+        
+        ContentExtractor extractor = findExtractorByFilename(filename);
+        if (extractor == null) {
+            throw new UnsupportedOperationException("No suitable extractor found for file: " + filename);
+        }
+
+        String content = extractor.extractContentFromUrl(url);
+
+        note.setContent(content);
+        noteRepository.save(note);
+
+        logger.info("Content extraction completed for note ID: {}", noteId);
+    }
+
 }

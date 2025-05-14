@@ -73,6 +73,9 @@ public class Note {
     @Column(name = "STATUS", nullable = false)
     private String status = "PENDING";
 
+    @Lob
+    @Column(name="content", nullable = false)
+    private String content;
 
     public Boolean getDeleted() {
         return deleted;
@@ -87,157 +90,165 @@ public class Note {
     
         
         
-        @PrePersist
-        protected void onCreate() {
-            this.createdAt = LocalDateTime.now();
-            this.updatedAt = LocalDateTime.now();
-            this.likes = 0L;
-            if (this.uuid == null) {
-                this.uuid = UUID.randomUUID().toString();
-            }
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.likes = 0L;
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID().toString();
         }
-    
-        @PreUpdate
-        protected void onUpdate() {
-            this.updatedAt = LocalDateTime.now();
-        }
-    
-        // Getters and setters
-        public Long getId() {
-            return id;
-        }
-    
-        public void setId(Long id) {
-            this.id = id;
-        }
-    
-        public Course getCourse() {
-            return course;
-        }
-    
-        public void setCourse(Course course) {
-            this.course = course;
-        }
-    
-        public String getFilename() {
-            return filename;
-        }
-    
-        public void setFilename(String filename) {
-            this.filename = filename;
-        }
-    
-        public User getUser() {
-            return user;
-        }
-    
-        public void setUser(User user) {
-            this.user = user;
-        }
-    
-        public String getTitle() {
-            return title;
-        }
-    
-        public void setTitle(String title) {
-            this.title = title;
-        }
-    
-        public String getDescription() {
-            return description;
-        }
-    
-        public void setDescription(String description) {
-            this.description = description;
-        }
-    
-        public String getPdfUrl() {
-            return pdfUrl;
-        }
-    
-        public void setPdfUrl(String pdfUrl) {
-            this.pdfUrl = pdfUrl;
-        }
-    
-        public LocalDateTime getCreatedAt() {
-            return createdAt;
-        }
-    
-        public void setCreatedAt(LocalDateTime createdAt) {
-            this.createdAt = createdAt;
-        }
-    
-        public LocalDateTime getUpdatedAt() {
-            return updatedAt;
-        }
-    
-        public void setUpdatedAt(LocalDateTime updatedAt) {
-            this.updatedAt = updatedAt;
-        }
-        public boolean getIsPublic() {
-            return isPublic;
-        }
-    
-        public void setIsPublic(boolean isPublic) {
-            this.isPublic = isPublic;
-        }
-    
-        public Long getLikes(){
-            return likes;
-        }
-    
-        public void setLikes(Long likes) {
-            this.likes = likes;
-        }
-    
-    
-        public String getUuid() {
-            return uuid;
-        }
-    
-        public void setUuid(String uuid) {
-            this.uuid = uuid;
-        }
-    
-    
-        public String getAcademicYear() {
-            return academicYear;
-        }
-    
-        public void setAcademicYear(String academicYear) {
-            this.academicYear = academicYear;
-        }
-    
-        public String getProfessor() {
-            return professor;
-        }
-    
-        public void setProfessor(String professor) {
-            this.professor = professor;
-        }
-    
-        public NoteType getNoteType() {
-            return noteType;
-        }
-    
-        public void setNoteType(NoteType noteType) {
-            this.noteType = noteType;
-        }
-    
-    
-        public String getSlugTitle() {
-            return slugTitle;
-        }
-    
-        public void setSlugTitle(String slugTitle) {
-            this.slugTitle = slugTitle;
-        }
-    
-        public String getStatus() {
-            return status;
-        }
-    
-        public void setStatus(String status) {
-            this.status = status;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Course getCourse() {
+        return course;
+    }
+
+    public void setCourse(Course course) {
+        this.course = course;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getPdfUrl() {
+        return pdfUrl;
+    }
+
+    public void setPdfUrl(String pdfUrl) {
+        this.pdfUrl = pdfUrl;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    public boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public Long getLikes(){
+        return likes;
+    }
+
+    public void setLikes(Long likes) {
+        this.likes = likes;
+    }
+
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+
+    public String getAcademicYear() {
+        return academicYear;
+    }
+
+    public void setAcademicYear(String academicYear) {
+        this.academicYear = academicYear;
+    }
+
+    public String getProfessor() {
+        return professor;
+    }
+
+    public void setProfessor(String professor) {
+        this.professor = professor;
+    }
+
+    public NoteType getNoteType() {
+        return noteType;
+    }
+
+    public void setNoteType(NoteType noteType) {
+        this.noteType = noteType;
+    }
+
+
+    public String getSlugTitle() {
+        return slugTitle;
+    }
+
+    public void setSlugTitle(String slugTitle) {
+        this.slugTitle = slugTitle;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getContent(){
+        return content;
     }
 }
