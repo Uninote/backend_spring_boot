@@ -240,11 +240,20 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<NoteDTO> saveNote(@Validated(CreateGroup.class) @RequestBody NoteDTO notedto) {
-        Note savedNote = noteService.saveNote(notedto);
-        NoteDTO noteDto= EntityToDTOConverter.convertNoteToDTO(savedNote);
-        return ResponseEntity.ok(noteDto);
+    public ResponseEntity<?> saveNote(@Validated(CreateGroup.class) @RequestBody NoteDTO notedto) {
+        try {
+            Note savedNote = noteService.saveNote(notedto);
+            NoteDTO noteDto = EntityToDTOConverter.convertNoteToDTO(savedNote);
+            return ResponseEntity.ok(noteDto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred while saving the note."));
+        }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNoteById(@PathVariable Long id) {

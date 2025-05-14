@@ -1012,6 +1012,7 @@ public class NoteService {
 
 
         Note savedNote = noteRepository.save(note);
+        logger.error("here note");
         boolean hasReceivedFirstLog = uniscoreIncreaseLogsRepository.existsByUserIdAndIncreaseTypeId(user.getId(), 22L);
 
             if (!hasReceivedFirstLog) {

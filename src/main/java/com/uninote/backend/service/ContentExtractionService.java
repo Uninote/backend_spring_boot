@@ -12,6 +12,7 @@ import com.uninote.backend.service.extractor.ContentExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -233,6 +234,7 @@ public class ContentExtractionService {
         return null;
     }
 
+    @Async
     public void extractContentFromNote(Long noteId) {
         logger.info("Extracting content from note with ID: {}", noteId);
 

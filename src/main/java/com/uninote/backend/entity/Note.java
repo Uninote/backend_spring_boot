@@ -74,7 +74,7 @@ public class Note {
     private String status = "PENDING";
 
     @Lob
-    @Column(name="content", nullable = false)
+    @Column(name="content", nullable = true)
     private String content;
 
     public Boolean getDeleted() {
