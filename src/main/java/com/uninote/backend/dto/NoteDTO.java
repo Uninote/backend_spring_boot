@@ -270,6 +270,7 @@ public class NoteDTO {
         this.academicYear = academicYear;
         this.certified = certified;
         this.grade = grade;
+        this.uuid = uuid; 
         this.isDigitized = !(content.isEmpty() || content ==null|| content.equals(""));
     }
 
