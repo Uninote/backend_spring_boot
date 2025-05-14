@@ -1,6 +1,7 @@
 package com.uninote.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import com.uninote.backend.entity.SpaceChat;
 import com.uninote.backend.entity.YouTubeResource;
 import com.uninote.backend.repository.MessageRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
+import com.uninote.backend.repository.ResourceRepository;
 import com.uninote.backend.repository.SpaceChatRepository;
 import com.uninote.backend.repository.SpaceResourceRepository;
 import com.uninote.backend.service.embedding.EmbeddingService;
@@ -110,6 +112,9 @@ public class ChatService {
 
     @Autowired
     private SpaceResourceRepository spaceResourceRepository;
+
+    @Autowired
+    private ResourceRepository resourceRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 150000;
@@ -530,7 +535,19 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
     
     logger.info("Number of top chunks retrieved: {}", topChunks.size());
     String resourcesSummary = formatResourceChunks(topChunks);
-    return createSpaceSystemPrompt(resourcesSummary);
+    Set<Long> usedResourceIds = topChunks.stream()
+        .map(chunk -> Long.parseLong(chunk.get("resource_id")))
+        .collect(Collectors.toSet());
+
+    Map<Long, String> resourceSummaries = resourceRepository.findAllById(usedResourceIds).stream()
+        .collect(Collectors.toMap(Resource::getId, Resource::getSummary));
+
+    StringBuilder summariesText = new StringBuilder("Resource Summaries:\n\n");
+    resourceSummaries.forEach((id, summary) -> {
+        summariesText.append("- Resource ID ").append(id).append(": ")
+                     .append(summary != null ? summary.trim() : "(no summary)").append("\n");
+    });
+    return createSpaceSystemPrompt(summariesText.toString(),resourcesSummary);
 }
 
 // Keep your existing helper methods like createResourceSystemPrompt, 
@@ -582,14 +599,15 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
                "6. **When unsure, state that the information was not available.**";
     }
     
-    private String createSpaceSystemPrompt(String resourcesSummary) {
-        return "You are Tutie, an AI tutor helping students in a study space, which contains many resources.\n\n" +
-                " Use the provided chunks only.\n\n" +
-               resourcesSummary + "\n\n" +
-               "Guidelines:\n" +
-               "- Be concise and factual\n" +
-               "- Cite the resource chunks in a 'sources' field\n" +
-               "- Do not make up or hallucinate information\n";
+    private String createSpaceSystemPrompt(String resourceSummaries,String resourcesSummary) {
+          return "You are Tutie, an AI tutor helping students in a study space, which contains many resources.\n\n" +
+           resourceSummaries + "\n\n" +
+           "Use the following chunks from the resources:\n\n" +
+           resourcesSummary + "\n\n" +
+           "Guidelines:\n" +
+           "- Be concise and factual\n" +
+           "- Cite the resource chunks in a 'sources' field\n" +
+           "- Do not make up or hallucinate information\n";
     }
     
     private String createFirstMessagePrompt() {
