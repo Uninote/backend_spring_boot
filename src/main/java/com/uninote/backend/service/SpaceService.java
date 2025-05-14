@@ -3,10 +3,13 @@ package com.uninote.backend.service;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.entity.SpaceChat;
 import com.uninote.backend.entity.SpaceResource;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.dto.FileResourceDTO;
 import com.uninote.backend.dto.MessageDTO;
 import com.uninote.backend.dto.ResourceDTO;
 import com.uninote.backend.dto.SpaceSummaryDTO;
+import com.uninote.backend.dto.TranscriptSnippetDto;
 import com.uninote.backend.dto.YouTubeResourceDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.Resource;
@@ -31,6 +34,7 @@ import java.net.URI;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,7 +152,21 @@ public class SpaceService {
                     YouTubeResourceDTO dto = new YouTubeResourceDTO();
                     mapCommonFields(dto, resource);
                     dto.setYoutubeUrl(ytResource.getYoutubeUrl());
-                  
+                    try {
+                        String snippetsJson = ytResource.getSnippets();
+                        if (snippetsJson != null && !snippetsJson.trim().isEmpty()) {
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            List<TranscriptSnippetDto> snippetList = objectMapper.readValue(
+                                snippetsJson,
+                                new TypeReference<List<TranscriptSnippetDto>>() {}
+                            );
+                            dto.setTranscriptSnippets(snippetList);
+                        } else {
+                            dto.setTranscriptSnippets(Collections.emptyList());
+                        }
+                    } catch (Exception e) {
+                        dto.setTranscriptSnippets(Collections.emptyList());
+                    }
 
                     
                     resourceDTOs.add(dto);
