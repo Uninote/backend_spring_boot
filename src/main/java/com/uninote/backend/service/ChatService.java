@@ -16,6 +16,7 @@ import com.uninote.backend.dto.FileResourceDTO;
 import com.uninote.backend.dto.MessageDTO;
 import com.uninote.backend.dto.NoteResourceDTO;
 import com.uninote.backend.dto.ResourceDTO;
+import com.uninote.backend.dto.TranscriptSnippetDto;
 import com.uninote.backend.dto.YouTubeResourceDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
@@ -47,6 +48,7 @@ import java.lang.reflect.Method;
 import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -64,6 +66,7 @@ import com.uninote.backend.config.AzureOpenAiConfig;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.MessageMediaRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,11 +202,29 @@ public class ChatService {
             dto.setTitle(nr.getTitle());
             dto.setCreatedAt(nr.getCreatedAt());
             dto.setSummary(nr.getSummary());
+            dto.setContent(nr.getContent());
             dto.setChapters(nr.getChapters());
             dto.setFlashcards(nr.getFlashcards());
             dto.setQuizzes(nr.getQuiz());
             dto.setContent(nr.getContent());
             dto.setYoutubeUrl(nr.getYoutubeUrl());
+            try {
+                String snippetsJson = nr.getSnippets();
+                if (snippetsJson != null && !snippetsJson.trim().isEmpty()) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    List<TranscriptSnippetDto> snippetList = objectMapper.readValue(
+                        snippetsJson,
+                        new TypeReference<List<TranscriptSnippetDto>>() {}
+                    );
+                    dto.setTranscriptSnippets(snippetList);
+                } else {
+                    dto.setTranscriptSnippets(Collections.emptyList());
+                }
+            } catch (Exception e) {
+                logger.error("Failed to parse snippets JSON from DB: {}", e.getMessage());
+                dto.setTranscriptSnippets(Collections.emptyList());
+            }
+
 
             resourceDTO = dto;
             

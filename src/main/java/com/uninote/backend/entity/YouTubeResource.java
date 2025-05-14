@@ -11,6 +11,9 @@ public class YouTubeResource extends Resource {
     @Column(name = "URL")
     private String youtubeUrl;
 
+    @Lob
+    @Column(name = "SNIPPETS")
+    private String snippets;
 
 
 
@@ -20,6 +23,14 @@ public class YouTubeResource extends Resource {
 
     public void setYoutubeUrl(String youtubeUrl) {
         this.youtubeUrl = youtubeUrl;
+    }
+
+    public String getSnippets() {
+        return snippets;
+    }
+
+    public void setSnippets(String snippets) {
+        this.snippets = snippets;
     }
 
 }

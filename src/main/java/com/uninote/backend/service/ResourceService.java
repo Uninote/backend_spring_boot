@@ -219,6 +219,7 @@ public class ResourceService {
                 yt.setCreatedAt(new Timestamp(System.currentTimeMillis()));
                 String fastApiUrl = baseUrl + "/api/transcript?url=" + videoId;
                 String fullText = "";
+                String snippetsJson = "";
                 logger.info(fastApiUrl);
 
                 RestTemplate restTemplate = new RestTemplate();
@@ -232,6 +233,9 @@ public class ResourceService {
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode rootNode = objectMapper.readTree(transcriptJson);
                     fullText = rootNode.path("full_text").asText();
+                    String rawSnippetsJson = rootNode.path("snippets_json").asText();
+
+                    snippetsJson = org.apache.commons.text.StringEscapeUtils.unescapeJava(rawSnippetsJson);
 
                 } else {
                     logger.error("Failed to fetch transcript. Status code: {}", response.getStatusCodeValue());
@@ -242,6 +246,8 @@ public class ResourceService {
                 }
                 
             yt.setContent(fullText);  
+            yt.setSnippets(snippetsJson);
+
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                 @Override
                 public void afterCommit() {

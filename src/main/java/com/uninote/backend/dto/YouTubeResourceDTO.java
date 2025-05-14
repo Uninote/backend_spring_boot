@@ -6,7 +6,7 @@ public class YouTubeResourceDTO extends ResourceDTO {
     private String youtubeUrl;
     private String videoId;
     private String language;
-    private List<String> transcriptSnippets;
+    private List<TranscriptSnippetDto> transcriptSnippets;
 
     public YouTubeResourceDTO() {
         this.type = "youtube";
@@ -25,11 +25,10 @@ public class YouTubeResourceDTO extends ResourceDTO {
         return language;
     }
 
-    public List<String> getTranscriptSnippets() {
+    public List<TranscriptSnippetDto> getTranscriptSnippets() {
         return transcriptSnippets;
     }
 
-    // Setters
     public void setYoutubeUrl(String youtubeUrl) {
         this.youtubeUrl = youtubeUrl;
     }
@@ -42,7 +41,7 @@ public class YouTubeResourceDTO extends ResourceDTO {
         this.language = language;
     }
 
-    public void setTranscriptSnippets(List<String> transcriptSnippets) {
-        this.transcriptSnippets = transcriptSnippets;
-    }
+    public void setTranscriptSnippets(List<TranscriptSnippetDto> transcriptSnippets) {
+    this.transcriptSnippets = transcriptSnippets;
+}
 }
