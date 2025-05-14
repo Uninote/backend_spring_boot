@@ -15,4 +15,6 @@ public interface ResourceChatRepository extends JpaRepository<ResourceChat,Long>
 
     List<ResourceChat> findAllByChat_User(User user);
 
+    List<ResourceChat> findAllByChat_UserOrderByChat_UpdatedAtDesc(User user);
+
 }

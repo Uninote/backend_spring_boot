@@ -82,7 +82,7 @@ public class ResourceChatService {
     }
 
     public List<ResourceChatSummaryDTO> getAllByUser(User user) {
-        List<ResourceChat> chats = resourceChatRepository.findAllByChat_User(user);
+        List<ResourceChat> chats = resourceChatRepository.findAllByChat_UserOrderByChat_UpdatedAtDesc(user);
         
         return chats.stream()
             .map(chat -> new ResourceChatSummaryDTO(
