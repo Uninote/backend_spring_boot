@@ -216,7 +216,7 @@ public class NoteDTO {
         this.academicYear = academicYear;
         this.certified = certified;
         this.grade = grade;
-        this.isDigitized = (status.equals( "PROCESSED"));
+        this.isDigitized = (status.equals( "EXTRACTED"));
         this.uuid = uuid;
     }
 
@@ -247,9 +247,8 @@ public class NoteDTO {
         this.isDigitized = (status.equals( "PROCESSED"));
     }
 
-    public NoteDTO(
-        Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
-        String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status, String uuid,String content  ) {
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status, String uuid, String content) {
         this.noteId = noteId;
         this.courseId = courseId;
         this.userId = userId;
@@ -270,9 +269,37 @@ public class NoteDTO {
         this.academicYear = academicYear;
         this.certified = certified;
         this.grade = grade;
-        this.uuid = uuid; 
-        this.isDigitized = !(content.isEmpty() || content ==null|| content.equals(""));
+        this.isDigitized = (content != null && !content.isEmpty());
+        this.uuid = uuid;
     }
+
+    public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
+                   String courseName, String universityName, String departmentName, Long totalLikes, String username, String profileImageUrl, LocalDateTime createdAt, String noteType, String professor, String academicYear, Boolean certified, Double grade, String status, String uuid, Boolean isDigitized) {
+        this.noteId = noteId;
+        this.courseId = courseId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.pdfUrl = pdfUrl;
+        this.filename = filename;
+        this.isPublic = isPublic;
+        this.courseName = courseName;
+        this.universityName = universityName;   
+        this.departmentName = departmentName;   
+        this.totalLikes = totalLikes;
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+        this.createdAt = createdAt;
+        this.noteType = noteType;
+        this.professor = professor;
+        this.academicYear = academicYear;
+        this.certified = certified;
+        this.grade = grade;
+        this.isDigitized = isDigitized;
+        this.uuid = uuid;
+    }
+        
+    
 
     public NoteDTO() {};
 

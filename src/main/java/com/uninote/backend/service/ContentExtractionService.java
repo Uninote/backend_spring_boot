@@ -255,7 +255,9 @@ public class ContentExtractionService {
         }
 
         String content = extractor.extractContentFromUrl(url);
-
+        if (content != null && !content.isEmpty() ) {
+            note.setStatus("EXTRACTED");
+        }
         note.setContent(content);
         noteRepository.save(note);
 
