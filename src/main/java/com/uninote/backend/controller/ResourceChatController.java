@@ -7,6 +7,7 @@ import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.YouTubeResource;
+import com.uninote.backend.exceptions.EmptyContentException;
 import com.uninote.backend.service.ResourceChatService;
 import com.uninote.backend.service.ResourceService;
 
@@ -101,7 +102,9 @@ public class ResourceChatController {
 
             return ResponseEntity.ok(dto);
 
-        } catch (Exception e) {
+        } catch (EmptyContentException e) {
+            throw e;
+        }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body("Failed to create resource chat: " + e.getMessage());
         }

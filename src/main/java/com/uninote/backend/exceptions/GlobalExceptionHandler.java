@@ -13,7 +13,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
-//@RestControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     
@@ -59,5 +59,12 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), errorMessage);
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(EmptyContentException.class)
+    public ResponseEntity<Map<String, String>> handleEmptyContent(EmptyContentException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Resource has no content.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 }

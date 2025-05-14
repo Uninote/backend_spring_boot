@@ -1,6 +1,7 @@
 package com.uninote.backend.service;
 
 import com.uninote.backend.entity.*;
+import com.uninote.backend.exceptions.EmptyContentException;
 import com.uninote.backend.repository.FileResourceRepository;
 import com.uninote.backend.repository.NoteResourceRepository;
 import com.uninote.backend.repository.YouTubeResourceRepository;
@@ -129,7 +130,10 @@ public class ResourceService {
                 
                 FileResource savedResource = fileResourceRepository.save(fr);
                 Resource updatedResource = contentExtractionService.extractContent(file, savedResource);
-
+                String content = updatedResource.getContent();
+                if (content == null || content.trim().isEmpty()) {
+                    throw new EmptyContentException("Resource has no content.");
+                }
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCommit() {
@@ -139,12 +143,17 @@ public class ResourceService {
                 logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
                 return savedResource;
                 
+            } catch (EmptyContentException e) {
+                logger.error("Firebase upload error: {}", e.getMessage());
+                throw e;
             } catch (Exception e) {
                 logger.error("Firebase upload error: {}", e.getMessage());
                 // Try alternative method if primary method fails
                 return createFileResourceAlternative(file, fileId, originalFilename, extension);
             }
             
+        } catch (EmptyContentException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("ERROR: File upload failed - {}", e.getMessage());
             throw new RuntimeException("File upload failed: " + e.getMessage(), e);
