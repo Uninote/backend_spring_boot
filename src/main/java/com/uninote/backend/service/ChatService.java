@@ -190,6 +190,22 @@ public class ChatService {
             dto.setFileUrl(nr.getNote().getPdfUrl());
 
             resourceDTO = dto;
+        } else if (resource instanceof YouTubeResource) {
+            YouTubeResource nr = (YouTubeResource) resource;
+            log.info("Mapping YouTubeResource with id: {}", nr.getId());
+
+            YouTubeResourceDTO dto = new YouTubeResourceDTO();
+            dto.setId(nr.getId());
+            dto.setTitle(nr.getTitle());
+            dto.setCreatedAt(nr.getCreatedAt());
+            dto.setSummary(nr.getSummary());
+            dto.setChapters(nr.getChapters());
+            dto.setFlashcards(nr.getFlashcards());
+            dto.setQuizzes(nr.getQuiz());
+            dto.setContent(nr.getContent());
+            dto.setYoutubeUrl(nr.getYoutubeUrl());
+
+            resourceDTO = dto;
             
 
         } else {
