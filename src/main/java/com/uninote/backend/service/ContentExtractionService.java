@@ -12,6 +12,9 @@ import com.uninote.backend.service.extractor.ContentExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -245,23 +248,47 @@ public class ContentExtractionService {
         String filename = note.getFilename();
 
         if (url == null || filename == null) {
-            throw new RuntimeException("Note does not have a valid URL or filename for content extraction");
+            logger.warn("Skipping note {} due to missing URL or filename", noteId);
+            return;
         }
 
-        
         ContentExtractor extractor = findExtractorByFilename(filename);
         if (extractor == null) {
-            throw new UnsupportedOperationException("No suitable extractor found for file: " + filename);
+            logger.warn("No extractor for file: {}", filename);
+            return;
         }
 
-        String content = extractor.extractContentFromUrl(url);
-        if (content != null && !content.isEmpty() ) {
-            note.setStatus("EXTRACTED");
+        try {
+            String content = extractor.extractContentFromUrl(url);
+            if (content != null && !content.isEmpty()) {
+                note.setStatus("EXTRACTED");
+            } else {
+                note.setStatus("NON_DIGITIZABLE");
+            }
+            note.setContent(content);
+            noteRepository.save(note);
+            logger.info("Content extraction completed for note ID: {}", noteId);
+        } catch (Exception e) {
+            logger.error("Failed to extract content from note {}: {}", noteId, e.getMessage());
+            note.setStatus("FAILED");
+            noteRepository.save(note);
         }
-        note.setContent(content);
-        noteRepository.save(note);
-
-        logger.info("Content extraction completed for note ID: {}", noteId);
     }
+
+    public void extractContentInBatches(int batchSize) {
+        Pageable pageable = PageRequest.of(0, batchSize);
+        Page<Long> page;
+
+        do {
+            page = noteRepository.findNoteIdsWithoutContent(pageable);
+
+            for (Long noteId : page.getContent()) {
+                extractContentFromNote(noteId); // already async
+            }
+
+            pageable = pageable.next();
+        } while (!page.isLast());
+    }
+
 
 }

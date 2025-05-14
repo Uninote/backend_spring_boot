@@ -504,7 +504,7 @@ public class NoteService {
             dto.setNoteTypeId(note.getNoteType().getTypeId());
             dto.setNoteType(tn.stream().filter(name -> languageCode.equals(name.getLanguage().getCode())).map(NoteTypeName::getTypeName).findFirst().orElse(null));
         }
-        dto.setIsDigitized(!(note.getContent().isEmpty() || note.getContent() ==null|| note.getContent().equals("")));
+            dto.setIsDigitized(note.getContent() != null && !note.getContent().trim().isEmpty());
 
         
         

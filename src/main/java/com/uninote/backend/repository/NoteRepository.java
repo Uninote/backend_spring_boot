@@ -995,6 +995,9 @@ List<NoteDTO> findTopInteractedNotesByUser(
    @Query("SELECT COUNT(*) FROM Note n WHERE n.isPublic= True AND n.deleted=false AND n.user.id = id")
    Long countNotesByUserId(Long id);
 
+   @Query("SELECT n.id FROM Note n WHERE (n.content IS NULL OR TRIM(n.content) = '') AND n.pdfUrl IS NOT NULL AND n.filename IS NOT NULL")
+   Page<Long> findNoteIdsWithoutContent(Pageable pageable);
+
 }
 
 
