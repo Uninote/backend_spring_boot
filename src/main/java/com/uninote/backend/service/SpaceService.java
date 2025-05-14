@@ -16,7 +16,8 @@ import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.YouTubeResource;
 import com.uninote.backend.entity.FileResource;
-
+import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.NoteResource;
 import com.uninote.backend.repository.SpaceRepository;
 import com.uninote.backend.repository.SpaceResourceRepository;
 import com.uninote.backend.repository.UserRepository;
@@ -24,8 +25,10 @@ import com.uninote.backend.repository.YouTubeResourceRepository;
 import com.uninote.backend.repository.SpaceChatRepository;
 import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.FileResourceRepository;
+import com.uninote.backend.repository.NoteRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -70,6 +73,9 @@ public class SpaceService {
 
     @Autowired
     private ResourceService resourceService;
+    
+    @Autowired
+    private NoteRepository noteRepository;
 
     public Space createSpaceAndChat(String name, String userUid) {
         Space space = new Space();
@@ -206,7 +212,7 @@ public class SpaceService {
     }
 
     @Transactional
-    public Resource addResourceToSpace(String type, MultipartFile file, String youtubeUrl, String spaceId, String userUid) {
+    public Resource addResourceToSpace(String type, MultipartFile file, String youtubeUrl, String spaceId, String userUid,Long noteId) {
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -226,6 +232,12 @@ public class SpaceService {
                 if (youtubeUrl == null) throw new IllegalArgumentException("youtubeUrl is required for type=youtube");
                 YouTubeResource youTubeResource = resourceService.createYouTubeResource(youtubeUrl);
                 resource = youTubeResource;
+                break;
+            case "note":
+                if (noteId == null) throw new IllegalArgumentException("noteId is required for type=noteId");
+                Note note = noteRepository.findById(noteId).orElseThrow(() -> new IllegalArgumentException("Note note found"));
+                NoteResource noteResource = resourceService.createNoteResource(note);
+                resource = noteResource;
                 break;
 
             default:

@@ -126,7 +126,8 @@ public class SpaceController {
             @PathVariable String spaceUuid,
             @RequestParam String type,
             @RequestParam(required = false) MultipartFile file,
-            @RequestParam(required = false) String url
+            @RequestParam(required = false) String url,
+            @RequestParam(required = false) Long noteId
         ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -137,7 +138,7 @@ public class SpaceController {
         FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
         String userUid = firebaseAuth.getUid();
         Resource resource = spaceService.addResourceToSpace(
-            type, file, url,  spaceUuid, userUid
+            type, file, url,  spaceUuid, userUid, noteId
         );
 
         return ResponseEntity.ok(resource);
