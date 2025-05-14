@@ -977,7 +977,7 @@ public class NoteService {
     return new NoteSearchResponse(dtos, totalElements, totalPages);
 }
 
-
+    @Transactional
     public Note saveNote(NoteDTO noteDto) {
         Course course = courseRepository.findById(noteDto.getCourseId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid course ID"));
