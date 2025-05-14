@@ -13,6 +13,7 @@ import org.springframework.transaction.support.TransactionSynchronizationAdapter
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.yaml.snakeyaml.emitter.EmitterException;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -253,7 +254,9 @@ public class ResourceService {
                 } catch(Exception e) {
                     logger.error("here"+ e.getMessage());
                 }
-                
+            if (fullText == null || fullText.trim().equals("")) {
+                throw new EmptyContentException("Resource has no content.");
+            }
             yt.setContent(fullText);  
             yt.setSnippets(snippetsJson);
 
@@ -268,6 +271,8 @@ public class ResourceService {
             YouTubeResource savedResource = youTubeResourceRepository.save(yt);
             logger.info("=== YOUTUBE RESOURCE CREATION COMPLETE: ID={} ===", savedResource.getId());
             return savedResource;
+        } catch (EmptyContentException e){
+            throw e;
         } catch (Exception e) {
             logger.error("ERROR: YouTube resource creation failed - {}", e.getMessage());
             throw new RuntimeException("YouTube resource creation failed: " + e.getMessage(), e);
@@ -328,8 +333,10 @@ public class ResourceService {
         try {
             MultipartFile file = downloadPdfAsMultipartFile(note.getPdfUrl());
     
-            contentExtractionService.extractContent(file, savedResource);
-    
+            Resource re = contentExtractionService.extractContent(file, savedResource);
+            if (re.getContent() == null || re.getContent().trim().equals("")) {
+                throw new EmptyContentException("Resource content not found");
+            }
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                 @Override
                 public void afterCommit() {
@@ -337,6 +344,8 @@ public class ResourceService {
                 }
             });
     
+        } catch (EmptyContentException e){
+            throw e;
         } catch (IOException e) {
             throw new RuntimeException("Failed to download or process PDF from URL: " + note.getPdfUrl(), e);
         }
