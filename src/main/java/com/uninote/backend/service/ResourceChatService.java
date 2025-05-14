@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -82,9 +83,11 @@ public class ResourceChatService {
     }
 
     public List<ResourceChatSummaryDTO> getAllByUser(User user) {
-        List<ResourceChat> chats = resourceChatRepository.findAllByChat_User(user);
+        List<ResourceChat> chats = resourceChatRepository.findAllWithChatAndResourceByUser(user);
         
         return chats.stream()
+            .sorted(Comparator.comparing((ResourceChat chat) -> chat.getChat().getUpdatedAt(),
+                Comparator.nullsLast(Comparator.naturalOrder())).reversed())
             .map(chat -> new ResourceChatSummaryDTO(
                 chat.getChat().getId(),
                 chat.getChat().getUuid(),

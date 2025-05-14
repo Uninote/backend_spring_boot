@@ -4,9 +4,9 @@ public class PlanLimits {
 
     public static int getDailyChatLimit(SubscriptionPlan plan) {
         if (plan == SubscriptionPlan.FREE) {
-            return 0;
+            return Integer.MAX_VALUE;
         } else if (plan == SubscriptionPlan.BASIC) {
-            return 10;
+            return Integer.MAX_VALUE;
         } else {
             return Integer.MAX_VALUE;
         }
@@ -14,21 +14,21 @@ public class PlanLimits {
 
     public static int getMaxSpaces(SubscriptionPlan plan) {
         if (plan == SubscriptionPlan.FREE) {
-            return 0;
+            return Integer.MAX_VALUE;
         } else if (plan == SubscriptionPlan.BASIC) {
-            return 10;
+            return Integer.MAX_VALUE;
         } else if (plan == SubscriptionPlan.PRO) {
-            return 100;
+            return Integer.MAX_VALUE;
         } else {
-            return 1000;
+            return Integer.MAX_VALUE;
         }
     }
 
     public static int getMaxMessagesPerChat(SubscriptionPlan plan) {
         if (plan == SubscriptionPlan.FREE) {
-            return 5;
+            return Integer.MAX_VALUE;
         } else if (plan == SubscriptionPlan.BASIC) {
-            return 100;
+            return Integer.MAX_VALUE;
         } else {
             return Integer.MAX_VALUE;
         }

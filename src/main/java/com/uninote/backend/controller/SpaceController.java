@@ -60,18 +60,17 @@ public class SpaceController {
 
     @PostMapping
     public ResponseEntity<SpaceDTO> createSpace(@RequestBody SpaceCreationRequest body) {
-        logger.error("here");
-        try {
-            String title = body.getTitle();
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            logger.error("here");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication != null && authentication.isAuthenticated()) {
-                FirebaseAuthentication firebaseAuthentication = (FirebaseAuthentication) authentication;
-                String userUid = firebaseAuthentication.getUid(); 
-                User user = userRepository.findByFirebaseUid(userUid)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-                usageLimitService.checkDailySpaceLimit(user);
+        if (authentication != null && authentication.isAuthenticated()) {
+            FirebaseAuthentication firebaseAuthentication = (FirebaseAuthentication) authentication;
+            String userUid = firebaseAuthentication.getUid(); 
+            User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            usageLimitService.checkDailySpaceLimit(user);
+            try {
+                String title = body.getTitle();
+                
 
                 Space space = spaceService.createSpaceAndChat(title, userUid);
                 logger.error("here");
@@ -81,13 +80,14 @@ public class SpaceController {
                                             space.getCreatedAt());
 
                 return new ResponseEntity<>(dto, HttpStatus.CREATED);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
             } else {
                 return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED); 
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        
     }
 
 
