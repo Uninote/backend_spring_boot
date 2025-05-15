@@ -61,7 +61,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             "https://www.uninote.gr",
             "https://uninote-creators-portal.vercel.app",
             "https://uninote-creators-portal-eiz6j2q68-uninotes-projects.vercel.app",
-            "https://uninote-node-dashboard-2fa17dd3fc4c.herokuapp.com"
+            "https://uninote-node-dashboard-2fa17dd3fc4c.herokuapp.com",
+            "https://uninote-web-official-y7b7-git-main-crissel04s-projects.vercel.app"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

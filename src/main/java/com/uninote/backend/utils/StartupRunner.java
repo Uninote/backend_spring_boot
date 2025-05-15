@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.uninote.backend.service.ContentExtractionService;
 
-@Component
+/*@Component
 public class StartupRunner implements ApplicationRunner {
 
     private final ContentExtractionService contentExtractionService;
@@ -19,4 +19,4 @@ public class StartupRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         contentExtractionService.extractContentInBatches(400);
     }
-}
+}*/
