@@ -55,6 +55,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(
             "http://localhost:3000",
+            "http://localhost:3000/",
             "https://*.ngrok-free.app",
             "https://uninote.gr",
             "https://uninote.gr/*",

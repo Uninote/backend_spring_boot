@@ -1,6 +1,7 @@
 package com.uninote.backend.dto;
 
 import java.sql.Timestamp;
+import java.util.Date;
 
 public class ResourceChatSummaryDTO {
     private Long chatId;
@@ -10,14 +11,16 @@ public class ResourceChatSummaryDTO {
     private Timestamp createdAt;
     private String title;
 
-    public ResourceChatSummaryDTO(Long chatId, String uuid, String resourceTitle, String resourceType, Timestamp createdAt, String title) {
+
+    public ResourceChatSummaryDTO(Long chatId, String uuid, String resourceTitle, Date createdAt, String title) {
         this.chatId = chatId;
         this.uuid = uuid;
-        this.resourceTitle = resourceTitle;
-        this.resourceType = resourceType;
-        this.createdAt = createdAt;
-        this.title = title;
+        this.resourceTitle = resourceTitle != null ? resourceTitle : "";
+        this.createdAt = createdAt != null ? new Timestamp(createdAt.getTime()) : null;
+        this.title = title != null ? title : "";
+        this.resourceType = "";
     }
+
 
     public Long getChatId() {
         return chatId;
@@ -33,6 +36,10 @@ public class ResourceChatSummaryDTO {
 
     public String getResourceType() {
         return resourceType;
+    }
+    
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
     public Timestamp getCreatedAt() {

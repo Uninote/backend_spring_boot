@@ -82,18 +82,9 @@ public class ResourceChatService {
     }
 
     public List<ResourceChatSummaryDTO> getAllByUser(User user) {
-        List<ResourceChat> chats = resourceChatRepository.findAllByChat_UserOrderByChat_UpdatedAtDesc(user);
+        List<ResourceChatSummaryDTO> chats = resourceChatRepository.findAllSummaryByUser(user);
         
-        return chats.stream()
-            .map(chat -> new ResourceChatSummaryDTO(
-                chat.getChat().getId(),
-                chat.getChat().getUuid(),
-                chat.getResource().getTitle(),
-                chat.getResource() instanceof FileResource ? "file" : "youtube",
-                chat.getChat().getCreatedAt(),
-                chat.getChat().getTitle()
-            ))
-            .collect(Collectors.toList());
+        return chats;
     }
 
     public ResourceChat createWithNote(Long noteId, String userUid) {
