@@ -85,6 +85,8 @@ public class SpaceService {
         space.setUuid(UUID.randomUUID().toString());
         space.setUser(user);
         space.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        space.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+
         Space savedSpace = spaceRepository.save(space);
 
         SpaceChat spaceChat = new SpaceChat();
@@ -245,6 +247,7 @@ public class SpaceService {
         }
 
         SpaceResource spaceResource = new SpaceResource();
+        space.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         spaceResource.setSpace(space);
         spaceResource.setResource(resource);
         spaceResourceRepository.save(spaceResource);
@@ -256,17 +259,9 @@ public class SpaceService {
         User user = userRepository.findByFirebaseUid(firebaseUid)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<Space> spaces = spaceRepository.findAllByUser(user);
-
-        return spaces.stream()
-            .map(space -> new SpaceSummaryDTO(
-                space.getId(),
-                space.getTitle(),
-                space.getCreatedAt(),
-                space.getUuid()
-            ))
-            .collect(Collectors.toList());
+        return spaceRepository.findAllSummariesByUser(user);
     }
+
 
 
 }
