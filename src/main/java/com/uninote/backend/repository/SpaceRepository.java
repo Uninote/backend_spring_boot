@@ -22,7 +22,7 @@ public interface SpaceRepository extends JpaRepository<Space, Long> {
     List<Space> findAllByUser(User user);
     @Query("SELECT new com.uninote.backend.dto.SpaceSummaryDTO(" +
         "CAST(s.id AS java.lang.Long), s.title, CAST(s.createdAt AS java.sql.Timestamp), s.uuid) " +
-        "FROM Space s WHERE s.user = :user AND s.uuid IS NOT NULL AND s.updatedAt IS NOT NULL")
+        "FROM Space s WHERE s.user = :user AND s.uuid IS NOT NULL AND s.updatedAt IS NOT NULL ORDER BY s.updatedAt DESC")
     List<SpaceSummaryDTO> findAllSummariesByUser(@Param("user") User user);
 
 
