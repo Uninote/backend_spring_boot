@@ -27,6 +27,7 @@ import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.FileResourceRepository;
 import com.uninote.backend.repository.NoteRepository;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
@@ -77,6 +78,9 @@ public class SpaceService {
     @Autowired
     private NoteRepository noteRepository;
 
+    @Autowired
+    private MixPanelService mixPanelService;
+
     public Space createSpaceAndChat(String name, String userUid) {
         Space space = new Space();
         User user = userRepository.findByFirebaseUid(userUid)
@@ -98,6 +102,7 @@ public class SpaceService {
         savedSpace.getSpaceChats().add(spaceChat);
 
         spaceRepository.save(savedSpace);
+        mixPanelService.trackEvent(user.getId(), "Space Creation", new JSONObject());
 
         return savedSpace; 
     }
@@ -251,6 +256,7 @@ public class SpaceService {
         spaceResource.setSpace(space);
         spaceResource.setResource(resource);
         spaceResourceRepository.save(spaceResource);
+        mixPanelService.trackEvent(user.getId(), "Add resource to space", new JSONObject());
 
         return resource;
     }
@@ -258,7 +264,7 @@ public class SpaceService {
     public List<SpaceSummaryDTO> getSpacesByUser(String firebaseUid) {
         User user = userRepository.findByFirebaseUid(firebaseUid)
             .orElseThrow(() -> new RuntimeException("User not found"));
-
+        
         return spaceRepository.findAllSummariesByUser(user);
     }
 

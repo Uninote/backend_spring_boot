@@ -14,6 +14,7 @@ import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
 import com.uninote.backend.repository.UserRepository;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +43,9 @@ public class ResourceChatService {
     @Autowired
     private NoteRepository noteRepository;
 
+    @Autowired
+    private MixPanelService mixPanelService;
+
     @Transactional
     public ResourceChat createWithFileResource(MultipartFile file, String userUid) {
         Chat chat = new Chat(); 
@@ -58,7 +62,9 @@ public class ResourceChatService {
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
         resourceChat.setResource(fileResource);
-
+        JSONObject props = new JSONObject();
+        props.put("type", "file");
+        mixPanelService.trackEvent(user.getId(), "Chat Creation", props);
         return resourceChatRepository.save(resourceChat);
     }
 
@@ -77,7 +83,9 @@ public class ResourceChatService {
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
         resourceChat.setResource(ytResource);
-
+        JSONObject props = new JSONObject();
+        props.put("type", "youtube");
+        mixPanelService.trackEvent(user.getId(), "Chat Creation", props);
         return resourceChatRepository.save(resourceChat);
     }
 
@@ -100,6 +108,9 @@ public class ResourceChatService {
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
         resourceChat.setResource(nr);
+        JSONObject props = new JSONObject();
+        props.put("type", "note");
+        mixPanelService.trackEvent(user.getId(), "Chat Creation", props);
 
         return resourceChatRepository.save(resourceChat);    }
 

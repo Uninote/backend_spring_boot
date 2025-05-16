@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.context.annotation.Lazy;
-
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -51,12 +51,17 @@ public class MixPanelService {
             allowedEvents.add("Tutie Chat Response");
             allowedEvents.add("SignUp Navigation");
             allowedEvents.add("App Visit");
+            allowedEvents.add("Chat Creation");
+            allowedEvents.add("Space Creation");
+            allowedEvents.add("Message");
+            allowedEvents.add("Add resource to space");
         }
 
     public boolean isAllowedEvent(String eventName) {
         return allowedEvents.contains(eventName);
     }
 
+    @Async
     public void trackEvent(long userId, String eventName, JSONObject properties) {
         if (!isAllowedEvent(eventName)) {
             logger.warn("Event '{}' is not allowed and will not be tracked.", eventName);
