@@ -566,7 +566,8 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
                "4. **Use LaTeX** for any math equations:\n" +
                "   - Inline math should be wrapped in `$...$`\n" +
                "   - Block-level equations should be wrapped in `$$...$$`\n" +
-               "5. **Ensure completeness**, provide insights beyond what's explicitly stated.";
+               "5. **Ensure completeness**, provide insights beyond what's explicitly stated.\n" +
+               "Only respond in Greek.";
     }
     
     private String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, List<Map<String, String>> chunks) {
@@ -596,7 +597,8 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
                "   - Inline math should be wrapped in `$...$`\n" +
                "   - Block-level math should be wrapped in `$$...$$`\n" +
                "5. **Ensure completeness**, but **do not hallucinate beyond the provided excerpts**.\n" +
-               "6. **When unsure, state that the information was not available.**";
+               "6. **When unsure, state that the information was not available.**"+
+               "Only respond in Greek.";
     }
     
     private String createSpaceSystemPrompt(String resourceSummaries,String resourcesSummary) {
@@ -607,7 +609,8 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
            "Guidelines:\n" +
            "- Be concise and factual\n" +
            "- Cite the resource chunks in a 'sources' field\n" +
-           "- Do not make up or hallucinate information\n";
+           "- Do not make up or hallucinate information\n"+
+               "Only respond in Greek.";
     }
     
     private String createFirstMessagePrompt() {

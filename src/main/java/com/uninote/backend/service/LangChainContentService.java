@@ -675,7 +675,8 @@ public class LangChainContentService {
                "  \"chapters\": [{ \"title\": \"\", \"short_description\": \"\", \"start_index\": 0, \"end_index\": 1000 }],\n" +
                "  \"relations\": [{ \"concept1\": \"\", \"concept2\": \"\" }]\n" +
                "}\n" +
-               "Only return valid JSON without any extra text, markdown, or explanations.";
+               "Only return valid JSON without any extra text, markdown, or explanations."+
+               "Only respond in Greek.";
     }
     
     // The individual prompt methods are kept for backward compatibility
