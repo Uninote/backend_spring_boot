@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.azure.ai.openai.models.ChatCompletionsJsonResponseFormat;
+import com.azure.core.http.HttpClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.uninote.backend.dto.ChatHistoryDto;
@@ -36,9 +37,15 @@ import com.uninote.backend.repository.SpaceResourceRepository;
 import com.uninote.backend.service.embedding.EmbeddingService;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ImageContent;
+import java.util.Base64;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.message.AiMessage;
 
@@ -47,6 +54,7 @@ import com.azure.ai.openai.models.ChatCompletionsJsonResponseFormat;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -75,6 +83,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+
+import org.apache.http.HttpResponse;
+import org.springframework.http.HttpEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
+
+import org.springframework.http.HttpMethod;
+
 
 @Service
 public class ChatService {
@@ -256,6 +276,7 @@ public class ChatService {
             messageDtos
         );
     }
+    
     @Transactional
     public SseEmitter addMessageToChat(String chatUuid, String userMessage, List<MultipartFile> uploadedImages) {
         logger.info("Adding message to chat: {}", chatUuid);
@@ -300,46 +321,6 @@ public class ChatService {
                     systemPrompt += createFirstMessagePrompt();
                 }
                 
-                ChatLanguageModel chatModel;
-                
-                if (isFirstMessage) {
-                    chatModel = AzureOpenAiChatModel.builder()
-                            .endpoint(azureConfig.getAzureEndpoint())
-                            .apiKey(azureConfig.getAzureApiKey())
-                            .deploymentName(azureConfig.getChatDeployment())
-                            .temperature(0.7)
-                            .maxTokens(1500)
-                            .responseFormat(new ChatCompletionsJsonResponseFormat())
-                            .build();
-                } else {
-                    chatModel = AzureOpenAiChatModel.builder()
-                            .endpoint(azureConfig.getAzureEndpoint())
-                            .apiKey(azureConfig.getAzureApiKey())
-                            .deploymentName(azureConfig.getChatDeployment())
-                            .temperature(0.7)
-                            .maxTokens(1500)
-                            .build();
-                }
-                
-                List<dev.langchain4j.data.message.ChatMessage> messageHistory = new ArrayList<>();
-                
-                messageHistory.add(dev.langchain4j.data.message.SystemMessage.from(systemPrompt));
-                
-                List<Message> previousMessages = messageRepository.findAllByChatIdOrderByCreatedAtAsc(baseChat.getId());
-                for (Message message : previousMessages) {
-                    message.getMedia().size();
-                    
-                    if (message.getUserMessage() != null) {
-                        messageHistory.add(dev.langchain4j.data.message.UserMessage.from(message.getUserMessage()));
-                    }
-                    
-                    if (message.getServiceResponse() != null) {
-                        messageHistory.add(dev.langchain4j.data.message.AiMessage.from(message.getServiceResponse()));
-                    }
-                }
-                
-                messageHistory.add(dev.langchain4j.data.message.UserMessage.from(userMessage));
-                
                 List<Map<String, String>> uploadedMediaMeta = new ArrayList<>();
                 if (uploadedImages != null && !uploadedImages.isEmpty()) {
                     for (MultipartFile image : uploadedImages) {
@@ -362,7 +343,6 @@ public class ChatService {
                     }
                 }
                 
-        
                 StringBuilder responseBuffer = new StringBuilder();
                 
                 String finalResponse;
@@ -372,56 +352,161 @@ public class ChatService {
                 Map<String, Object> annotations = new HashMap<>();
                 
                 try {
-                    dev.langchain4j.data.message.AiMessage aiMessage = chatModel.generate(messageHistory).content();
-                    finalResponse = aiMessage.text();
+                    org.apache.http.client.HttpClient httpClient = org.apache.http.impl.client.HttpClients.createDefault();
+                                      
+                    String azureEndpoint = azureConfig.getAzureEndpoint();
+                    String deploymentName = azureConfig.getChatDeployment(); 
+                    String apiVersion = "2023-12-01-preview";
                     
-                    String[] chunks = finalResponse.split("(?<=\\G.{50})");
-                    for (String chunk : chunks) {
-                        if (!chunk.isEmpty()) {
-                            responseBuffer.append(chunk);
-                            emitter.send(objectMapper.writeValueAsString(chunk));
-                            Thread.sleep(30); 
+                    String apiUrl = azureEndpoint + "/openai/deployments/" + deploymentName + "/chat/completions?api-version=" + apiVersion;
+                    org.apache.http.client.methods.HttpPost request = new org.apache.http.client.methods.HttpPost(apiUrl);                     
+                    request.setHeader("Content-Type", "application/json");
+                    request.setHeader("api-key", azureConfig.getAzureApiKey());
+                    
+                    // Prepare the request body
+                    Map<String, Object> requestBody = new HashMap<>();
+                    requestBody.put("temperature", 0.7);
+                    requestBody.put("max_tokens", 1500);
+                    
+                    List<Map<String, Object>> messages = new ArrayList<>();
+                    
+                    Map<String, Object> systemMsg = new HashMap<>();
+                    systemMsg.put("role", "system");
+                    systemMsg.put("content", systemPrompt);
+                    messages.add(systemMsg);
+                    
+                    List<Message> previousMessages = messageRepository.findAllByChatIdOrderByCreatedAtAsc(baseChat.getId());
+                    for (Message message : previousMessages) {
+                        message.getMedia().size();
+                        
+                        if (message.getUserMessage() != null) {
+                            Map<String, Object> userMsg = new HashMap<>();
+                            userMsg.put("role", "user");
+                            userMsg.put("content", message.getUserMessage());
+                            messages.add(userMsg);
+                        }
+                        
+                        if (message.getServiceResponse() != null) {
+                            Map<String, Object> aiMsg = new HashMap<>();
+                            aiMsg.put("role", "assistant");
+                            aiMsg.put("content", message.getServiceResponse());
+                            messages.add(aiMsg);
                         }
                     }
                     
-                    if (isFirstMessage) {
-                        try {
-                            String jsonString = finalResponse;
-                            
-                            if (finalResponse.contains("```json")) {
-                                jsonString = finalResponse.substring(
-                                    finalResponse.indexOf("```json") + 7, 
-                                    finalResponse.lastIndexOf("```")
-                                ).trim();
-                            } else if (finalResponse.contains("```")) {
+                    Map<String, Object> currentUserMsg = new HashMap<>();
+                    currentUserMsg.put("role", "user");
+                    
+                    if (uploadedImages != null && !uploadedImages.isEmpty()) {
+                        List<Map<String, Object>> contentList = new ArrayList<>();
+                        
+                        Map<String, Object> textContent = new HashMap<>();
+                        textContent.put("type", "text");
+                        textContent.put("text", userMessage);
+                        contentList.add(textContent);
+                        
+                        for (MultipartFile image : uploadedImages) {
+                            try {
+                                logger.error("hey");
+                                Map<String, Object> imageContent = new HashMap<>();
+                                imageContent.put("type", "image_url");
+                                
+                                Map<String, String> imageUrl = new HashMap<>();
+                                String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+                                imageUrl.put("url", "data:" + image.getContentType() + ";base64," + base64Image);
+                                
+                                imageContent.put("image_url", imageUrl);
+                                contentList.add(imageContent);
+                            } catch (IOException e) {
+                                logger.warn("Failed to process image: {}", e.getMessage());
+                            }
+                        }
 
-                                jsonString = finalResponse.substring(
-                                    finalResponse.indexOf("```") + 3, 
-                                    finalResponse.lastIndexOf("```")
-                                ).trim();
+                        logger.error("hey-beooo");
+
+                        logger.error(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(messages));
+                        currentUserMsg.put("content", contentList);
+                    } else {
+                        // For text-only messages
+                        currentUserMsg.put("content", userMessage);
+                    }
+                    
+                    messages.add(currentUserMsg);
+                    
+                    // Add messages to the request
+                    requestBody.put("messages", messages);
+                    
+                    // Set JSON response format for first message if needed
+                    if (isFirstMessage) {
+                        Map<String, Object> responseFormat = new HashMap<>();
+                        responseFormat.put("type", "json_object");
+                        requestBody.put("response_format", responseFormat);
+                    }
+                    
+                    // Convert request to JSON
+                    String jsonRequest = objectMapper.writeValueAsString(requestBody);
+                    StringEntity entity = new StringEntity(jsonRequest, StandardCharsets.UTF_8);
+                    request.setEntity(entity);
+                    
+                    HttpResponse response = httpClient.execute(request);
+                    
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    org.apache.http.HttpEntity responseEntity = response.getEntity();
+                    String responseBody = EntityUtils.toString(responseEntity);
+                    
+                    if (statusCode == 200) {
+                        JsonNode responseJson = objectMapper.readTree(responseBody);
+                        finalResponse = responseJson.path("choices").get(0).path("message").path("content").asText();
+                        
+                        String[] chunks = finalResponse.split("(?<=\\G.{50})");
+                        for (String chunk : chunks) {
+                            if (!chunk.isEmpty()) {
+                                responseBuffer.append(chunk);
+                                emitter.send(objectMapper.writeValueAsString(chunk));
+                                Thread.sleep(30);
                             }
-                            
-                            jsonString = jsonString.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
-                            
-                            JsonNode responseJson = objectMapper.readTree(jsonString);
-                            logger.info(responseJson.toString());
-                            
-                            aiGeneratedTitle = responseJson.has("title") ? responseJson.get("title").asText() : baseChat.getTitle();
-                            textResponse = responseJson.has("response") ? responseJson.get("response").asText() : "";
-                            
-                            if (responseJson.has("sources") && responseJson.get("sources").isArray()) {
-                                JsonNode sourcesNode = responseJson.get("sources");
-                                for (int i = 0; i < sourcesNode.size(); i++) {
-                                    sources.add(sourcesNode.get(i).asText());
+                        }
+                        
+                        if (isFirstMessage) {
+                            try {
+                                String jsonString = finalResponse;
+                                
+                                if (finalResponse.contains("```json")) {
+                                    jsonString = finalResponse.substring(
+                                        finalResponse.indexOf("```json") + 7, 
+                                        finalResponse.lastIndexOf("```")
+                                    ).trim();
+                                } else if (finalResponse.contains("```")) {
+                                    jsonString = finalResponse.substring(
+                                        finalResponse.indexOf("```") + 3, 
+                                        finalResponse.lastIndexOf("```")
+                                    ).trim();
                                 }
+                                
+                                jsonString = jsonString.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
+                                
+                                JsonNode parsedJson = objectMapper.readTree(jsonString);
+                                logger.info(parsedJson.toString());
+                                
+                                aiGeneratedTitle = parsedJson.has("title") ? parsedJson.get("title").asText() : baseChat.getTitle();
+                                textResponse = parsedJson.has("response") ? parsedJson.get("response").asText() : "";
+                                
+                                if (parsedJson.has("sources") && parsedJson.get("sources").isArray()) {
+                                    JsonNode sourcesNode = parsedJson.get("sources");
+                                    for (int i = 0; i < sourcesNode.size(); i++) {
+                                        sources.add(sourcesNode.get(i).asText());
+                                    }
+                                }
+                            } catch (Exception e) {
+                                logger.error("Failed to parse JSON response: {}", e.getMessage());
+                                logger.error("Problem response text: {}", finalResponse);
+                                textResponse = finalResponse;
                             }
-                        } catch (Exception e) {
-                            logger.error("Failed to parse JSON response: {}", e.getMessage());
-                            logger.error("Problem response text: {}", finalResponse);
+                        } else {
                             textResponse = finalResponse;
                         }
                     } else {
-                        textResponse = finalResponse;
+                        throw new RuntimeException("Azure OpenAI API returned status code: " + statusCode + " with message: " + responseBody);
                     }
                 } catch (Exception e) {
                     logger.error("Error generating chat completion: {}", e.getMessage());

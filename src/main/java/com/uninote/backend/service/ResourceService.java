@@ -133,14 +133,17 @@ public class ResourceService {
                 Resource updatedResource = contentExtractionService.extractContent(file, savedResource);
                 String content = updatedResource.getContent();
                 if (content == null || content.trim().isEmpty()) {
-                    throw new EmptyContentException("Resource has no content.");
+                    //throw new EmptyContentException("Resource has no content.");
                 }
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                    @Override
-                    public void afterCommit() {
-                        langChainContentService.generateAllContentAsync(updatedResource.getId());
-                    }
-                });
+                if (content != null && !content.trim().isEmpty()) {
+                    
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                        @Override
+                        public void afterCommit() {
+                            langChainContentService.generateAllContentAsync(updatedResource.getId());
+                        }
+                    });
+                }
                 logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
                 return savedResource;
                 
