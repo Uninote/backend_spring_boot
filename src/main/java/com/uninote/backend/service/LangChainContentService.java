@@ -320,7 +320,7 @@ public class LangChainContentService {
                "  ]\n" +
                "}\n" +
                "\n" +
-               "- **Do not include any extra text, markdown, or explanations. Only return a valid JSON object.**";
+               "- **Do not include any extra text, markdown, or explanations. Only return a valid JSON object. Make sure to respond in greek.**";
     }
     
     /**
