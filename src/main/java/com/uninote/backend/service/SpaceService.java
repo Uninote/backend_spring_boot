@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityNotFoundException;
+
 @Service
 public class SpaceService {
 
@@ -268,6 +270,14 @@ public class SpaceService {
         return spaceRepository.findAllSummariesByUser(user);
     }
 
+    public Resource getResourceInSpace(String spaceUuid, Long resourceId) {
+        Space space = spaceRepository.findByUuid(spaceUuid)
+                .orElseThrow(() -> new EntityNotFoundException("Space not found with UUID: " + spaceUuid));
 
+        SpaceResource spaceResource = spaceResourceRepository
+                .findBySpace_IdAndResource_Id(space.getId(), resourceId)
+                .orElseThrow(() -> new EntityNotFoundException("Resource not found in the specified space"));
 
+        return spaceResource.getResource();
+    }
 }

@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.dto.ResourceDTO;
 import com.uninote.backend.dto.SpaceDTO;
 import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.entity.Resource;
@@ -158,4 +159,13 @@ public class SpaceController {
         List<SpaceSummaryDTO> spaces = spaceService.getSpacesByUser(userUid);
         return ResponseEntity.ok(spaces);
     }
-}
+
+        @GetMapping("/{spaceUuid}/resources/{resourceId}")
+        public ResponseEntity<Void> getResourceInSpace(
+                @PathVariable String spaceUuid,
+                @PathVariable Long resourceId) {
+
+            Resource resource = spaceService.getResourceInSpace(spaceUuid, resourceId);
+            return ResponseEntity.noContent().build(); 
+        }
+    }
