@@ -691,10 +691,15 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
            resourceSummaries + "\n\n" +
            "Use the following chunks from the resources:\n\n" +
            resourcesSummary + "\n\n" +
-           "Guidelines:\n" +
-           "- Be concise and factual\n" +
-           "- Cite the resource chunks in a 'sources' field\n" +
-           "- Do not make up or hallucinate information\n"+
+           "### **Response Guidelines**\n" +
+               "1. **Make sure your response provides value** based on the provided summary and excerpts.\n" +
+               "2. **Use Markdown** formatting with a clear structure and context.\n" +
+               "3. **Use direct quotes from excerpts when applicable.**\n" +
+               "4. **Use LaTeX** for any math equations:\n" +
+               "   - Inline math should be wrapped in `$...$`\n" +
+               "   - Block-level math should be wrapped in `$$...$$`\n" +
+               "5. **Ensure completeness**, but **do not hallucinate beyond the provided excerpts**.\n" +
+               "6. **When unsure, state that the information was not available.**"+
                "Only respond in Greek.";
     }
     
