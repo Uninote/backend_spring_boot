@@ -160,12 +160,12 @@ public class SpaceController {
         return ResponseEntity.ok(spaces);
     }
 
-        @GetMapping("/{spaceUuid}/resources/{resourceId}")
-        public ResponseEntity<Void> getResourceInSpace(
+        @DeleteMapping("/{spaceUuid}/resources/{resourceId}")
+        public ResponseEntity<Void> removeResourceInSpace(
                 @PathVariable String spaceUuid,
                 @PathVariable Long resourceId) {
 
-            Resource resource = spaceService.getResourceInSpace(spaceUuid, resourceId);
+            spaceService.removeResourceFromSpace(spaceUuid, resourceId);
             return ResponseEntity.noContent().build(); 
         }
     }

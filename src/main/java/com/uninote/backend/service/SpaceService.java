@@ -270,7 +270,7 @@ public class SpaceService {
         return spaceRepository.findAllSummariesByUser(user);
     }
 
-    public Resource getResourceInSpace(String spaceUuid, Long resourceId) {
+    public void removeResourceFromSpace(String spaceUuid, Long resourceId) {
         Space space = spaceRepository.findByUuid(spaceUuid)
                 .orElseThrow(() -> new EntityNotFoundException("Space not found with UUID: " + spaceUuid));
 
@@ -278,6 +278,7 @@ public class SpaceService {
                 .findBySpace_IdAndResource_Id(space.getId(), resourceId)
                 .orElseThrow(() -> new EntityNotFoundException("Resource not found in the specified space"));
 
-        return spaceResource.getResource();
+        spaceResourceRepository.delete(spaceResource);
     }
+
 }
