@@ -4,6 +4,8 @@ import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.entity.User;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,4 +29,6 @@ public interface SpaceRepository extends JpaRepository<Space, Long> {
 
 
    
+    long countByUserAndCreatedAtBetween(User user, Date startOfDay, Date endOfDay);
+
 }

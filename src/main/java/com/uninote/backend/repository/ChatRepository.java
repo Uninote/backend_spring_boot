@@ -1,5 +1,7 @@
 package com.uninote.backend.repository;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +23,6 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     List<Chat> findByUserAndTitleContainingIgnoreCaseOrderByUpdatedAtDesc(User user, String searchTerm);
     
     void deleteByIdAndUser(Long id, User user);
+
+    long countByUserAndCreatedAtBetween(User user, Date startOfDay, Date endOfDay);
 }

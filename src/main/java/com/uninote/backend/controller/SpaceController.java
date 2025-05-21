@@ -6,9 +6,12 @@ import com.uninote.backend.dto.SpaceDTO;
 import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.Space;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.ResourceService;
 import com.uninote.backend.service.SVDRecommendationService;
 import com.uninote.backend.service.SpaceService;
+import com.uninote.backend.service.UsageLimitService;
 
 import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
@@ -45,6 +48,11 @@ public class SpaceController {
     private static final Logger logger = LoggerFactory.getLogger(SpaceController.class);
     private final SpaceService spaceService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private UsageLimitService usageLimitService;
 
     @Autowired
     public SpaceController(SpaceService spaceService) {
@@ -53,16 +61,18 @@ public class SpaceController {
 
     @PostMapping
     public ResponseEntity<SpaceDTO> createSpace(@RequestBody SpaceCreationRequest body) {
-        logger.error("here");
-        try {
-            String title = body.getTitle();
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            logger.error("here");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication != null && authentication.isAuthenticated()) {
-                FirebaseAuthentication firebaseAuthentication = (FirebaseAuthentication) authentication;
-                String userUid = firebaseAuthentication.getUid(); 
+        if (authentication != null && authentication.isAuthenticated()) {
+            FirebaseAuthentication firebaseAuthentication = (FirebaseAuthentication) authentication;
+            String userUid = firebaseAuthentication.getUid(); 
+            User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            usageLimitService.checkDailySpaceLimit(user);
+            try {
+                String title = body.getTitle();
                 
+
                 Space space = spaceService.createSpaceAndChat(title, userUid);
                 logger.error("here");
                 SpaceDTO dto = new SpaceDTO(space.getId(), 
@@ -71,13 +81,14 @@ public class SpaceController {
                                             space.getCreatedAt());
 
                 return new ResponseEntity<>(dto, HttpStatus.CREATED);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
             } else {
                 return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED); 
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        
     }
 
 

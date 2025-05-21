@@ -11,6 +11,8 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Rank;
 import com.uninote.backend.entity.Role;
 import com.uninote.backend.entity.Season;
+import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.UniscoreIncreaseLog;
 import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
@@ -30,6 +32,7 @@ import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.RankRepository;
 import com.uninote.backend.repository.RoleRepository;
+import com.uninote.backend.repository.SubscriptionRepository;
 import com.uninote.backend.repository.UniscoreIncreaseLogRepository;
 import com.uninote.backend.repository.UniscoreIncreaseTypeRepository;
 import com.uninote.backend.repository.UniversityRepository;
@@ -106,6 +109,9 @@ public class UserService {
 
     @Autowired
     private BadgeService badgeService;
+
+    @Autowired
+    private SubscriptionRepository subscriptionRepository;
 
 
     @Autowired
@@ -404,6 +410,21 @@ public void softDeleteUserById(Long userId) {
             UserSeasonPoints userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
             userSeasonPointsRepository.save(userSeasonPoints);
         }
+
+        
+        Subscription freeSub = new Subscription();
+        freeSub.setUser(savedUser);
+        freeSub.setPlan(SubscriptionPlan.FREE);
+        freeSub.setStatus("active");
+        freeSub.setDuration(null);
+        freeSub.setStartDate(LocalDateTime.now());
+        freeSub.setEndDate(null);
+        freeSub.setStripeCustomerId(null);
+        freeSub.setStripeSubscriptionId(null);
+        freeSub.setPlanName("Free");
+
+        subscriptionRepository.save(freeSub);
+    
         
         return savedUser;
     }

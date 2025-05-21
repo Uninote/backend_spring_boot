@@ -16,6 +16,9 @@ import com.uninote.backend.entity.User;
 public interface ResourceChatRepository extends JpaRepository<ResourceChat,Long>{
     Optional<ResourceChat> findByChat_Uuid(String uuid);
 
+    @Query("SELECT rc FROM ResourceChat rc JOIN FETCH rc.chat c JOIN FETCH rc.resource r WHERE c.user = :user")
+    List<ResourceChat> findAllWithChatAndResourceByUser(@Param("user") User user);
+
     List<ResourceChat> findAllByChat_User(User user);
 
     @Query("SELECT new com.uninote.backend.dto.ResourceChatSummaryDTO(" +
