@@ -31,6 +31,9 @@ public class Chat {
     @Column(name = "UPDATED_AT")
     private Timestamp updatedAt;
 
+    @Column(name = "IS_DELETED")
+    private Boolean isDeleted = false;
+
     public Chat() {}
 
     public Long getId() {
@@ -79,5 +82,13 @@ public class Chat {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getDeleted(){
+        return this.isDeleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.isDeleted = deleted;
     }
 }

@@ -25,7 +25,7 @@ public interface ResourceChatRepository extends JpaRepository<ResourceChat,Long>
             "c.chat.createdAt, " +
             "c.chat.title) " +
             "FROM ResourceChat c " +
-            "WHERE c.chat.user = :user AND c.chat.uuid IS NOT NULL " +
+            "WHERE c.chat.user = :user AND c.chat.uuid IS NOT NULL AND c.chat.isDeleted = false " +
             "ORDER BY c.chat.updatedAt DESC")
     List<ResourceChatSummaryDTO> findAllSummaryByUser(@Param("user") User user);
 
