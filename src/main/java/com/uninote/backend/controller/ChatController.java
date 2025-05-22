@@ -160,12 +160,22 @@ public class ChatController {
                 case "summary":
                     return ResponseEntity.ok(langChainContentService.generateSummary(resourceId));
 
-                case "flashcards":
+                case "flashcards": {
+                    String flashcardsJson;
+
                     if ("append".equalsIgnoreCase(mode)) {
-                        return ResponseEntity.ok(langChainContentService.generateAdditionalFlashcards(resource));
+                        Resource updated = langChainContentService.generateAdditionalFlashcards(resource);
+                        flashcardsJson = updated.getFlashcards();
                     } else {
-                        return ResponseEntity.ok(langChainContentService.generateFlashcards(resourceId));
+                        Resource updated = langChainContentService.generateFlashcards(resourceId);
+                        flashcardsJson = updated.getFlashcards();
                     }
+
+                    return ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(flashcardsJson);
+                }
+
 
                 case "chapters":
                     return ResponseEntity.ok(langChainContentService.generateChapters(resourceId));

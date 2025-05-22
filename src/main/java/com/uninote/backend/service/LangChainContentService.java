@@ -787,24 +787,28 @@ public class LangChainContentService {
     
     public Resource generateFlashcards(Long resourceId) {
         logger.info("Generating flashcards for resource: {}", resourceId);
-        
+
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
-        
-        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+
+        if (resource.getContent() == null || resource.getContent().isBlank()) {
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-        
+
         ChatLanguageModel chatModel = getChatModel();
         FlashcardGenerator generator = AiServices.builder(FlashcardGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-        
-        String flashcards = generator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent()));
-        
-        resource.setFlashcards(flashcards);
+
+        String rawResponse = generator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent()));
+
+        String cleanJson = validateAndCleanJson(rawResponse, "flashcards");
+
+        resource.setFlashcards(cleanJson);
+
         return resourceRepository.save(resource);
     }
+
     
     public Resource generateQuiz(Long resourceId) {
         logger.info("Generating quiz for resource: {}", resourceId);
