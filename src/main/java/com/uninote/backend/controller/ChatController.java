@@ -181,7 +181,10 @@ public class ChatController {
                     return ResponseEntity.ok(langChainContentService.generateChapters(resourceId));
 
                 case "quiz":
-                    return ResponseEntity.ok(langChainContentService.generateQuiz(resourceId));
+                    return ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .body(langChainContentService.generateQuiz(resourceId));
+
                 case "all":
                     return ResponseEntity.ok(langChainContentService.generateAllContent(resourceId));
 

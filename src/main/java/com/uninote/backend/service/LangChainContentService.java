@@ -810,26 +810,27 @@ public class LangChainContentService {
     }
 
     
-    public Resource generateQuiz(Long resourceId) {
-        logger.info("Generating quiz for resource: {}", resourceId);
-        
+    public String generateQuiz(Long resourceId) {
+        logger.info("Generating quiz (JSON only) for resource: {}", resourceId);
+
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
-        
-        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+
+        if (resource.getContent() == null || resource.getContent().isBlank()) {
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-        
+
         ChatLanguageModel chatModel = getChatModel();
         QuizGenerator generator = AiServices.builder(QuizGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-        
-        String quiz = generator.generateQuiz(prepareQuizPrompt(resource.getContent()));
-        
-        resource.setQuiz(quiz);
-        return resourceRepository.save(resource);
+
+        String rawResponse = generator.generateQuiz(prepareQuizPrompt(resource.getContent()));
+        String cleanJson = validateAndCleanJson(rawResponse, "quiz");
+
+        return cleanJson;
     }
+
     
     public Resource generateChapters(Long resourceId) {
         logger.info("Generating chapters for resource: {}", resourceId);
