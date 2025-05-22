@@ -697,18 +697,27 @@ public class LangChainContentService {
     
     private String prepareFlashcardsPrompt(String content) {
         String truncatedContent = handleLargeContent(content, 2500);
-        
+
         PromptTemplate template = PromptTemplate.from(
-            "Create a set of flashcards based on the following text. Each flashcard should have " +
-            "a 'front' with a question or concept, and a 'back' with the answer or explanation. " +
-            "Return the flashcards as a JSON array of objects with 'front' and 'back' fields. " +
-            "Format the output as a JSON array without any markdown or code blocks - just pure JSON.\n\n" +
-            "Text for flashcards:\n{{content}}\n\n" +
-            "Example format:\n[{\"front\":\"Question 1\",\"back\":\"Answer 1\"},{\"front\":\"Question 2\",\"back\":\"Answer 2\"}]"
+            "You are an AI assistant. Your job is to generate educational flashcards based on the provided content.\n\n" +
+            "### FLASHCARDS\n" +
+            "- Each flashcard should focus on a key term, concept, or question from the material.\n" +
+            "- Provide a **concise but clear answer**, and include a **helpful short hint**.\n" +
+            "- Ensure flashcards span a broad range of the material and reflect important learning points.\n\n" +
+            "---\n\n" +
+            "The content of the resource is:\n\n{{content}}\n\n" +
+            "### Output Format\n" +
+            "- Return your response in **strict JSON format** like this:\n" +
+            "[\n" +
+            "  { \"question\": \"\", \"answer\": \"\", \"hint\": \"\" },\n" +
+            "  { \"question\": \"\", \"answer\": \"\", \"hint\": \"\" }\n" +
+            "]\n" +
+            "- **Do not include any extra text, markdown, or explanations. Make sure to respond in Greek.**"
         );
-        
+
         return template.apply(Map.of("content", truncatedContent)).text();
     }
+
     
     private String prepareQuizPrompt(String content) {
         String truncatedContent = handleLargeContent(content, 2500);
@@ -885,4 +894,41 @@ public class LangChainContentService {
     private String abbreviate(String text, int maxLength) {
         return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
     }
+
+
+    public Resource generateAdditionalFlashcards(Resource resource) {
+        logger.info("Appending additional flashcards for resource ID: {}", resource.getId());
+
+        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+            throw new IllegalStateException("Resource content is empty. Extract content first.");
+        }
+
+        ChatLanguageModel chatModel = getChatModel();
+
+        FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
+                .chatLanguageModel(chatModel)
+                .build();
+
+        String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent()));
+        String cleanJson = validateAndCleanJson(flashcardsJson, "flashcards");
+        JSONArray newFlashcards = new JSONArray(cleanJson);
+
+        JSONArray existingFlashcards;
+        try {
+            existingFlashcards = new JSONArray(resource.getFlashcards());
+        } catch (Exception e) {
+            logger.warn("Existing flashcards could not be parsed. Starting fresh.");
+            existingFlashcards = new JSONArray();
+        }
+
+        for (int i = 0; i < newFlashcards.length(); i++) {
+            existingFlashcards.put(newFlashcards.getJSONObject(i));
+        }
+
+        resource.setFlashcards(existingFlashcards.toString());
+
+        return resourceRepository.save(resource);
+    }
+
+
 }

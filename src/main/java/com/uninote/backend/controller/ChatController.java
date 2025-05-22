@@ -6,10 +6,13 @@ import com.uninote.backend.dto.ChatHistoryDto;
 import com.uninote.backend.dto.ChatRequest;
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
+import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.ChatRepository;
+import com.uninote.backend.repository.ResourceRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.ChatService;
+import com.uninote.backend.service.LangChainContentService;
 import com.uninote.backend.service.ResourceChatService;
 import com.uninote.backend.service.UsageLimitService;
 
@@ -43,6 +46,12 @@ public class ChatController {
 
     @Autowired
     private UsageLimitService usageLimitService;
+
+    @Autowired
+    private LangChainContentService langChainContentService;
+
+    @Autowired
+    private ResourceRepository resourceRepository;
 
     @Autowired
     public ChatController(ChatService chatService) {
@@ -135,6 +144,43 @@ public class ChatController {
     public ResponseEntity<ChatRequest> updateChat(@PathVariable String chatUuid, @RequestBody ChatRequest chatDto) {
         ChatRequest req = chatService.updateChat(chatUuid, chatDto);
         return ResponseEntity.ok(req);
+    }
+
+    @PostMapping("/{resourceId}/generate")
+    public ResponseEntity<?> generateContent(
+            @PathVariable Long resourceId,
+            @RequestParam String type,
+            @RequestParam(defaultValue = "append") String mode) {
+
+        try {
+            switch (type.toLowerCase()) {
+                case "summary":
+                    return ResponseEntity.ok(langChainContentService.generateSummary(resourceId));
+
+                case "flashcards":
+                    Resource resource = resourceRepository.findById(resourceId)
+                            .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
+                    if ("append".equalsIgnoreCase(mode)) {
+                        return ResponseEntity.ok(langChainContentService.generateAdditionalFlashcards(resource));
+                    } else {
+                        return ResponseEntity.ok(langChainContentService.generateFlashcards(resourceId));
+                    }
+
+                case "chapters":
+                    return ResponseEntity.ok(langChainContentService.generateChapters(resourceId));
+
+                case "quiz":
+                    return ResponseEntity.status(501).body("Quiz generation is not implemented yet.");
+
+                case "all":
+                    return ResponseEntity.ok(langChainContentService.generateAllContent(resourceId));
+
+                default:
+                    return ResponseEntity.badRequest().body("Unknown content type: " + type);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error generating content: " + e.getMessage());
+        }
     }
 
     
