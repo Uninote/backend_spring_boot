@@ -649,7 +649,8 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
                "1. **Make sure your response provides value** — do not just repeat the resource.\n" +
                "2. **Use Markdown** formatting, include clear structure and context.\n" +
                "3. **Extract direct quotes from the resource** to support the response.\n" +
-               "4. **Use LaTeX** for any math equations:\n" +
+               "4. If the user asks you to solve something make sure to solve it to completion. Do not mention only the methodology, unless the user explicitely says this.\n"+
+               "5. **Use LaTeX** for any math equations:\n" +
                "   - Inline math should be wrapped in `$...$`\n" +
                "   - Block-level equations should be wrapped in `$$...$$`\n" +
                "5. **Ensure completeness**, provide insights beyond what's explicitly stated.\n" +
