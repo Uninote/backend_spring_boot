@@ -721,18 +721,33 @@ public class LangChainContentService {
     
     private String prepareQuizPrompt(String content) {
         String truncatedContent = handleLargeContent(content, 2500);
-        
+
         PromptTemplate template = PromptTemplate.from(
-            "Create a multiple-choice quiz based on the following text. Each question should have " +
-            "one correct answer and three incorrect answers. Return the quiz as a JSON array of objects " +
-            "with 'question', 'correctAnswer', and 'incorrectAnswers' (an array) fields. " +
-            "Format the output as a JSON array without any markdown or code blocks - just pure JSON.\n\n" +
-            "Text for quiz:\n{{content}}\n\n" +
-            "Example format:\n[{\"question\":\"Question 1\",\"correctAnswer\":\"Correct answer\",\"incorrectAnswers\":[\"Wrong 1\",\"Wrong 2\",\"Wrong 3\"]}]"
+            "You are an AI assistant. Your job is to generate a high-quality multiple-choice quiz from the provided content.\n\n" +
+            "### QUIZ INSTRUCTIONS\n" +
+            "- Each question should test key concepts from the material.\n" +
+            "- Vary the difficulty level across questions (easy, medium, hard).\n" +
+            "- Provide **exactly four** answer choices per question.\n" +
+            "- Ensure **only one** of the four answers is correct.\n" +
+            "- The incorrect answers (distractors) should be **plausible but incorrect**.\n" +
+            "- Use **clear, direct language** in both questions and answers.\n\n" +
+            "---\n\n" +
+            "The content of the resource is:\n\n{{content}}\n\n" +
+            "### Output Format\n" +
+            "- Return your response in **strict JSON format** like this:\n" +
+            "[\n" +
+            "  {\n" +
+            "    \"question\": \"\",\n" +
+            "    \"options\": [\"\", \"\", \"\", \"\"],\n" +
+            "    \"answer\": \"\"\n" +
+            "  }\n" +
+            "]\n" +
+            "- **Do not include any extra text, markdown, or explanations. Make sure to respond in Greek.**"
         );
-        
+
         return template.apply(Map.of("content", truncatedContent)).text();
     }
+
     
     private String prepareChaptersPrompt(String content) {
         String truncatedContent = handleLargeContent(content, 100000);

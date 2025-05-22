@@ -150,16 +150,17 @@ public class ChatController {
     public ResponseEntity<?> generateContent(
             @PathVariable Long resourceId,
             @RequestParam String type,
-            @RequestParam(defaultValue = "append") String mode) {
+            @RequestParam(defaultValue = "replace") String mode) {
 
         try {
+            Resource resource = resourceRepository.findById(resourceId)
+                    .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
+
             switch (type.toLowerCase()) {
                 case "summary":
                     return ResponseEntity.ok(langChainContentService.generateSummary(resourceId));
 
                 case "flashcards":
-                    Resource resource = resourceRepository.findById(resourceId)
-                            .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
                     if ("append".equalsIgnoreCase(mode)) {
                         return ResponseEntity.ok(langChainContentService.generateAdditionalFlashcards(resource));
                     } else {
@@ -170,18 +171,19 @@ public class ChatController {
                     return ResponseEntity.ok(langChainContentService.generateChapters(resourceId));
 
                 case "quiz":
-                    return ResponseEntity.status(501).body("Quiz generation is not implemented yet.");
-
+                    return ResponseEntity.ok(langChainContentService.generateQuiz(resourceId));
                 case "all":
                     return ResponseEntity.ok(langChainContentService.generateAllContent(resourceId));
 
                 default:
                     return ResponseEntity.badRequest().body("Unknown content type: " + type);
             }
+
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error generating content: " + e.getMessage());
         }
     }
+
 
     
 }
