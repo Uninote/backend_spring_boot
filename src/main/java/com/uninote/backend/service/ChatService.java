@@ -73,6 +73,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.config.AzureOpenAiConfig;
+import com.uninote.backend.dto.ChatRequest;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.MessageMediaRepository;
@@ -923,5 +924,18 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
     private String abbreviate(String text, int maxLength) {
         if (text == null) return "";
         return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
+    }
+
+    @Transactional
+    public ChatRequest updateChat(String chatUuid, ChatRequest chatDto) {
+        Chat chat = chatRepository.findByUuid(chatUuid)
+                .orElseThrow(() -> new RuntimeException("Chat with UUID " + chatUuid + " not found"));
+        if (chatDto.getTitle() != null && !chatDto.getTitle().isBlank()) {
+            chat.setTitle(chatDto.getTitle());
+        }
+
+        Chat newChat = chatRepository.save(chat);
+        return new ChatRequest(newChat.getTitle());
+        
     }
 }

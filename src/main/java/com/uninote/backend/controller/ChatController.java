@@ -3,6 +3,7 @@ package com.uninote.backend.controller;
 import com.azure.ai.openai.models.ChatResponseMessage;
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.dto.ChatHistoryDto;
+import com.uninote.backend.dto.ChatRequest;
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.User;
@@ -129,5 +130,13 @@ public class ChatController {
         chatService.deleteChat(chatUuid);
         return ResponseEntity.ok("Chat deleted successfully");
     }
+
+    @PutMapping("/{chatUuid}")
+    public ResponseEntity<ChatRequest> updateChat(@PathVariable String chatUuid, @RequestBody ChatRequest chatDto) {
+        ChatRequest req = chatService.updateChat(chatUuid, chatDto);
+        return ResponseEntity.ok(req);
+    }
+
+    
 }
 
