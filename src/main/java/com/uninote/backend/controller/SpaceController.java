@@ -3,6 +3,7 @@ package com.uninote.backend.controller;
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.dto.ResourceDTO;
 import com.uninote.backend.dto.SpaceDTO;
+import com.uninote.backend.dto.SpaceRequest;
 import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.Space;
@@ -171,12 +172,18 @@ public class SpaceController {
         return ResponseEntity.ok(spaces);
     }
 
-        @DeleteMapping("/{spaceUuid}/resources/{resourceId}")
-        public ResponseEntity<Void> removeResourceInSpace(
-                @PathVariable String spaceUuid,
-                @PathVariable Long resourceId) {
+    @DeleteMapping("/{spaceUuid}/resources/{resourceId}")
+    public ResponseEntity<Void> removeResourceInSpace(
+            @PathVariable String spaceUuid,
+            @PathVariable Long resourceId) {
 
-            spaceService.removeResourceFromSpace(spaceUuid, resourceId);
-            return ResponseEntity.noContent().build(); 
-        }
+        spaceService.removeResourceFromSpace(spaceUuid, resourceId);
+        return ResponseEntity.noContent().build(); 
     }
+
+    @PutMapping("/{spaceUuid}")
+    public ResponseEntity<SpaceRequest> updateSpace(@PathVariable String spaceUuid, @RequestBody SpaceRequest spaceRequest){
+        SpaceRequest req =  spaceService.updateSpace(spaceUuid, spaceRequest);
+        return ResponseEntity.ok(req);
+    }
+}

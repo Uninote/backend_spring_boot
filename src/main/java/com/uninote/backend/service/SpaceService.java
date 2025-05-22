@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.dto.FileResourceDTO;
 import com.uninote.backend.dto.MessageDTO;
 import com.uninote.backend.dto.ResourceDTO;
+import com.uninote.backend.dto.SpaceRequest;
 import com.uninote.backend.dto.SpaceSummaryDTO;
 import com.uninote.backend.dto.TranscriptSnippetDto;
 import com.uninote.backend.dto.YouTubeResourceDTO;
@@ -281,4 +282,16 @@ public class SpaceService {
         spaceResourceRepository.delete(spaceResource);
     }
 
+    @Transactional
+    public SpaceRequest updateSpace(String spaceUuid, SpaceRequest spaceRequest) {
+        Space space = spaceRepository.findByUuid(spaceUuid)
+            .orElseThrow(() -> new EntityNotFoundException("Space not found with UUID: " + spaceUuid)); 
+        
+        if (spaceRequest.getTitle() != null && !spaceRequest.getTitle().isBlank()) {
+            space.setTitle(spaceRequest.getTitle());
+        }
+
+        Space newSpace =  spaceRepository.save(space);
+        return new SpaceRequest(newSpace.getTitle());
+    }
 }
