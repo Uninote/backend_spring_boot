@@ -153,7 +153,7 @@ public class NoteController {
                 User user = userRepository.findByFirebaseUid(userUid)
                         .orElseThrow(() -> new IllegalArgumentException("Invalid user UID: " + userUid));
 
-                Long uploadedNotes = noteService.countNotesByUserId(id);
+                Long uploadedNotes = noteService.countNotesByUserId(user.getId());
                 int viewCountToday = noteViewService.getTodayViewCount(user.getId());
                 logger.error(uploadedNotes.toString());
                 logger.error(String.valueOf(viewCountToday));
