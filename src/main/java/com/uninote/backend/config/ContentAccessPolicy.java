@@ -1,10 +1,11 @@
 package com.uninote.backend.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.uninote.backend.entity.User;
-import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.service.NoteService;
 import com.uninote.backend.service.NoteViewService;
 
@@ -12,30 +13,41 @@ import com.uninote.backend.service.NoteViewService;
 public class ContentAccessPolicy {
     public static final int MAX_FREE_NOTE_VIEWS = AppConstants.MAX_FREE_NOTE_VIEWS;
 
+    private static final Logger logger = LoggerFactory.getLogger(ContentAccessPolicy.class);
+
     @Autowired
     private NoteService noteService;
 
-    @Autowired NoteViewService noteViewService;
+    @Autowired
+    private NoteViewService noteViewService;
 
     private ContentAccessPolicy() {
     }
 
     public boolean isAccessAllowedForAnonymous(int viewedCount) {
-        return viewedCount < MAX_FREE_NOTE_VIEWS;
+        boolean allowed = viewedCount < MAX_FREE_NOTE_VIEWS;
+        logger.error("Anonymous access check: viewedCount={}, allowed={}", viewedCount, allowed);
+        return allowed;
     }
 
     public boolean isAccessAllowedForUser(int viewedCount, Long uploadedNotes) {
-        return uploadedNotes > 0  || viewedCount < MAX_FREE_NOTE_VIEWS;
+        boolean allowed = uploadedNotes > 0 || viewedCount < MAX_FREE_NOTE_VIEWS;
+        logger.error("User access check: uploadedNotes={}, viewedCount={}, allowed={}", uploadedNotes, viewedCount, allowed);
+        return allowed;
     }
 
     public boolean isAccessAllowedForUser(User user) {
-        if (user.getId() == 112L){
-            Long uploadedNotes  = noteService.countNotesByUserId(user.getId());
-            int viewedCount  = noteViewService.getTodayViewCount(user.getId());
-            return uploadedNotes > 0  || viewedCount < MAX_FREE_NOTE_VIEWS;
+        if (user.getId() == 112L) {
+            Long uploadedNotes = noteService.countNotesByUserId(user.getId());
+            logger.error(user.getId().toString());
+            int viewedCount = noteViewService.getTodayViewCount(user.getId());
+            boolean allowed = uploadedNotes > 0 || viewedCount < MAX_FREE_NOTE_VIEWS;
+            logger.error("Special user access check (userId=112): uploadedNotes={}, viewedCount={}, allowed={}",
+                    uploadedNotes, viewedCount, allowed);
+            return allowed;
         }
+
+        logger.error("Access granted for userId={}", user.getId());
         return true;
-
     }
-
 }

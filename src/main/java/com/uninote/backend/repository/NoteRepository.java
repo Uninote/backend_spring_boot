@@ -992,7 +992,7 @@ List<NoteDTO> findTopInteractedNotesByUser(
 
    boolean existsByCourse_DepartmentAndIsPublicTrueAndDeletedFalse(Department deptB);
 
-   @Query("SELECT COUNT(*) FROM Note n WHERE n.isPublic= True AND n.deleted=false AND n.user.id = id")
+   @Query("SELECT COUNT(*) FROM Note n WHERE n.isPublic= True AND n.deleted=false AND n.user.id = :id")
    Long countNotesByUserId(Long id);
 
    @Query("SELECT n.id FROM Note n WHERE (n.content IS NULL OR TRIM(n.content) = '') AND n.pdfUrl IS NOT NULL AND n.filename IS NOT NULL")
