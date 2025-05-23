@@ -37,7 +37,7 @@ public class ContentAccessPolicy {
     }
 
     public boolean isAccessAllowedForUser(User user) {
-        if (user.getId() == 112L) {
+        if (user.getId() == 112L || user.getId() == 1881L) {
             Long uploadedNotes = noteService.countNotesByUserId(user.getId());
             logger.error(user.getId().toString());
             int viewedCount = noteViewService.getTodayViewCount(user.getId());
