@@ -159,7 +159,7 @@ public class NoteController {
                 logger.error(String.valueOf(viewCountToday));
 
 
-                if (!contentAccessPolicy.isAccessAllowedForUser(viewCountToday, uploadedNotes)) {
+                if (!contentAccessPolicy.isAccessAllowedForUser(user)) {
                     Map<String, String> error = new HashMap<>();
                     error.put("message", "Access denied: daily view limit reached");
 
