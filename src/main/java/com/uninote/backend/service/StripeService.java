@@ -1,39 +1,55 @@
 package com.uninote.backend.service;
 
-
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Price;
 import com.stripe.model.checkout.Session;
 import com.stripe.model.Subscription;
 import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.checkout.SessionCreateParams;
 import com.uninote.backend.entity.SubscriptionDuration;
+import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import java.util.EnumMap;
 import java.util.Map;
+import java.util.HashMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 
 @Service
 public class StripeService {
 
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
+    private final Environment env;
 
-    @Value("${stripe.price.one_day}")
-    private String oneDayPriceId;
+    private final Map<SubscriptionPlan, Map<SubscriptionDuration, String>> priceIdMap = new EnumMap<>(SubscriptionPlan.class);
 
-    @Value("${stripe.price.one_month}")
-    private String oneMonthPriceId;
-
-    @Value("${stripe.price.one_year}")
-    private String oneYearPriceId;
-
-    public StripeService(UserRepository userRepository, SubscriptionService subscriptionService) {
+    public StripeService(UserRepository userRepository,
+                         SubscriptionService subscriptionService,
+                         Environment env) {
         this.userRepository = userRepository;
         this.subscriptionService = subscriptionService;
+        this.env = env;
+    }
+
+    @PostConstruct
+    private void initPriceMap() {
+        for (SubscriptionPlan plan : SubscriptionPlan.values()) {
+            Map<SubscriptionDuration, String> durationMap = new EnumMap<>(SubscriptionDuration.class);
+            for (SubscriptionDuration duration : SubscriptionDuration.values()) {
+                String key = "stripe.price." + plan.name() + "_" + duration.name();
+                String value = env.getProperty(key);
+                if (value != null) {
+                    durationMap.put(duration, value);
+                }
+            }
+            priceIdMap.put(plan, durationMap);
+        }
     }
 
     public Customer createOrRetrieveCustomer(User user) throws StripeException {
@@ -52,18 +68,17 @@ public class StripeService {
         return customer;
     }
 
-    public String getPriceIdForDuration(SubscriptionDuration duration) {
-    if (duration == SubscriptionDuration.ONE_DAY) {
-        return oneDayPriceId;
-    } else if (duration == SubscriptionDuration.ONE_MONTH) {
-        return oneMonthPriceId;
-    } else if (duration == SubscriptionDuration.ONE_YEAR) {
-        return oneYearPriceId;
-    } else {
-        throw new IllegalArgumentException("Unknown subscription duration: " + duration);
-    }
-}
+    public String getPriceId(SubscriptionPlan plan, SubscriptionDuration duration) {
+        String priceId = priceIdMap
+            .getOrDefault(plan, Map.of())
+            .get(duration);
 
+        if (priceId == null) {
+            throw new IllegalArgumentException("Missing price ID for plan=" + plan + ", duration=" + duration);
+        }
+
+        return priceId;
+    }
 
     public void handleCheckoutSessionCompleted(Session session) throws StripeException {
         String customerId = session.getCustomer();
@@ -79,31 +94,35 @@ public class StripeService {
         Price price = stripeSub.getItems().getData().get(0).getPrice();
         String priceId = price.getId();
 
-        SubscriptionDuration duration = mapPriceIdToDuration(priceId);
+        SubscriptionPlan plan = null;
+        SubscriptionDuration duration = null;
 
-        /*subscriptionService.createSubscription(
+        outer:
+        for (Map.Entry<SubscriptionPlan, Map<SubscriptionDuration, String>> entry : priceIdMap.entrySet()) {
+            for (Map.Entry<SubscriptionDuration, String> inner : entry.getValue().entrySet()) {
+                if (inner.getValue().equals(priceId)) {
+                    plan = entry.getKey();
+                    duration = inner.getKey();
+                    break outer;
+                }
+            }
+        }
+
+        if (plan == null || duration == null) {
+            throw new IllegalArgumentException("Price ID not mapped in config: " + priceId);
+        }
+
+        subscriptionService.createSubscription(
                 email,
+                plan,
                 duration,
                 subscriptionId,
                 customerId
-        );*/
+        );
     }
 
     public void handleSubscriptionCancelled(Subscription stripeSubscription) throws StripeException {
         String stripeSubId = stripeSubscription.getId();
-        // Optional: remove from DB or mark as cancelled
-        // Example: subscriptionRepository.updateStatusByStripeSubscriptionId(stripeSubId, "cancelled");
-    }
-
-    private SubscriptionDuration mapPriceIdToDuration(String priceId) {
-        if (priceId.equals(oneDayPriceId)) {
-            return SubscriptionDuration.ONE_DAY;
-        } else if (priceId.equals(oneMonthPriceId)) {
-            return SubscriptionDuration.ONE_MONTH;
-        } else if (priceId.equals(oneYearPriceId)) {
-            return SubscriptionDuration.ONE_YEAR;
-        } else {
-            throw new IllegalArgumentException("Unknown price ID: " + priceId);
-        }
+        // Optional: subscriptionRepository.markCancelled(stripeSubId);
     }
 }

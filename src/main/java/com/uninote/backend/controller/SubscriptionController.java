@@ -4,6 +4,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.uninote.backend.entity.Subscription;
 import com.uninote.backend.entity.SubscriptionDuration;
+import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.StripeService;
@@ -39,14 +40,15 @@ public class SubscriptionController {
     @PostMapping("/create-checkout-session")
     public ResponseEntity<?> createCheckoutSession(
             @AuthenticationPrincipal(expression = "email") String email,
-            @RequestParam SubscriptionDuration duration) {
+            @RequestParam SubscriptionDuration duration,
+            @RequestParam SubscriptionPlan plan) {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         try {
             Customer stripeCustomer = stripeService.createOrRetrieveCustomer(user);
-            String priceId = stripeService.getPriceIdForDuration(duration);
+            String priceId = stripeService.getPriceId(plan, duration);
 
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
