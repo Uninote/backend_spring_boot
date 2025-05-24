@@ -103,7 +103,19 @@ public class ResourceChatService {
         List<Object> all = new ArrayList<>();
         all.addAll(resourceChats);
         all.addAll(simpleChats);
-        return all;
+    all.sort((a, b) -> {
+            Timestamp aTime = (a instanceof ResourceChatSummaryDTO)
+                    ? ((ResourceChatSummaryDTO) a).getCreatedAt()
+                    : ((SimpleChatSummaryDTO) a).getCreatedAt();
+
+            Timestamp bTime = (b instanceof ResourceChatSummaryDTO)
+                    ? ((ResourceChatSummaryDTO) b).getCreatedAt()
+                    : ((SimpleChatSummaryDTO) b).getCreatedAt();
+
+            return bTime.compareTo(aTime);
+        });
+
+        return all;    
     }
 
 
