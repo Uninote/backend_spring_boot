@@ -10,6 +10,7 @@ public class ResourceChatSummaryDTO {
     private String resourceType;
     private Timestamp createdAt;
     private String title;
+    private final String type = "resource";
 
 
     public ResourceChatSummaryDTO(Long chatId, String uuid, String resourceTitle, Date createdAt, String title) {
@@ -49,4 +50,8 @@ public class ResourceChatSummaryDTO {
     public String getTitle() {
         return title;
     }
-}
+
+    public String getType() {
+        return type;
+    }
+    }

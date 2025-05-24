@@ -9,6 +9,8 @@ public class SimpleChatSummaryDTO {
     private String uuid;
     private Timestamp createdAt;
     private String title;
+    private final String type = "simple";
+
 
     public SimpleChatSummaryDTO(Long chatId, String uuid, Date createdAt, String title) {
         this.chatId = chatId;
@@ -31,5 +33,9 @@ public class SimpleChatSummaryDTO {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getType() {
+        return type;
     }
 }
