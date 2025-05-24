@@ -1,6 +1,7 @@
 package com.uninote.backend.service;
 
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
+import com.uninote.backend.dto.SimpleChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
 import com.uninote.backend.entity.Note;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -90,11 +92,16 @@ public class ResourceChatService {
         return resourceChatRepository.save(resourceChat);
     }
 
-    public List<ResourceChatSummaryDTO> getAllByUser(User user) {
-        List<ResourceChatSummaryDTO> chats = resourceChatRepository.findAllSummaryByUser(user);
-        
-        return chats;
+    public List<Object> getAllByUser(User user) {
+        List<ResourceChatSummaryDTO> resourceChats = resourceChatRepository.findAllSummaryByUser(user);
+        List<SimpleChatSummaryDTO> simpleChats = chatRepository.findSimpleChatSummariesByUser(user);
+
+        List<Object> all = new ArrayList<>();
+        all.addAll(resourceChats);
+        all.addAll(simpleChats);
+        return all;
     }
+
 
     public ResourceChat createWithNote(Long noteId, String userUid) {
         Chat chat = new Chat(); 
@@ -134,6 +141,18 @@ public class ResourceChatService {
         resourceChat.setResource(noteResource);
 
         return resourceChatRepository.save(resourceChat);
+    }
+
+    public Chat createSimpleChat(String userUid) {
+        Chat chat = new Chat(); 
+        chat.setUuid(UUID.randomUUID().toString());
+
+        User user = userRepository.findByFirebaseUid(userUid)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
+        chat.setUser(user);
+
+        return chat = chatRepository.save(chat);
+        
     }
 
 }

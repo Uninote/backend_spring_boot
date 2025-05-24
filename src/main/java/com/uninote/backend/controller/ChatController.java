@@ -93,7 +93,7 @@ public class ChatController {
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<ResourceChatSummaryDTO> chats = resourceChatService.getAllByUser(user);
+        List<Object> chats = resourceChatService.getAllByUser(user);
 
         return ResponseEntity.ok(chats);
     }

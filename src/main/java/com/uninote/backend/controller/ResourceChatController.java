@@ -2,6 +2,8 @@ package com.uninote.backend.controller;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.dto.ResourceChatResponseDTO;
+import com.uninote.backend.dto.SimpleChatResponseDTO;
+import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
@@ -79,11 +81,22 @@ public class ResourceChatController {
                     }
                     created = resourceChatService.createWithNote(noteId, userUid);
                     break;
+                case "chat":
+                    Chat chat = resourceChatService.createSimpleChat(userUid);
+                    SimpleChatResponseDTO dto = new SimpleChatResponseDTO(
+                        chat.getId(),
+                        chat.getTitle(),
+                        chat.getUuid(),
+                        chat.getCreatedAt(),
+                        chat.getUpdatedAt()
+                    );
+                    return ResponseEntity.ok(dto);
+
 
                     
 
                 default:
-                    return ResponseEntity.badRequest().body("Invalid type. Must be 'file' or 'youtube' or 'note'.");
+                    return ResponseEntity.badRequest().body("Invalid type. Must be 'file' or 'youtube' or 'note' or 'chat'.");
             }
 
             Resource resource = created.getResource(); 

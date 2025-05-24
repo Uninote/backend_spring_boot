@@ -174,93 +174,102 @@ public class ChatService {
         long startTime = System.currentTimeMillis();
 
         ResourceChat resourceChat = resourceChatRepository.findByChat_Uuid(chatUuid)
-            .orElseThrow(() -> {
-                log.error("ResourceChat not found for UUID: {}", chatUuid);
-                return new RuntimeException("ResourceChat not found");
-            });
+            .orElse(null);
         log.info("Found resource of type: {}");
         long queryTime = System.currentTimeMillis();
         log.info("Database query took {} ms", queryTime - startTime);
-        Resource resource = resourceChat.getResource();
-        log.info("Found resource of type: {}", resource.getClass().getSimpleName());
 
-        ResourceDTO resourceDTO;
+        ResourceDTO resourceDTO = null;
+        String title;
 
-        if (resource instanceof FileResource) {
-            FileResource fr = (FileResource) resource;
-            log.info("Mapping FileResource with id: {}", fr.getId());
+        Chat chat;
+        if (resourceChat != null) {
+            log.info("Found ResourceChat — mapping resource.");
+            chat = resourceChat.getChat();
+            Resource resource = resourceChat.getResource();
+            title = resource.getTitle();
 
-            FileResourceDTO dto = new FileResourceDTO();
-            dto.setId(fr.getId());
-            dto.setTitle(fr.getTitle());
-            dto.setCreatedAt(fr.getCreatedAt());
-            dto.setSummary(fr.getSummary());
-            dto.setContent(fr.getContent());
-            dto.setSupabaseFileUrl(fr.getFileUrl());
-            dto.setFlashcards(fr.getFlashcards());
-            dto.setChapters(fr.getChapters());
-            dto.setQuizzes(fr.getQuiz());
+            if (resource instanceof FileResource) {
+                FileResource fr = (FileResource) resource;
+                log.info("Mapping FileResource with id: {}", fr.getId());
 
-            resourceDTO = dto;
+                FileResourceDTO dto = new FileResourceDTO();
+                dto.setId(fr.getId());
+                dto.setTitle(fr.getTitle());
+                dto.setCreatedAt(fr.getCreatedAt());
+                dto.setSummary(fr.getSummary());
+                dto.setContent(fr.getContent());
+                dto.setSupabaseFileUrl(fr.getFileUrl());
+                dto.setFlashcards(fr.getFlashcards());
+                dto.setChapters(fr.getChapters());
+                dto.setQuizzes(fr.getQuiz());
 
-        } else if (resource instanceof NoteResource) {
-            NoteResource nr = (NoteResource) resource;
-            log.info("Mapping YouTubeResource with id: {}", nr.getId());
+                resourceDTO = dto;
 
-            NoteResourceDTO dto = new NoteResourceDTO();
-            dto.setId(nr.getId());
-            dto.setTitle(nr.getTitle());
-            dto.setCreatedAt(nr.getCreatedAt());
-            dto.setSummary(nr.getSummary());
-            dto.setChapters(nr.getChapters());
-            dto.setFlashcards(nr.getFlashcards());
-            dto.setQuizzes(nr.getQuiz());
-            dto.setContent(nr.getContent());
-            dto.setFileUrl(nr.getNote().getPdfUrl());
+            } else if (resource instanceof NoteResource) {
+                NoteResource nr = (NoteResource) resource;
+                log.info("Mapping YouTubeResource with id: {}", nr.getId());
 
-            resourceDTO = dto;
-        } else if (resource instanceof YouTubeResource) {
-            YouTubeResource nr = (YouTubeResource) resource;
-            log.info("Mapping YouTubeResource with id: {}", nr.getId());
+                NoteResourceDTO dto = new NoteResourceDTO();
+                dto.setId(nr.getId());
+                dto.setTitle(nr.getTitle());
+                dto.setCreatedAt(nr.getCreatedAt());
+                dto.setSummary(nr.getSummary());
+                dto.setChapters(nr.getChapters());
+                dto.setFlashcards(nr.getFlashcards());
+                dto.setQuizzes(nr.getQuiz());
+                dto.setContent(nr.getContent());
+                dto.setFileUrl(nr.getNote().getPdfUrl());
 
-            YouTubeResourceDTO dto = new YouTubeResourceDTO();
-            dto.setId(nr.getId());
-            dto.setTitle(nr.getTitle());
-            dto.setCreatedAt(nr.getCreatedAt());
-            dto.setSummary(nr.getSummary());
-            dto.setContent(nr.getContent());
-            dto.setChapters(nr.getChapters());
-            dto.setFlashcards(nr.getFlashcards());
-            dto.setQuizzes(nr.getQuiz());
-            dto.setContent(nr.getContent());
-            dto.setYoutubeUrl(nr.getYoutubeUrl());
-            try {
-                String snippetsJson = nr.getSnippets();
-                if (snippetsJson != null && !snippetsJson.trim().isEmpty()) {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    List<TranscriptSnippetDto> snippetList = objectMapper.readValue(
-                        snippetsJson,
-                        new TypeReference<List<TranscriptSnippetDto>>() {}
-                    );
-                    dto.setTranscriptSnippets(snippetList);
-                } else {
+                resourceDTO = dto;
+            } else if (resource instanceof YouTubeResource) {
+                YouTubeResource nr = (YouTubeResource) resource;
+                log.info("Mapping YouTubeResource with id: {}", nr.getId());
+
+                YouTubeResourceDTO dto = new YouTubeResourceDTO();
+                dto.setId(nr.getId());
+                dto.setTitle(nr.getTitle());
+                dto.setCreatedAt(nr.getCreatedAt());
+                dto.setSummary(nr.getSummary());
+                dto.setContent(nr.getContent());
+                dto.setChapters(nr.getChapters());
+                dto.setFlashcards(nr.getFlashcards());
+                dto.setQuizzes(nr.getQuiz());
+                dto.setContent(nr.getContent());
+                dto.setYoutubeUrl(nr.getYoutubeUrl());
+                try {
+                    String snippetsJson = nr.getSnippets();
+                    if (snippetsJson != null && !snippetsJson.trim().isEmpty()) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        List<TranscriptSnippetDto> snippetList = objectMapper.readValue(
+                            snippetsJson,
+                            new TypeReference<List<TranscriptSnippetDto>>() {}
+                        );
+                        dto.setTranscriptSnippets(snippetList);
+                    } else {
+                        dto.setTranscriptSnippets(Collections.emptyList());
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to parse snippets JSON from DB: {}", e.getMessage());
                     dto.setTranscriptSnippets(Collections.emptyList());
                 }
-            } catch (Exception e) {
-                logger.error("Failed to parse snippets JSON from DB: {}", e.getMessage());
-                dto.setTranscriptSnippets(Collections.emptyList());
+
+
+                resourceDTO = dto;
+                
+
+            } else {
+                log.error("Unsupported resource type: {}", resource.getClass().getSimpleName());
+                throw new IllegalStateException("Unsupported resource type: " + resource.getClass().getSimpleName());
             }
-
-
-            resourceDTO = dto;
-            
-
         } else {
-            log.error("Unsupported resource type: {}", resource.getClass().getSimpleName());
-            throw new IllegalStateException("Unsupported resource type: " + resource.getClass().getSimpleName());
+            log.warn("No ResourceChat found — treating as SimpleChat.");
+            chat = chatRepository.findByUuid(chatUuid)
+                    .orElseThrow(() -> new RuntimeException("Chat not found for UUID: " + chatUuid));
+            title = chat.getTitle() != null ? chat.getTitle() : "Untitled Chat";
         }
 
-        Long chatId = resourceChat.getChat().getId();
+        Long chatId = chat.getId();
         log.info("Fetching messages for chatId: {}", chatId);
 
         List<MessageDTO> messageDtos = messageRepository.findAllByChatIdOrderByCreatedAtAsc(chatId)
@@ -272,8 +281,8 @@ public class ChatService {
 
         return new ChatHistoryDto(
             chatId,
-            resource.getTitle(),
-            resourceDTO,
+            title,
+            resourceDTO, 
             messageDtos
         );
     }
@@ -296,13 +305,6 @@ public class ChatService {
                 
                 ResourceChat resourceChat = resourceChatRepository.findById(baseChat.getId()).orElse(null);
                 SpaceChat spaceChat = null;
-                if (resourceChat == null) {
-                    spaceChat = spaceChatRepository.findById(baseChat.getId()).orElse(null);
-                }
-                
-                if (resourceChat == null && spaceChat == null) {
-                    throw new RuntimeException("No associated ResourceChat or SpaceChat found for chat UUID: " + chatUuid);
-                }
                 
                 String systemPrompt;
                 Object specificChat;
@@ -310,10 +312,14 @@ public class ChatService {
                     specificChat = resourceChat;
                     logger.info("Handling as ResourceChat");
                     systemPrompt = buildResourceChatSystemPrompt(resourceChat, userMessage);
-                } else {
+                } else if ((spaceChat = spaceChatRepository.findById(baseChat.getId()).orElse(null)) != null) {
                     specificChat = spaceChat;
                     logger.info("Handling as SpaceChat");
                     systemPrompt = buildSpaceChatSystemPrompt(spaceChat, userMessage);
+                } else {
+                    specificChat = baseChat;
+                    logger.info("Handling as SimpleChat");
+                    systemPrompt = buildSimpleChatSystemPrompt();
                 }
                 
                 boolean isFirstMessage = messageRepository.countByChat(baseChat) == 0;
@@ -592,6 +598,24 @@ public class ChatService {
         
         return emitter;
     }
+
+    private String buildSimpleChatSystemPrompt() {
+
+        return "You are **Tutie**, the best AI tutor. Your goal is to provide accurate, insightful, and well-structured responses in **Markdown format**.\n\n" +
+            "### **Chat Context**\n" +
+            "- The user has not provided a specific resource, so base your answers on your own knowledge and reasoning.\n\n" +
+            "### **Response Guidelines**\n" +
+            "1. **Be clear, helpful, and educational**.\n" +
+            "2. **Use Markdown** formatting — include headers, lists, bold/italic where needed.\n" +
+            "3. **Use LaTeX** for any math equations:\n" +
+            "   - Inline math: `$...$`\n" +
+            "   - Block-level math: `$$...$$`\n" +
+            "4. **Answer thoroughly** — provide full solutions and explanations.\n" +
+            "5. **Ask clarifying questions** if the user's request is vague or incomplete.\n" +
+            "6. Be engaging, but stay focused on tutoring and educational value.\n\n" +
+            "Only respond in Greek.\n\n";
+    }
+
 
 private String buildResourceChatSystemPrompt(ResourceChat resourceChat, String userMessage) {
     Resource resource = resourceChat.getResource();
