@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -57,7 +58,8 @@ public class ResourceChatService {
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
-
+        chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
 
         FileResource fileResource = resourceService.createFileResource(file);
@@ -84,6 +86,8 @@ public class ResourceChatService {
         YouTubeResource ytResource = resourceService.createYouTubeResource(youtubeUrl);
 
         ResourceChat resourceChat = new ResourceChat();
+        chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         resourceChat.setChat(chat);
         resourceChat.setResource(ytResource);
         JSONObject props = new JSONObject();
@@ -110,6 +114,8 @@ public class ResourceChatService {
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
+        chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
         Note note = noteRepository.getById(noteId);
         NoteResource nr = resourceService.createNoteResource(note);
@@ -131,7 +137,8 @@ public class ResourceChatService {
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
-
+        chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
 
         NoteResource noteResource = resourceService.createNoteResource(note);
