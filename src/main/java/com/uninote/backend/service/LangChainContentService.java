@@ -278,11 +278,11 @@ public class LangChainContentService {
                "- Provide a **concise but clear answer**, and include a **helpful short hint**.\n\n" +
                
                "### SUMMARY\n" +
-               "- Provide a **detailed and well-structured summary** of the content.\n" +
+               "- Provide a ** extremely detailed and well-structured summary** of the content.\n" +
                "- The summary should be **rich in information**, capturing key concepts, important details, and examples where applicable.\n" +
                "- The point of this summary is not to describe waht the resource contains but to compress all the required information into a cohesive summary.\n"+
                "- Important information like formulas or definitions should be included. The students should be able to get the entire knowledge of the resource by this summary.\n"+
-               "- Aim for **at least 12 sentences**, ensuring completeness without excessive verbosity.\n" +
+               "- Aim for **at least 20 sentences**, ensuring completeness without excessive verbosity.\n" +
                "- Format the summary in **Markdown**, using bullet points, headings, and emphasis where necessary.\n\n" +
                
                "### CHAPTER SPLITTING\n" +
@@ -655,10 +655,13 @@ public class LangChainContentService {
                "- Each flashcard should focus on a concept from this section only.\n" +
                "- Provide a concise answer and helpful hint.\n\n" +
                
-               "### SUMMARY\n" +
-               "- Provide a detailed summary of this section only.\n" +
-               "- Capture the key points and concepts from this specific section.\n" +
-               "- Format the summary in Markdown.\n\n" +
+               "## SUMMARY\n" +
+               "- Provide a ** extremely detailed and well-structured summary** of the content of this section only.\n" +
+               "- The summary should be **rich in information**, capturing key concepts, important details, and examples where applicable.\n" +
+               "- The point of this summary is not to describe waht the resource contains but to compress all the required information into a cohesive summary.\n"+
+               "- Important information like formulas or definitions should be included. The students should be able to get the entire knowledge of the resource by this summary.\n"+
+               "- Aim for **at least 20 sentences**, ensuring completeness without excessive verbosity.\n" +
+               "- Format the summary in **Markdown**, using bullet points, headings, and emphasis where necessary.\n\n" +
                
                "### RELATIONS\n" +
                "- Extract key concept relations from this section only.\n\n" +
