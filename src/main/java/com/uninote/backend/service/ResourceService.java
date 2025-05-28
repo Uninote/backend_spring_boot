@@ -89,6 +89,22 @@ public class ResourceService {
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
+
+            File finalFile;
+
+            // Save uploaded file to temp dir
+            File tempInputFile = new File("/tmp", fileId + extension);
+            file.transferTo(tempInputFile);
+            logger.info("Saved input file to temp: {}", tempInputFile.getAbsolutePath());
+
+            if (extension.equals(".doc") || extension.equals(".docx") || extension.equals(".ppt") || extension.equals(".pptx")) {
+                finalFile = convertToPdfUsingLibreOffice(tempInputFile);
+                logger.info("Converted to PDF: {}", finalFile.getAbsolutePath());
+            } else if (extension.equals(".pdf")) {
+                finalFile = tempInputFile;
+            } else {
+                throw new IllegalArgumentException("Unsupported file type: " + extension);
+            }
             
             // Align with frontend structure - use "notes" directory like frontend
             String storagePath = "notes/" + fileId + extension;
@@ -409,6 +425,27 @@ public class ResourceService {
                 }
             };
         }
+    }
+
+    private File convertToPdfUsingLibreOffice(File inputFile) throws IOException, InterruptedException {
+        String outputDir = inputFile.getParent();
+        
+        String sofficePath = "/app/.heroku/vendor/libreoffice/program/soffice";
+
+        ProcessBuilder pb = new ProcessBuilder(
+            sofficePath,
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", outputDir,
+            inputFile.getAbsolutePath()
+        );
+
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        process.waitFor();
+
+        String pdfName = inputFile.getName().replaceAll("\\.(docx?|pptx?)$", ".pdf");
+        return new File(outputDir, pdfName);
     }
 
     
