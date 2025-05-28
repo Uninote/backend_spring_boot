@@ -32,6 +32,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.UUID;
 
@@ -96,8 +98,10 @@ public class ResourceService {
             File finalFile;
 
             // Save uploaded file to temp dir
-            File tempInputFile = new File("/tmp", fileId + extension);
-            file.transferTo(tempInputFile);
+            Path tempFilePath = Files.createTempFile(fileId, extension);
+            Files.write(tempFilePath, file.getBytes());
+            File tempInputFile = tempFilePath.toFile();
+
             logger.info("Saved input file to temp: {}", tempInputFile.getAbsolutePath());
 
             if (extension.equals(".doc") || extension.equals(".docx") || extension.equals(".ppt") || extension.equals(".pptx")) {
