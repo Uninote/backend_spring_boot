@@ -43,7 +43,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeRequests()
                 .antMatchers("/chat/**", "/spaces/**").authenticated()
-                .antMatchers("/notes/**").permitAll()
+                .antMatchers("/notes/**","/api/**/**").permitAll()
                 .anyRequest().permitAll();
     }
 
