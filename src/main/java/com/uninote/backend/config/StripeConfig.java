@@ -16,15 +16,18 @@ public class StripeConfig {
 
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
+    public StripeConfig() {
+        logger.info("StripeConfig constructor called - Configuration is being loaded!");
+    }
 
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeSecretKey;
-
+        logger.error("Stripe API key set successfully. hey");
         if (stripeSecretKey != null && !stripeSecretKey.isBlank()) {
-            logger.info("Stripe API key set successfully.");
+            logger.error("Stripe API key set successfully.");
         } else {
-            logger.warn("Stripe API key is missing or empty. Check environment variable STRIPE_SECRET_KEY.");
+            logger.error("Stripe API key is missing or empty. Check environment variable STRIPE_SECRET_KEY.");
         }
     }
 }

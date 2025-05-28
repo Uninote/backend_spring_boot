@@ -14,14 +14,29 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 
+import javax.annotation.PostConstruct;
+
 @Service
 public class SubscriptionService {
+
+    @Value("${stripe.secret.key}")
+    private String stripeSecretKey;
 
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
     @Autowired
     private UserRepository userRepository;
+
+    @PostConstruct
+    private void initStripe() {
+        if (stripeSecretKey != null && !stripeSecretKey.isBlank()) {
+            Stripe.apiKey = stripeSecretKey;
+            System.out.println("Stripe API key initialized in SubscriptionService");
+        } else {
+            throw new IllegalStateException("Stripe secret key is missing!");
+        }
+    }
 
     public Subscription createSubscription(String email,
                                            SubscriptionPlan plan,
