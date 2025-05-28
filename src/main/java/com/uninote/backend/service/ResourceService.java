@@ -68,6 +68,9 @@ public class ResourceService {
     @Autowired
     private NoteResourceRepository noteResourceRepository;
 
+    @Autowired
+    private CloudConvertService cloudConvertService;
+
     private static String baseUrl = "https://uninote-python-scripts-7d4abe41edb3.herokuapp.com";
 
 
@@ -98,7 +101,7 @@ public class ResourceService {
             logger.info("Saved input file to temp: {}", tempInputFile.getAbsolutePath());
 
             if (extension.equals(".doc") || extension.equals(".docx") || extension.equals(".ppt") || extension.equals(".pptx")) {
-                finalFile = convertToPdfUsingLibreOffice(tempInputFile);
+                finalFile = cloudConvertService.convertToPdf(tempInputFile);
                 logger.info("Converted to PDF: {}", finalFile.getAbsolutePath());
             } else if (extension.equals(".pdf")) {
                 finalFile = tempInputFile;
