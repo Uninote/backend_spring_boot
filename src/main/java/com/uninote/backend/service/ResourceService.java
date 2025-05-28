@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.yaml.snakeyaml.emitter.EmitterException;
 
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
@@ -78,114 +79,78 @@ public class ResourceService {
 
     public FileResource createFileResource(MultipartFile file) {
         logger.info("=== STARTING FILE UPLOAD ===");
+
+        if (file == null || file.isEmpty()) {
+            logger.error("ERROR: File is null or empty");
+            throw new IllegalArgumentException("File cannot be null or empty");
+        }
+
         String fileId = UUID.randomUUID().toString();
-        String originalFilename = file != null ? file.getOriginalFilename() : "null";
+        String originalFilename = file.getOriginalFilename();
         logger.info("File upload: ID={}, Name={}", fileId, originalFilename);
-        
+
         try {
-            // Validate file
-            if (file == null) {
-                logger.error("ERROR: File is null");
-                throw new IllegalArgumentException("File cannot be null");
-            }
-            
-            // Get file extension
+            // Get extension
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
             }
 
-            File finalFile;
-
-            // Save uploaded file to temp dir
-            Path tempFilePath = Files.createTempFile(fileId, extension);
-            Files.write(tempFilePath, file.getBytes());
-            File tempInputFile = tempFilePath.toFile();
-
-            logger.info("Saved input file to temp: {}", tempInputFile.getAbsolutePath());
-
-            if (extension.equals(".doc") || extension.equals(".docx") || extension.equals(".ppt") || extension.equals(".pptx")) {
-                finalFile = cloudConvertService.convertToPdf(tempInputFile);
-                logger.info("Converted to PDF: {}", finalFile.getAbsolutePath());
-            } else if (extension.equals(".pdf")) {
-                finalFile = tempInputFile;
-            } else {
-                throw new IllegalArgumentException("Unsupported file type: " + extension);
+            if (!extension.equals(".pdf")) {
+                throw new IllegalArgumentException("Only PDF files are supported for upload without temp files.");
             }
-            
-            // Align with frontend structure - use "notes" directory like frontend
+
             String storagePath = "notes/" + fileId + extension;
             logger.info("Storage path: {}", storagePath);
-            
-            // Get bucket directly from Firebase App
-            logger.info("Getting Firebase bucket");
-            Bucket bucket = null;
-            
-            try {
-                // Get Firebase bucket the correct way - directly from StorageClient
-                bucket = StorageClient.getInstance().bucket();
-                String bucketName = bucket.getName();
-                logger.info("Successfully got bucket: {}", bucketName);
-                
-                // Upload file directly using the Bucket object
-                logger.info("Uploading file...");
-                com.google.cloud.storage.Blob blob = bucket.create(
-                    storagePath, 
-                    file.getBytes(), 
-                    file.getContentType() != null ? file.getContentType() : "application/octet-stream"
+
+            Bucket bucket = StorageClient.getInstance().bucket();
+            String bucketName = bucket.getName();
+            logger.info("Got bucket: {}", bucketName);
+
+            // Upload to Firebase using input stream
+            try (InputStream inputStream = file.getInputStream()) {
+                Blob blob = bucket.create(
+                    storagePath,
+                    inputStream,
+                    file.getContentType() != null ? file.getContentType() : "application/pdf"
                 );
-                
-                logger.info("File uploaded successfully. Name: {}, Size: {}", 
-                    blob.getName(), blob.getSize());
-                
-                // Generate the download URL
-                String downloadUrl = String.format(
-                    "https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media", 
-                    bucketName, 
-                    storagePath.replace("/", "%2F")
-                );
-                logger.info("Download URL: {}", downloadUrl);
-                
-                // Save to database
-                FileResource fr = new FileResource();
-                fr.setFileUrl(downloadUrl);
-                fr.setTitle(originalFilename);
-                fr.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-                
-                FileResource savedResource = fileResourceRepository.save(fr);
-                Resource updatedResource = contentExtractionService.extractContent(file, savedResource);
-                String content = updatedResource.getContent();
-                if (content == null || content.trim().isEmpty()) {
-                    //throw new EmptyContentException("Resource has no content.");
-                }
-                if (content != null && !content.trim().isEmpty()) {
-                    
-                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                        @Override
-                        public void afterCommit() {
-                            langChainContentService.generateAllContentAsync(updatedResource.getId());
-                        }
-                    });
-                }
-                logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
-                return savedResource;
-                
-            } catch (EmptyContentException e) {
-                logger.error("Firebase upload error: {}", e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                logger.error("Firebase upload error: {}", e.getMessage());
-                // Try alternative method if primary method fails
-                return createFileResourceAlternative(file, fileId, originalFilename, extension);
+                logger.info("Uploaded file: {}, Size: {}", blob.getName(), blob.getSize());
             }
-            
-        } catch (EmptyContentException e) {
-            throw e;
+
+            String downloadUrl = String.format(
+                "https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media",
+                bucketName,
+                storagePath.replace("/", "%2F")
+            );
+            logger.info("Download URL: {}", downloadUrl);
+
+            FileResource fr = new FileResource();
+            fr.setFileUrl(downloadUrl);
+            fr.setTitle(originalFilename);
+            fr.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            FileResource savedResource = fileResourceRepository.save(fr);
+
+            Resource updatedResource = contentExtractionService.extractContent(file, savedResource);
+            String content = updatedResource.getContent();
+
+            if (content != null && !content.trim().isEmpty()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCommit() {
+                        langChainContentService.generateAllContentAsync(updatedResource.getId());
+                    }
+                });
+            }
+
+            logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
+            return savedResource;
+
         } catch (Exception e) {
-            logger.error("ERROR: File upload failed - {}", e.getMessage());
+            logger.error("File upload failed: {}", e.getMessage(), e);
             throw new RuntimeException("File upload failed: " + e.getMessage(), e);
         }
     }
+
 
     // Fallback method if the primary method fails
     private FileResource createFileResourceAlternative(MultipartFile file, String fileId, 
