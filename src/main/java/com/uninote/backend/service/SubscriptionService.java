@@ -1,10 +1,16 @@
 package com.uninote.backend.service;
 
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
 import com.uninote.backend.entity.*;
 import com.uninote.backend.repository.SubscriptionRepository;
 import com.uninote.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import org.springframework.beans.factory.annotation.Value;
+
 
 import java.time.LocalDateTime;
 
@@ -72,6 +78,46 @@ public class SubscriptionService {
             .map(subscriptionRepository::existsActiveByUser)
             .orElse(false);
     }
+
+    public void handleStripeWebhook(String customerEmail, String stripeSubscriptionId, String durationStr) {
+        try {
+            com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
+            String stripeCustomerId = stripeSub.getCustomer();
+
+            User user = userRepository.findByEmail(customerEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            if (user.getStripeCustomerId() == null) {
+                user.setStripeCustomerId(stripeCustomerId);
+                userRepository.save(user);
+            } else if (!user.getStripeCustomerId().equals(stripeCustomerId)) {
+                throw new SecurityException("Customer ID mismatch.");
+            }
+
+            boolean exists = subscriptionRepository.existsByStripeSubscriptionId(stripeSubscriptionId);
+            if (exists) {
+                return;
+            }
+
+            SubscriptionDuration duration = SubscriptionDuration.valueOf(durationStr);
+            SubscriptionPlan plan = SubscriptionPlan.BASIC;
+
+            createSubscription(customerEmail, plan, duration, stripeSubscriptionId, stripeCustomerId);
+
+        } catch (com.stripe.exception.InvalidRequestException e) {
+            if (e.getStatusCode() == 404) {
+                throw new RuntimeException("Stripe subscription not found: " + stripeSubscriptionId);
+            }
+            throw new RuntimeException("Stripe request error: " + e.getMessage(), e);
+        } catch (StripeException e) {
+            throw new RuntimeException("Stripe error: " + e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid subscription duration: " + durationStr, e);
+        }
+    }
+
+
+
 
 
 }

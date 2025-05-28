@@ -24,4 +24,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     boolean existsByUser(User savedUser);
 
+    boolean existsByStripeSubscriptionId(String stripeSubscriptionId);
+
 }
