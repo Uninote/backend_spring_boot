@@ -138,7 +138,7 @@ public class ChatService {
     private ResourceRepository resourceRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
-    private static final int MAX_RESOURCE_CHARS = 150000;
+    private static final int MAX_RESOURCE_CHARS = 130000;
 
 
     public List<Message> getChatMessagesByChat(Chat chat) {
@@ -373,7 +373,7 @@ public class ChatService {
                     // Prepare the request body
                     Map<String, Object> requestBody = new HashMap<>();
                     requestBody.put("temperature", 0.7);
-                    requestBody.put("max_tokens", 1500);
+                    requestBody.put("max_tokens", 3000);
                     
                     List<Map<String, Object>> messages = new ArrayList<>();
                     
