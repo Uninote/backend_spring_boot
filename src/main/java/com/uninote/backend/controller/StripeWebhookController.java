@@ -37,21 +37,6 @@ public class StripeWebhookController {
 
     @PostMapping("/webhook-sync")
     public ResponseEntity<?> syncSubscription(@RequestBody StripeWebhookPayload payload) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-
-        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
-        String userUid = firebaseAuth.getUid();
-
-        User user = userRepository.findByFirebaseUid(userUid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!user.getEmail().equalsIgnoreCase(payload.getCustomerEmail())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Email mismatch between Firebase user and Stripe payload"));
-        }
         try {
             subscriptionService.handleStripeWebhook(
                 payload.getCustomerEmail(),
