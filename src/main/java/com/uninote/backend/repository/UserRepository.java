@@ -82,34 +82,53 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     @Query("SELECT u.id AS id, u.firebaseUid AS firebaseUid, u.name AS name, " +
-       "dn.name AS departmentName, dn.fullName AS departmentFullName, " +
-       "un.name AS universityName, un.fullName AS universityFullName, " +
-       "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername, COALESCE(u.seasonScore, 0) AS seasonScore, " +
-       "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
-       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id and n.deleted = 0) AS totalNotes, " +
-       "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = 0) AS totalPublicNotes, " +
-       "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes, " +
-       "u.certified AS certified " +
-       "FROM User u " +
-       "JOIN DepartmentName dn ON dn.department = u.department " +
-       "JOIN UniversityName un ON un.university = u.university " +
-       "JOIN Rank r ON r.id = u.rank.id " +
-       "WHERE dn.language.code = :languageId " +
-       "AND un.language.code = :languageId " +
-       "AND u.id = :userId")
-    UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") String languageId);
+        "dn.name AS departmentName, dn.fullName AS departmentFullName, " +
+        "un.name AS universityName, un.fullName AS universityFullName, " +
+        "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
+        "u.instagramUsername AS instagramUsername, COALESCE(u.seasonScore, 0) AS seasonScore, " +
+        "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
+        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id and n.deleted = 0) AS totalNotes, " +
+        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = 0) AS totalPublicNotes, " +
+        "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes, " +
+        "u.certified AS certified, " +
+        "s.plan AS subscriptionPlan " +
+        "FROM User u " +
+        "JOIN DepartmentName dn ON dn.department = u.department " +
+        "JOIN UniversityName un ON un.university = u.university " +
+        "JOIN Rank r ON r.id = u.rank.id " +
+        "LEFT JOIN Subscription s ON s.user = u " +
+        "AND s.status = 'active' " +
+        "AND s.startDate <= CURRENT_DATE " +
+        "AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+        "WHERE dn.language.code = :languageId " +
+        "AND un.language.code = :languageId " +
+        "AND u.id = :userId")
+        UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") String languageId);
 
-    @Query("SELECT u.university.id AS universityId, u.department.id AS departmentId, " +
-      "u.uniscore AS uniscore, u.username AS username, u.profileImageUrl AS profileImageUrl, u.instagramUsername AS instagramUsername,COALESCE(u.seasonScore, 0) AS seasonScore, " +
-      "dn.name AS departmentName, " +
-      "un.name AS universityName, " + 
-      "u.certified AS certified " +   
-      "FROM User u " +   
-      "JOIN DepartmentName dn ON dn.department = u.department  " +
-      "JOIN UniversityName un ON un.university = u.university " +
-      "WHERE dn.language.code = :language AND un.language.code = :language "+
-      "AND u.id = :userId")
-   UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("language") String language);
+
+    @Query("SELECT u.university.id AS universityId, " +
+        "u.department.id AS departmentId, " +
+        "u.uniscore AS uniscore, " +
+        "u.username AS username, " +
+        "u.profileImageUrl AS profileImageUrl, " +
+        "u.instagramUsername AS instagramUsername, " +
+        "COALESCE(u.seasonScore, 0) AS seasonScore, " +
+        "dn.name AS departmentName, " +
+        "un.name AS universityName, " +
+        "u.certified AS certified, " +
+        "s.plan AS subscriptionPlan " +
+        "FROM User u " +
+        "JOIN DepartmentName dn ON dn.department = u.department " +
+        "JOIN UniversityName un ON un.university = u.university " +
+        "LEFT JOIN Subscription s ON s.user = u " +
+        "AND s.status = 'active' " +
+        "AND s.startDate <= CURRENT_DATE " +
+        "AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+        "WHERE dn.language.code = :language " +
+        "AND un.language.code = :language " +
+        "AND u.id = :userId")
+        UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("language") String language);
+
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.department_id ORDER BY u.uniscore DESC) AS rank " +

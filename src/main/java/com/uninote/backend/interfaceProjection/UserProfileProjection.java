@@ -1,5 +1,7 @@
 package com.uninote.backend.interfaceProjection;
 
+import com.uninote.backend.entity.SubscriptionPlan;
+
 public interface UserProfileProjection {
     Long getId();
     String getFirebaseUid();
@@ -22,5 +24,7 @@ public interface UserProfileProjection {
     String getInstagramUsername();
     Long getSeasonScore();
     Boolean getCertified();
+    SubscriptionPlan getSubscriptionPlan();
+
 
 }

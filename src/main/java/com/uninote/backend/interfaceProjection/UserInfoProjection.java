@@ -2,6 +2,8 @@ package com.uninote.backend.interfaceProjection;
 
 import org.springframework.beans.factory.annotation.Value;
 
+import com.uninote.backend.entity.SubscriptionPlan;
+
 public interface UserInfoProjection {
     Long getUniversityId();
     Long getDepartmentId();
@@ -16,4 +18,5 @@ public interface UserInfoProjection {
     Long getSeasonScore();
     @Value("#{(target.certified instanceof T(java.lang.Boolean)) ? target.certified : (target.certified == 1)}")
     Boolean getCertified();
+    SubscriptionPlan getSubscriptionPlan();
 }
