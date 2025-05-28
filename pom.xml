@@ -49,6 +49,11 @@
         <artifactId>httpclient</artifactId>
         <version>4.5.13</version> <!-- or newer 4.x version -->
     </dependency>
+    <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.10.1</version> <!-- must be >= 2.9.0 -->
+    </dependency>
 
     <!-- Ensure you use compatible Commons Lang -->
     <dependency>
