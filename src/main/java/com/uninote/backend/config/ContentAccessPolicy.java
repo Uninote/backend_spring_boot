@@ -37,17 +37,16 @@ public class ContentAccessPolicy {
     }
 
     public boolean isAccessAllowedForUser(User user) {
-        if (user.getId() == 112L || user.getId() == 1881L) {
-            Long uploadedNotes = noteService.countNotesByUserId(user.getId());
-            logger.error(user.getId().toString());
-            int viewedCount = noteViewService.getTodayViewCount(user.getId());
-            boolean allowed = uploadedNotes > 0 || viewedCount < MAX_FREE_NOTE_VIEWS;
-            logger.error("Special user access check (userId=112): uploadedNotes={}, viewedCount={}, allowed={}",
-                    uploadedNotes, viewedCount, allowed);
-            return allowed;
-        }
 
-        logger.error("Access granted for userId={}", user.getId());
-        return true;
+        Long uploadedNotes = noteService.countNotesByUserId(user.getId());
+        logger.error(user.getId().toString());
+        int viewedCount = noteViewService.getTodayViewCount(user.getId());
+        boolean allowed = uploadedNotes > 0 || viewedCount < MAX_FREE_NOTE_VIEWS;
+        logger.error("User access check: uploadedNotes={}, viewedCount={}, allowed={}",
+                uploadedNotes, viewedCount, allowed);
+        return allowed;
+        
+
+        
     }
 }
