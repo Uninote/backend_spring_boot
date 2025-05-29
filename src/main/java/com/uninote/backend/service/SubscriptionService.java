@@ -111,6 +111,8 @@ public class SubscriptionService {
             logger.info("Received Stripe webhook: email={}, subscriptionId={}, duration={}", customerEmail, stripeSubscriptionId, durationStr);
 
             com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
+            logger.debug("Received sub");
+
             String stripeCustomerId = stripeSub.getCustomer();
             logger.debug("Retrieved Stripe customer ID: {}", stripeCustomerId);
 
