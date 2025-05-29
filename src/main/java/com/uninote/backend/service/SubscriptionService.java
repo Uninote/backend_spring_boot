@@ -117,6 +117,7 @@ public class SubscriptionService {
                 logger.error("Invalid request to Stripe: {}", e.getMessage());
                 throw new RuntimeException("Stripe subscription not found: " + stripeSubscriptionId);
             }
+            logger.error("Invalid request to Stripe: new subscription");
 
             if (stripeSub == null) {
                 throw new RuntimeException("Stripe subscription is null.");
