@@ -109,8 +109,12 @@ public class SubscriptionService {
     public void handleStripeWebhook(String customerEmail, String stripeSubscriptionId, String durationStr) {
         try {
             logger.info("Received Stripe webhook: email={}, subscriptionId={}, duration={}", customerEmail, stripeSubscriptionId, durationStr);
-
-            com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
+            com.stripe.model.Subscription stripeSub = null;
+            try {
+                stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
+            } catch (com.stripe.exception.StripeException e) {
+                logger.error("Stripe API error: " + e.getMessage());
+            }            
             logger.debug("Received sub");
 
             String stripeCustomerId = stripeSub.getCustomer();
