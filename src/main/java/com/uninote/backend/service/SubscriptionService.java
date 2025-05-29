@@ -113,8 +113,14 @@ public class SubscriptionService {
             try {
                 stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
             } catch (com.stripe.exception.StripeException e) {
-                logger.error("Stripe API error: " + e.getMessage());
-            }            
+                
+                logger.error("Invalid request to Stripe: {}", e.getMessage());
+                throw new RuntimeException("Stripe subscription not found: " + stripeSubscriptionId);
+            }
+
+            if (stripeSub == null) {
+                throw new RuntimeException("Stripe subscription is null.");
+            }         
             logger.debug("Received sub");
 
             String stripeCustomerId = stripeSub.getCustomer();
@@ -149,15 +155,6 @@ public class SubscriptionService {
 
             createSubscription(customerEmail, plan, duration, stripeSubscriptionId, stripeCustomerId);
 
-        } catch (com.stripe.exception.InvalidRequestException e) {
-            logger.error("Stripe InvalidRequestException: {}", e.getMessage(), e);
-            if (e.getStatusCode() == 404) {
-                throw new RuntimeException("Stripe subscription not found: " + stripeSubscriptionId);
-            }
-            throw new RuntimeException("Stripe request error: " + e.getMessage(), e);
-        } catch (StripeException e) {
-            logger.error("Stripe exception: {}", e.getMessage(), e);
-            throw new RuntimeException("Stripe error: " + e.getMessage(), e);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid subscription duration: {}", durationStr, e);
             throw new RuntimeException("Invalid subscription duration: " + durationStr, e);
