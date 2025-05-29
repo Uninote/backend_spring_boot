@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,6 +38,9 @@ public class LangChainContentService {
 
     private static final Logger logger = LoggerFactory.getLogger(LangChainContentService.class);
     
+    @Autowired
+    private PromptService promptService;
+
     @Autowired
     private AzureOpenAiConfig azureConfig;
     
@@ -264,8 +268,15 @@ public class LangChainContentService {
     private String createUnifiedPrompt(Resource resource, String content) {
         String resourceType = resource.getClass().getSimpleName();
         String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Untitled Resource";
-        
-        return "You are an AI assistant. Your job is to generate four types of educational content from the given resource:\n\n" +
+        String prompt;
+        try {
+           prompt =  promptService.createContentGenerationPrompt(resourceTitle, resourceType, content);
+        } catch (IOException e) {
+            logger.error("Error generating resource prompt", e);
+            prompt = "Σφάλμα κατά τη δημιουργία του prompt. Παρακαλώ επικοινωνήστε με τον διαχειριστή.";
+        }
+        return prompt;
+        /*return "You are an AI assistant. Your job is to generate four types of educational content from the given resource:\n\n" +
                "### QUIZ\n" +
                "- Generate a high-quality multiple-choice quiz from the provided content.\n" +
                "- Each question should test key concepts and ensure varying difficulty levels.\n" +
@@ -322,7 +333,7 @@ public class LangChainContentService {
                "  ]\n" +
                "}\n" +
                "\n" +
-               "- **Do not include any extra text, markdown, or explanations. Only return a valid JSON object. Make sure to respond in greek.**";
+               "- **Do not include any extra text, markdown, or explanations. Only return a valid JSON object. Make sure to respond in greek.**";*/
     }
     
     /**
@@ -642,7 +653,15 @@ public class LangChainContentService {
         String resourceType = resource.getClass().getSimpleName();
         String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Untitled Resource";
         
-        return "You are an AI assistant processing Section " + sectionNumber + " of " + totalSections + 
+        String prompt;
+        try {
+            prompt = promptService.createLargeContentGenerationPrompt(resourceTitle, resourceType, totalSections, sectionNumber, sectionText);
+        } catch (IOException e) {
+            logger.error("Error generating resource prompt", e);
+            prompt = "Σφάλμα κατά τη δημιουργία του prompt. Παρακαλώ επικοινωνήστε με τον διαχειριστή.";
+        }
+        return prompt;
+        /*return "You are an AI assistant processing Section " + sectionNumber + " of " + totalSections + 
                " from a document. Generate educational content from this section:\n\n" +
                
                "### QUIZ\n" +
@@ -681,7 +700,7 @@ public class LangChainContentService {
                "  \"relations\": [{ \"concept1\": \"\", \"concept2\": \"\" }]\n" +
                "}\n" +
                "Only return valid JSON without any extra text, markdown, or explanations."+
-               "Only respond in Greek.";
+               "Only respond in Greek.";*/
     }
     
     // The individual prompt methods are kept for backward compatibility
