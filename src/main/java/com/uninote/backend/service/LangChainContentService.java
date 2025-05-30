@@ -96,6 +96,8 @@ public class LangChainContentService {
      * Generate all content types at once for a resource using a unified prompt
      */
     public Resource generateAllContent(Long resourceId) {
+        long startTime = System.currentTimeMillis();  // start timing
+
         logger.info("Generating all content for resource: {}", resourceId);
         
         Resource resource = resourceRepository.findById(resourceId)
@@ -105,20 +107,20 @@ public class LangChainContentService {
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
         
-        // Check document size and use appropriate processing method
         int contentLength = resource.getContent().length();
         logger.info("Document size: {} characters", contentLength);
         
         try {
             if (contentLength > 40000) {
-                // Very large document - use map-reduce approach
                 logger.info("Using map-reduce approach for very large document");
-                return processVeryLargeDocument(resource);
+                Resource result = processVeryLargeDocument(resource);
+                
+                long endTime = System.currentTimeMillis();
+                logger.info("Content generation completed in {} ms", (endTime - startTime));
+                return result;
             } else {
-                // Standard approach with improved content sampling for medium/large docs
                 String content = handleLargeContent(resource.getContent(), 4000);
                 
-                // Continue with your existing unified approach using the improved content
                 ChatLanguageModel chatModel = getChatModel();
                 UnifiedContentGenerator generator = AiServices.builder(UnifiedContentGenerator.class)
                         .chatLanguageModel(chatModel)
@@ -129,11 +131,9 @@ public class LangChainContentService {
                 String generatedJson = generator.generateContent(unifiedPrompt);
                 logger.info("Received response from unified content generation");
                 
-                // Process the response as in your original method
                 String extractedJson = extractJsonObject(generatedJson);
                 JSONObject allContent = new JSONObject(extractedJson);
                 
-                // Extract and save all content types
                 if (allContent.has("summary")) {
                     String summary = allContent.getString("summary");
                     resource.setSummary(summary);
@@ -155,6 +155,8 @@ public class LangChainContentService {
                 }
                 
                 resource.setGeneratedContent(allContent.toString());
+                resourceRepository.save(resource);
+
                 logger.info("Successfully generated all content types");
                 try {
                     processEmbeddings(resource);
@@ -162,17 +164,23 @@ public class LangChainContentService {
                     logger.error("Embedding processing failed: {}", e.getMessage(), e);
                 }
 
-                
+                Resource savedResource = resourceRepository.save(resource);
 
-                return resourceRepository.save(resource);
+                long endTime = System.currentTimeMillis();
+                logger.info("Content generation completed in {} ms", (endTime - startTime));
+                return savedResource;
             }
         } catch (Exception e) {
             logger.error("Error in content generation: {}", e.getMessage(), e);
-            
             logger.info("Falling back to individual content generation");
+
+            long endTime = System.currentTimeMillis();
+            logger.info("Content generation failed after {} ms, switching to fallback", (endTime - startTime));
+
             return generateAllContentFallback(resourceId);
         }
     }
+
     
     /**
      * Fallback method to generate content individually if unified approach fails
