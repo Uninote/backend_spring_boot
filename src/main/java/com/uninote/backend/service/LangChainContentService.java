@@ -278,10 +278,15 @@ public class LangChainContentService {
         String resourceType = resource.getClass().getSimpleName();
         String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Untitled Resource";
         String prompt;
+
+        long startTime = System.currentTimeMillis();
         try {
-           prompt =  promptService.createContentGenerationPrompt(resourceTitle, resourceType, content);
+            prompt = promptService.createContentGenerationPrompt(resourceTitle, resourceType, content);
+            long endTime = System.currentTimeMillis();
+            logger.info("Prompt generated successfully in {} ms", (endTime - startTime));
         } catch (IOException e) {
-            logger.error("Error generating resource prompt", e);
+            long endTime = System.currentTimeMillis();
+            logger.error("Error generating resource prompt after {} ms", (endTime - startTime), e);
             prompt = "Σφάλμα κατά τη δημιουργία του prompt. Παρακαλώ επικοινωνήστε με τον διαχειριστή.";
         }
         return prompt;
