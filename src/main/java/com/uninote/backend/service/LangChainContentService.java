@@ -156,8 +156,9 @@ public class LangChainContentService {
                 
                 resource.setGeneratedContent(allContent.toString());
                 resourceRepository.save(resource);
+                long contentEndTime = System.currentTimeMillis();
 
-                logger.info("Successfully generated all content types");
+                logger.info("Successfully generated all content types in {} ms" ,(contentEndTime - startTime));
                 try {
                     processEmbeddings(resource);
                 } catch (Exception e) {
