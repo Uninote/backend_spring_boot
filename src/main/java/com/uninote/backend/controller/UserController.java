@@ -46,7 +46,7 @@ public class UserController {
     private UserRepository userRepository;
 
     @Autowired 
-    private SubscriptionService subscriptionService
+    private SubscriptionService subscriptionService;
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
