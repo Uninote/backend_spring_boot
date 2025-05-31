@@ -21,7 +21,6 @@ import javax.annotation.PostConstruct;
 public class SubscriptionService {
     private static final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
-
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
@@ -41,11 +40,11 @@ public class SubscriptionService {
         }
     }
 
-        public Subscription createSubscription(String email,
-                                        SubscriptionPlan plan,
-                                        SubscriptionDuration duration,
-                                        String stripeSubId,
-                                        String stripeCustId) {
+    public Subscription createSubscription(String email,
+            SubscriptionPlan plan,
+            SubscriptionDuration duration,
+            String stripeSubId,
+            String stripeCustId) {
 
         logger.info("Creating subscription for user email: {}", email);
 
@@ -96,19 +95,23 @@ public class SubscriptionService {
             return start.plusMonths(1);
         } else if (duration == SubscriptionDuration.ONE_YEAR) {
             return start.plusYears(1);
+        } else if (duration == SubscriptionDuration.ONE_WEEK) {
+            return start.plusWeeks(1);
         } else {
             throw new IllegalArgumentException("Unknown subscription duration: " + duration);
         }
     }
+
     public boolean hasActiveSubscription(Long id) {
         return userRepository.findById(id)
-            .map(subscriptionRepository::existsActiveByUser)
-            .orElse(false);
+                .map(subscriptionRepository::existsActiveByUser)
+                .orElse(false);
     }
 
     public void handleStripeWebhook(String customerEmail, String stripeSubscriptionId, String durationStr) {
         try {
-            logger.info("Received Stripe webhook: email={}, subscriptionId={}, duration={}", customerEmail, stripeSubscriptionId, durationStr);
+            logger.info("Received Stripe webhook: email={}, subscriptionId={}, duration={}", customerEmail,
+                    stripeSubscriptionId, durationStr);
 
             com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
             logger.debug("Received sub");
@@ -117,7 +120,7 @@ public class SubscriptionService {
             logger.debug("Retrieved Stripe customer ID: {}", stripeCustomerId);
 
             User user = userRepository.findByEmail(customerEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             logger.debug("Found user: id={}, email={}, name={}", user.getId(), user.getEmail(), user.getName());
 
             if (user.getName() == null) {
@@ -159,10 +162,5 @@ public class SubscriptionService {
             throw new RuntimeException("Invalid subscription duration: " + durationStr, e);
         }
     }
-
-
-
-
-
 
 }
