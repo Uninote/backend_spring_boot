@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
