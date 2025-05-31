@@ -178,9 +178,11 @@ public class SubscriptionService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-
-        boolean hasSubscription = subscriptionRepository.existsByUser(user);
-        if (hasSubscription) {
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = calculateEndDate(start, plan, SubscriptionDuration.THREE_DAYS);
+        boolean overlapExists = subscriptionRepository
+                .existsByUserAndStartDateBeforeAndEndDateAfter(user, end, start);        
+        if (overlapExists) {
             throw new IllegalStateException("User already has an active subscription.");
         }
 
@@ -189,8 +191,7 @@ public class SubscriptionService {
         user.setMetadata(metadata);
         userRepository.save(user);
 
-        LocalDateTime start = LocalDateTime.now();
-        LocalDateTime end = calculateEndDate(start, plan, SubscriptionDuration.THREE_DAYS);
+        
 
         Subscription subscription = new Subscription();
         subscription.setUser(user);
