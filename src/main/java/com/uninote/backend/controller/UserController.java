@@ -15,6 +15,8 @@ import com.uninote.backend.dto.MetadataRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionPlan;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,12 @@ public class UserController {
 
     @Autowired
     private UniversityRepository universityRepository;
+
+    @Autowired 
+    private UserRepository userRepository;
+
+    @Autowired 
+    private SubscriptionService subscriptionService
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
