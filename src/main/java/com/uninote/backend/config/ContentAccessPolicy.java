@@ -27,13 +27,14 @@ public class ContentAccessPolicy {
     public boolean isAccessAllowedForAnonymous(int viewedCount) {
         boolean allowed = viewedCount < MAX_FREE_NOTE_VIEWS;
         logger.error("Anonymous access check: viewedCount={}, allowed={}", viewedCount, allowed);
-        return allowed;
+        return true;
     }
 
     public boolean isAccessAllowedForUser(int viewedCount, Long uploadedNotes) {
         boolean allowed = uploadedNotes > 0 || viewedCount < MAX_FREE_NOTE_VIEWS;
-        logger.error("User access check: uploadedNotes={}, viewedCount={}, allowed={}", uploadedNotes, viewedCount, allowed);
-        return allowed;
+        logger.error("User access check: uploadedNotes={}, viewedCount={}, allowed={}", uploadedNotes, viewedCount,
+                allowed);
+        return true;
     }
 
     public boolean isAccessAllowedForUser(User user) {
@@ -44,9 +45,7 @@ public class ContentAccessPolicy {
         boolean allowed = uploadedNotes > 0 || viewedCount < MAX_FREE_NOTE_VIEWS;
         logger.error("User access check: uploadedNotes={}, viewedCount={}, allowed={}",
                 uploadedNotes, viewedCount, allowed);
-        return allowed;
-        
+        return true;
 
-        
     }
 }
