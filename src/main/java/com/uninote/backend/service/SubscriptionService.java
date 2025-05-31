@@ -10,12 +10,18 @@ import org.springframework.stereotype.Service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.annotation.Transactional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityNotFoundException;
+
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Service
 public class SubscriptionService {
