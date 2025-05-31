@@ -237,4 +237,28 @@ public class UserController {
     public void verfiyEmail(@PathVariable String firebaseUid) {
         userService.verfiyEmail(firebaseUid);
     }
+
+    @PostMapping("/free-trial")
+    public ResponseEntity<?> createFreeTrial(@RequestBody MetadataRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>("Authorization token missing or invalid.", HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found for Firebase UID: " + userUid));
+
+        Subscription subscription = subscriptionService.createFreeTrialSubscription(
+                user.getId(),
+                SubscriptionPlan.BASIC,
+                request.getMetadata()
+        );
+
+        return ResponseEntity.ok(subscription);
+    }
 }

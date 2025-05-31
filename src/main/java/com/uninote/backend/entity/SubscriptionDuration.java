@@ -4,5 +4,6 @@ public enum SubscriptionDuration {
     ONE_DAY,
     ONE_MONTH,
     ONE_YEAR,
-    ONE_WEEK
+    ONE_WEEK,
+    THREE_DAYS
 }

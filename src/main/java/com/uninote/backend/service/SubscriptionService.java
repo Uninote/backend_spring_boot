@@ -97,7 +97,9 @@ public class SubscriptionService {
             return start.plusYears(1);
         } else if (duration == SubscriptionDuration.ONE_WEEK) {
             return start.plusWeeks(1);
-        } else {
+        } else if (duration == SubscriptionDuration.THREE_DAYS) {
+            return start.plusDays(3);
+        }  else {
             throw new IllegalArgumentException("Unknown subscription duration: " + duration);
         }
     }
@@ -162,5 +164,44 @@ public class SubscriptionService {
             throw new RuntimeException("Invalid subscription duration: " + durationStr, e);
         }
     }
+
+    @Transactional
+    public Subscription createFreeTrialSubscription(Long userId, SubscriptionPlan plan, JsonNode metadata) {
+
+        logger.info("Creating free trial subscription for user id: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        boolean hasSubscription = subscriptionRepository.existsByUser(user);
+        if (hasSubscription) {
+            throw new IllegalStateException("User already has an active subscription.");
+        }
+
+        logger.debug("User found: id={}, name={}, email={}", user.getId(), user.getName(), user.getEmail());
+
+        user.setMetadata(metadata);
+        userRepository.save(user);
+
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = calculateEndDate(start, plan, SubscriptionDuration.THREE_DAYS);
+
+        Subscription subscription = new Subscription();
+        subscription.setUser(user);
+        subscription.setPlan(plan);
+        subscription.setDuration(SubscriptionDuration.THREE_DAYS);
+        subscription.setStartDate(start);
+        subscription.setEndDate(end);
+        subscription.setStripeSubscriptionId(null);
+        subscription.setStripeCustomerId(null);
+
+        Subscription savedSub = subscriptionRepository.save(subscription);
+        
+        logger.info("Free trial subscription created: id={}, start={}, end={}", 
+                    savedSub.getId(), start, end);
+
+        return savedSub;
+    }
+
 
 }
