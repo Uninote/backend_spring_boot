@@ -7,6 +7,8 @@ import org.hibernate.Hibernate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {

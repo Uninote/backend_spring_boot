@@ -12,6 +12,10 @@ import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.service.UserService;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.uninote.backend.config.security.FirebaseAuthentication;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
