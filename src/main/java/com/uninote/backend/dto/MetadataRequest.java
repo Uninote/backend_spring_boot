@@ -1,4 +1,6 @@
-package com.uninote.backend;
+package com.uninote.backend.dto;
+import com.fasterxml.jackson.databind.JsonNode;
+
 
 public class MetadataRequest {
     private JsonNode metadata;
