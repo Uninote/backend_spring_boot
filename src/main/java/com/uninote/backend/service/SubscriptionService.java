@@ -99,7 +99,7 @@ public class SubscriptionService {
             return start.plusWeeks(1);
         } else if (duration == SubscriptionDuration.THREE_DAYS) {
             return start.plusDays(3);
-        }  else {
+        } else {
             throw new IllegalArgumentException("Unknown subscription duration: " + duration);
         }
     }
@@ -194,14 +194,13 @@ public class SubscriptionService {
         subscription.setEndDate(end);
         subscription.setStripeSubscriptionId(null);
         subscription.setStripeCustomerId(null);
-
+        subscription.setStatus("active");
         Subscription savedSub = subscriptionRepository.save(subscription);
-        
-        logger.info("Free trial subscription created: id={}, start={}, end={}", 
-                    savedSub.getId(), start, end);
+
+        logger.info("Free trial subscription created: id={}, start={}, end={}",
+                savedSub.getId(), start, end);
 
         return savedSub;
     }
-
 
 }
