@@ -476,6 +476,7 @@ public class ChatService {
                     StringEntity entity = new StringEntity(jsonRequest, StandardCharsets.UTF_8);
                     request.setEntity(entity);
                     
+                    
                     HttpResponse response = httpClient.execute(request);
                     
                     int statusCode = response.getStatusLine().getStatusCode();
