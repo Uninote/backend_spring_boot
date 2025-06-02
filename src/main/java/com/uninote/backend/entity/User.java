@@ -7,6 +7,10 @@ import org.hibernate.Hibernate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -105,6 +109,9 @@ public class User {
     @Column(name = "stripe_customer_id", nullable = true)
     private String stripeCustomerId;
 
+    @Lob
+    @Column(name = "metadata", nullable=true)
+    private String metadata;
 
     @PrePersist
     protected void onCreate() {
@@ -353,4 +360,12 @@ public class User {
         this.stripeCustomerId = stripeCustomerId;
     }
 
+    public void setMetadata(JsonNode metadata) {
+        this.metadata = metadata.toString();
+    }
+
+    public JsonNode getMetadata() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(this.metadata);
+    }
 }

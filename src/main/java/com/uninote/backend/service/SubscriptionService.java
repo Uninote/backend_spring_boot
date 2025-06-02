@@ -10,17 +10,22 @@ import org.springframework.stereotype.Service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.annotation.Transactional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityNotFoundException;
+
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Service
 public class SubscriptionService {
     private static final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
-
 
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
@@ -41,11 +46,11 @@ public class SubscriptionService {
         }
     }
 
-        public Subscription createSubscription(String email,
-                                        SubscriptionPlan plan,
-                                        SubscriptionDuration duration,
-                                        String stripeSubId,
-                                        String stripeCustId) {
+    public Subscription createSubscription(String email,
+            SubscriptionPlan plan,
+            SubscriptionDuration duration,
+            String stripeSubId,
+            String stripeCustId) {
 
         logger.info("Creating subscription for user email: {}", email);
 
@@ -96,19 +101,25 @@ public class SubscriptionService {
             return start.plusMonths(1);
         } else if (duration == SubscriptionDuration.ONE_YEAR) {
             return start.plusYears(1);
+        } else if (duration == SubscriptionDuration.ONE_WEEK) {
+            return start.plusWeeks(1);
+        } else if (duration == SubscriptionDuration.THREE_DAYS) {
+            return start.plusDays(3);
         } else {
             throw new IllegalArgumentException("Unknown subscription duration: " + duration);
         }
     }
+
     public boolean hasActiveSubscription(Long id) {
         return userRepository.findById(id)
-            .map(subscriptionRepository::existsActiveByUser)
-            .orElse(false);
+                .map(subscriptionRepository::existsActiveByUser)
+                .orElse(false);
     }
 
     public void handleStripeWebhook(String customerEmail, String stripeSubscriptionId, String durationStr) {
         try {
-            logger.info("Received Stripe webhook: email={}, subscriptionId={}, duration={}", customerEmail, stripeSubscriptionId, durationStr);
+            logger.info("Received Stripe webhook: email={}, subscriptionId={}, duration={}", customerEmail,
+                    stripeSubscriptionId, durationStr);
 
             com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(stripeSubscriptionId);
             logger.debug("Received sub");
@@ -117,7 +128,7 @@ public class SubscriptionService {
             logger.debug("Retrieved Stripe customer ID: {}", stripeCustomerId);
 
             User user = userRepository.findByEmail(customerEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             logger.debug("Found user: id={}, email={}, name={}", user.getId(), user.getEmail(), user.getName());
 
             if (user.getName() == null) {
@@ -160,9 +171,43 @@ public class SubscriptionService {
         }
     }
 
+    @Transactional
+    public Subscription createFreeTrialSubscription(Long userId, SubscriptionPlan plan, JsonNode metadata) {
 
+        logger.info("Creating free trial subscription for user id: {}", userId);
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = calculateEndDate(start, plan, SubscriptionDuration.THREE_DAYS);
+        boolean overlapExists = subscriptionRepository
+                .existsByUserAndStartDateBeforeAndEndDateAfter(user, end, start);        
+        if (overlapExists) {
+            throw new IllegalStateException("User already has an active subscription.");
+        }
 
+        logger.debug("User found: id={}, name={}, email={}", user.getId(), user.getName(), user.getEmail());
 
+        user.setMetadata(metadata);
+        userRepository.save(user);
+
+        
+
+        Subscription subscription = new Subscription();
+        subscription.setUser(user);
+        subscription.setPlan(plan);
+        subscription.setDuration(SubscriptionDuration.THREE_DAYS);
+        subscription.setStartDate(start);
+        subscription.setEndDate(end);
+        subscription.setStripeSubscriptionId(null);
+        subscription.setStripeCustomerId(null);
+        subscription.setStatus("active");
+        Subscription savedSub = subscriptionRepository.save(subscription);
+
+        logger.info("Free trial subscription created: id={}, start={}, end={}",
+                savedSub.getId(), start, end);
+
+        return savedSub;
+    }
 
 }

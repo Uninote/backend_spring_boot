@@ -77,6 +77,7 @@ import com.uninote.backend.dto.ChatRequest;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.MessageMediaRepository;
+import com.uninote.backend.service.PdfContentAnalyzerService;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.slf4j.Logger;
@@ -141,6 +142,9 @@ public class ChatService {
     @Autowired
     private PromptService promptService;
 
+    @Autowired
+    private PdfContentAnalyzerService pdfContentAnalyzerService;
+
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 130000;
 
@@ -202,7 +206,12 @@ public class ChatService {
                 dto.setTitle(fr.getTitle());
                 dto.setCreatedAt(fr.getCreatedAt());
                 dto.setSummary(fr.getSummary());
-                dto.setContent(fr.getContent());
+                Boolean isDigitized = pdfContentAnalyzerService.isValidContent(fr.getContent());
+                if (isDigitized) {
+                    dto.setContent(fr.getContent());
+                } else {
+                    dto.setContent(null);
+                }
                 dto.setSupabaseFileUrl(fr.getFileUrl());
                 dto.setFlashcards(fr.getFlashcards());
                 dto.setChapters(fr.getChapters());
@@ -222,7 +231,12 @@ public class ChatService {
                 dto.setChapters(nr.getChapters());
                 dto.setFlashcards(nr.getFlashcards());
                 dto.setQuizzes(nr.getQuiz());
-                dto.setContent(nr.getContent());
+                Boolean isDigitized = pdfContentAnalyzerService.isValidContent(nr.getContent());
+                if (isDigitized) {
+                    dto.setContent(nr.getContent());
+                } else {
+                    dto.setContent(null);
+                }               
                 dto.setFileUrl(nr.getNote().getPdfUrl());
 
                 resourceDTO = dto;
@@ -656,6 +670,7 @@ private String buildResourceChatSystemPrompt(ResourceChat resourceChat, String u
 }
 
 private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessage) {
+    final int MAX_RESOURCE_CONTENT_LENGTH = 10000;
     Space space = spaceChat.getSpace();
     Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
     List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
@@ -672,13 +687,20 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
         .map(chunk -> Long.parseLong(chunk.get("resource_id")))
         .collect(Collectors.toSet());
 
-    Map<Long, String> resourceSummaries = resourceRepository.findAllById(usedResourceIds).stream()
-        .collect(Collectors.toMap(Resource::getId, Resource::getSummary));
+   StringBuilder summariesText = new StringBuilder("Resource Summaries:\n\n");
 
-    StringBuilder summariesText = new StringBuilder("Resource Summaries:\n\n");
-    resourceSummaries.forEach((id, summary) -> {
-        summariesText.append("- Resource ID ").append(id).append(": ")
-                     .append(summary != null ? summary.trim() : "(no summary)").append("\n");
+    resourceRepository.findAllById(usedResourceIds).forEach(resource -> {
+        String contentToUse;
+        if (resource.getContent() != null && resource.getContent().length() <= MAX_RESOURCE_CONTENT_LENGTH) {
+            contentToUse = resource.getContent().trim();
+            logger.info("Using full content for resource ID {}", resource.getId());
+        } else {
+            contentToUse = (resource.getSummary() != null ? resource.getSummary().trim() : "(no summary)");
+            logger.info("Using summary for resource ID {}", resource.getId());
+        }
+
+        summariesText.append("- Resource Title ").append(resource.getTitle()).append(": ")
+                    .append(contentToUse).append("\n");
     });
     return createSpaceSystemPrompt(summariesText.toString(),resourcesSummary);
 }

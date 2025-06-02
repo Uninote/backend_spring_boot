@@ -10,7 +10,16 @@ import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
 import com.uninote.backend.repository.DepartmentRepository;
 import com.uninote.backend.repository.UniversityRepository;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.UserService;
+import com.uninote.backend.dto.MetadataRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.uninote.backend.service.SubscriptionService;
+
+import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionPlan;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +44,12 @@ public class UserController {
 
     @Autowired
     private UniversityRepository universityRepository;
+
+    @Autowired 
+    private UserRepository userRepository;
+
+    @Autowired 
+    private SubscriptionService subscriptionService;
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
@@ -236,5 +251,29 @@ public class UserController {
     @PostMapping("/verify-email/{firebaseUid}")
     public void verfiyEmail(@PathVariable String firebaseUid) {
         userService.verfiyEmail(firebaseUid);
+    }
+
+    @PostMapping("/free-trial")
+    public ResponseEntity<?> createFreeTrial(@RequestBody MetadataRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>("Authorization token missing or invalid.", HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found for Firebase UID: " + userUid));
+
+        Subscription subscription = subscriptionService.createFreeTrialSubscription(
+                user.getId(),
+                SubscriptionPlan.BASIC,
+                request.getMetadata()
+        );
+
+        return ResponseEntity.ok(subscription);
     }
 }

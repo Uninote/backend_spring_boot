@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ChunkingService {
 
-    private static final int MAX_CHUNK_SIZE = 10000; // characters or words
+    private static final int MAX_CHUNK_SIZE = 5500; // characters or words
 
     public List<String> splitIntoChunks(String text) {
         List<String> chunks = new ArrayList<>();
