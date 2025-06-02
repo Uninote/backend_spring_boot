@@ -141,6 +141,9 @@ public class ChatService {
     @Autowired
     private PromptService promptService;
 
+    @Autowired
+    private PdfContentAnalyzerService pdfContentAnalyzerService;
+
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 130000;
 
@@ -202,7 +205,12 @@ public class ChatService {
                 dto.setTitle(fr.getTitle());
                 dto.setCreatedAt(fr.getCreatedAt());
                 dto.setSummary(fr.getSummary());
-                dto.setContent(fr.getContent());
+                Boolean isDigitized = pdfContentAnalyzerService.isValidContent(fr.getContent());
+                if (isDigitized) {
+                    dto.setContent(fr.getContent());
+                } else {
+                    dto.setContent(null);
+                }
                 dto.setSupabaseFileUrl(fr.getFileUrl());
                 dto.setFlashcards(fr.getFlashcards());
                 dto.setChapters(fr.getChapters());
@@ -222,7 +230,12 @@ public class ChatService {
                 dto.setChapters(nr.getChapters());
                 dto.setFlashcards(nr.getFlashcards());
                 dto.setQuizzes(nr.getQuiz());
-                dto.setContent(nr.getContent());
+                Boolean isDigitized = pdfContentAnalyzerService.isValidContent(nr.getContent());
+                if (isDigitized) {
+                    dto.setContent(nr.getContent());
+                } else {
+                    dto.setContent(null);
+                }               
                 dto.setFileUrl(nr.getNote().getPdfUrl());
 
                 resourceDTO = dto;
