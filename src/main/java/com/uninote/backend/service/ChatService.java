@@ -77,6 +77,7 @@ import com.uninote.backend.dto.ChatRequest;
 import com.uninote.backend.entity.Space;
 import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.MessageMediaRepository;
+import com.uninote.backend.service.PdfContentAnalyzerService;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.slf4j.Logger;
