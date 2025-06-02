@@ -3,6 +3,8 @@ package com.uninote.backend.service;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.stereotype.Service;
+
 @Service
 public class PdfContentAnalyzerService {
 
