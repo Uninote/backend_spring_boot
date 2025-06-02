@@ -145,6 +145,9 @@ public class ChatService {
     @Autowired
     private PdfContentAnalyzerService pdfContentAnalyzerService;
 
+    @Autowired
+    private LangfuseClient langfuseClient;
+
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 130000;
 
@@ -482,7 +485,15 @@ public class ChatService {
                     if (statusCode == 200) {
                         JsonNode responseJson = objectMapper.readTree(responseBody);
                         finalResponse = responseJson.path("choices").get(0).path("message").path("content").asText();
-                        
+                        String fullPrompt = buildFullPrompt(systemPrompt, messages);
+                        langfuseClient.logGeneration(
+                            chatUuid,                  // traceId
+                            isFirstMessage,            // first message flag
+                            null,              // your user id if you have one, or null
+                            fullPrompt,                // your full prompt string
+                            finalResponse,             // the actual model output
+                            deploymentName             // e.g. gpt-4o
+                        );
                         String[] chunks = finalResponse.split("(?<=\\G.{50})");
                         for (String chunk : chunks) {
                             if (!chunk.isEmpty()) {
@@ -665,7 +676,10 @@ private String buildResourceChatSystemPrompt(ResourceChat resourceChat, String u
         List<Map<String, String>> topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
         logger.info("Number of top chunks retrieved: {}", topChunks.size());
         String resourcesSummary = resource.getSummary();
-        return createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks);
+        String content = resource.getContent();
+        String limitedContent = content.substring(0, Math.min(content.length(), 5000));
+
+        return createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks, limitedContent);
     }
 }
 
@@ -746,7 +760,7 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
             "Only respond in Greek.\n\n";*/
     }
     
-    private String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, List<Map<String, String>> chunks) {
+    private String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, List<Map<String, String>> chunks, String content) {
         StringBuilder chunksSection = new StringBuilder();
         
         if (chunks != null && !chunks.isEmpty()) {
@@ -758,6 +772,10 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
                     chunksSection.append("- Excerpt ").append(i + 1).append(": ").append(chunkText).append("\n\n");
                 }
             }
+        } else {
+            chunksSection.append("### **The start of the resource:**\n");
+            chunksSection.append(content);
+
         }
         String prompt;
             try {
@@ -1059,4 +1077,16 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
         return new ChatRequest(newChat.getTitle());
         
     }
+
+    private String buildFullPrompt(String systemPrompt, List<Map<String, Object>> messages) {
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append(systemPrompt).append("\n");
+
+        for (Map<String, Object> message : messages) {
+            promptBuilder.append(message.get("role")).append(": ");
+            promptBuilder.append(message.get("content")).append("\n");
+        }
+        return promptBuilder.toString();
+    }
+
 }
