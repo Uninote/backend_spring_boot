@@ -3,6 +3,7 @@ package com.uninote.backend.service;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class PdfContentAnalyzerService {
 
     private static final Pattern NOISE_PATTERNS = Pattern.compile(
