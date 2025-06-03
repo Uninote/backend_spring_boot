@@ -98,3 +98,4 @@ This chat is based on a resource titled: ${resourceTitle}
 Resource Information 
 Summary: ${resourcesSummary}
 Chunks: ${chunksSection}
+Part Of the Content: ${content}

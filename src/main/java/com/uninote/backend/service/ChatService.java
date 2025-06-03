@@ -800,7 +800,8 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
             prompt = promptService.createLargeResourceSystemPrompt(
                     safeResourceTitle,
                     safeResourcesSummary,
-                    safeChunksSection
+                    safeChunksSection,
+                    content
             );
         } catch (IOException e) {
             System.err.println("Failed to load resource prompt: " + e.getMessage());

@@ -76,11 +76,12 @@ public class PromptService {
         return getFilledPrompt("tutie_content_large.txt", params);
     }
 
-    public String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, String chunksSection) throws IOException {
+    public String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, String chunksSection, String content) throws IOException {
         Map<String, String> params = Map.of(
             "resourceTitle", resourceTitle,
             "resourcesSummary", resourcesSummary,
-            "chunksSection",chunksSection
+            "chunksSection",chunksSection,
+            "content",content
         );
         return getFilledPrompt("tutie_resource.txt", params);
     }
