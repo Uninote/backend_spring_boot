@@ -567,7 +567,7 @@ public class LangChainContentService {
                 
                 // Extract section summary
                 if (sectionContent.has("summary")) {
-                    summaryBuilder.append("## Section ").append(i+1).append("\n\n");
+                    summaryBuilder.append("\n\n");
                     summaryBuilder.append(sectionContent.getString("summary")).append("\n\n");
                 }
                 
