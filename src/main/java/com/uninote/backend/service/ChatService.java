@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -765,32 +766,48 @@ private String buildSpaceChatSystemPrompt(SpaceChat spaceChat, String userMessag
             "Only respond in Greek.\n\n";*/
     }
     
-    private String createLargeResourceSystemPrompt(String resourceTitle, String resourcesSummary, List<Map<String, String>> chunks, String content) {
+    private String createLargeResourceSystemPrompt(
+        String resourceTitle,
+        String resourcesSummary,
+        List<Map<String, String>> chunks,
+        String content) {
+
         StringBuilder chunksSection = new StringBuilder();
-        
+
         if (chunks != null && !chunks.isEmpty()) {
             chunksSection.append("### **Excerpts from the Resource**\n");
             for (int i = 0; i < chunks.size(); i++) {
                 Map<String, String> chunk = chunks.get(i);
-                String chunkText = chunk.getOrDefault("chunk_text", "").trim();
+                String chunkText = chunk != null
+                        ? Optional.ofNullable(chunk.get("chunk_text")).orElse("").trim()
+                        : "";
                 if (!chunkText.isEmpty()) {
                     chunksSection.append("- Excerpt ").append(i + 1).append(": ").append(chunkText).append("\n\n");
                 }
             }
         } else {
             chunksSection.append("### **The start of the resource:**\n");
-            chunksSection.append(content);
-
+            chunksSection.append(Optional.ofNullable(content).orElse(""));
         }
-        String prompt;
-            try {
-                prompt = promptService.createLargeResourceSystemPrompt(resourceTitle,resourcesSummary,chunksSection.toString());
-            } catch (IOException e) {
-                System.err.println("Failed to load resource prompt: " + e.getMessage());
 
-                prompt = "An error occured";
-            }        
-            return prompt;
+        // Handle nulls safely
+        String safeResourceTitle = Optional.ofNullable(resourceTitle).orElse("Unknown Resource");
+        String safeResourcesSummary = Optional.ofNullable(resourcesSummary).orElse("");
+        String safeChunksSection = chunksSection.toString();
+
+        String prompt;
+        try {
+            prompt = promptService.createLargeResourceSystemPrompt(
+                    safeResourceTitle,
+                    safeResourcesSummary,
+                    safeChunksSection
+            );
+        } catch (IOException e) {
+            System.err.println("Failed to load resource prompt: " + e.getMessage());
+            prompt = "An error occurred";
+        }
+
+        return prompt;
         /*return "You are **Tutie**, the best AI tutor. Your goal is to provide accurate, well-structured, and insightful responses in **Markdown format**.\n\n" +
                "### **Resource Information (Summary)**\n" +
                "- Title: **'" + resourceTitle + "'**\n" +
