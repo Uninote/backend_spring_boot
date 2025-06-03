@@ -83,6 +83,6 @@ public class PromptService {
             "chunksSection",chunksSection,
             "content",content
         );
-        return getFilledPrompt("tutie_resource.txt", params);
+        return getFilledPrompt("tutie_resource_large.txt", params);
     }
 }
