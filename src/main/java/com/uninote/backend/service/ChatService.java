@@ -678,8 +678,12 @@ private String buildResourceChatSystemPrompt(ResourceChat resourceChat, String u
         logger.info("Number of top chunks retrieved: {}", topChunks.size());
         String resourcesSummary = resource.getSummary();
         String content = resource.getContent();
-        String limitedContent = content.substring(0, Math.min(content.length(), 5000));
-
+        String limitedContent;
+        if (content.isBlank() || content==null) {
+            limitedContent = "";
+        } else{
+            limitedContent = content.substring(0, Math.min(content.length(), 5000));
+        }
         return createLargeResourceSystemPrompt(resourceTitle, resourcesSummary, topChunks, limitedContent);
     }
 }
