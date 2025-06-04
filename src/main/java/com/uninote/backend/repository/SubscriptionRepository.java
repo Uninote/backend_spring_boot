@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.User;
 
 @Repository
@@ -25,5 +26,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     boolean existsByUser(User savedUser);
 
     boolean existsByStripeSubscriptionId(String stripeSubscriptionId);
+
+    boolean existsByUser_IdAndDuration(Long userId, SubscriptionDuration duration);
 
 }

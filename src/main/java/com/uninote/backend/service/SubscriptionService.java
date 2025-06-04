@@ -210,4 +210,8 @@ public class SubscriptionService {
         return savedSub;
     }
 
+    public boolean existsByUserIdAndDuration(Long id, SubscriptionDuration threeDays) {
+        return subscriptionRepository.existsByUser_IdAndDuration(id, threeDays);
+    }
+
 }

@@ -91,7 +91,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = 0) AS totalPublicNotes, " +
         "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes, " +
         "u.certified AS certified, " +
-        "s.plan AS subscriptionPlan " +
+        "s.plan AS subscriptionPlan, " +
+        "CASE WHEN trial.id IS NOT NULL THEN true ELSE false END AS freeTrialCompleted " +
         "FROM User u " +
         "JOIN DepartmentName dn ON dn.department = u.department " +
         "JOIN UniversityName un ON un.university = u.university " +
@@ -100,6 +101,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "AND s.status = 'active' " +
         "AND s.startDate <= CURRENT_DATE " +
         "AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+        "LEFT JOIN Subscription trial ON trial.user = u AND trial.duration = 'THREE_DAYS' " +
         "WHERE dn.language.code = :languageId " +
         "AND un.language.code = :languageId " +
         "AND u.id = :userId")
@@ -116,7 +118,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "dn.name AS departmentName, " +
         "un.name AS universityName, " +
         "u.certified AS certified, " +
-        "s.plan AS subscriptionPlan " +
+        "s.plan AS subscriptionPlan, " +
+        "CASE WHEN trial.id IS NOT NULL THEN true ELSE false END AS freeTrialCompleted " +
         "FROM User u " +
         "JOIN DepartmentName dn ON dn.department = u.department " +
         "JOIN UniversityName un ON un.university = u.university " +
@@ -124,6 +127,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "AND s.status = 'active' " +
         "AND s.startDate <= CURRENT_DATE " +
         "AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+        "LEFT JOIN Subscription trial ON trial.user = u AND trial.duration = 'THREE_DAYS' " +
         "WHERE dn.language.code = :language " +
         "AND un.language.code = :language " +
         "AND u.id = :userId")

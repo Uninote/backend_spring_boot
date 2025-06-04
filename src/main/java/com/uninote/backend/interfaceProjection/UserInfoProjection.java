@@ -19,4 +19,5 @@ public interface UserInfoProjection {
     @Value("#{(target.certified instanceof T(java.lang.Boolean)) ? target.certified : (target.certified == 1)}")
     Boolean getCertified();
     SubscriptionPlan getSubscriptionPlan();
+    Boolean getFreeTrialCompleted();
 }

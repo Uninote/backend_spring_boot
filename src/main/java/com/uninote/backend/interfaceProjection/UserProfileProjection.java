@@ -25,6 +25,7 @@ public interface UserProfileProjection {
     Long getSeasonScore();
     Boolean getCertified();
     SubscriptionPlan getSubscriptionPlan();
+    Boolean getFreeTrialCompleted();
 
 
 }
