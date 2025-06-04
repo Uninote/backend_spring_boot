@@ -318,31 +318,36 @@ public class ResourceService {
     public NoteResource createNoteResource(Note note) {
         NoteResource noteResource = new NoteResource();
         noteResource.setNote(note);
-    
+
         NoteResource savedResource = noteResourceRepository.save(noteResource);
-    
+
         try {
             MultipartFile file = downloadPdfAsMultipartFile(note.getPdfUrl());
-    
+
             Resource re = contentExtractionService.extractContent(file, savedResource);
             if (re.getContent() == null || re.getContent().trim().equals("")) {
                 return savedResource;
             }
+
+            savedResource.setContent(re.getContent());
+            noteResourceRepository.save(savedResource);
+
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                 @Override
                 public void afterCommit() {
                     langChainContentService.generateAllContentAsync(savedResource.getId());
                 }
             });
-    
+
         } catch (EmptyContentException e){
             throw e;
         } catch (IOException e) {
             throw new RuntimeException("Failed to download or process PDF from URL: " + note.getPdfUrl(), e);
         }
-    
+
         return savedResource;
     }
+
     
 
     private MultipartFile downloadPdfAsMultipartFile(String pdfUrl) throws IOException {
