@@ -34,6 +34,8 @@ public class PromptService {
         return fillPromptTemplate(rawTemplate, params);
     }
     public String createResourceSystemPrompt(String resourceTitle, String resourceContent) throws IOException {
+        resourceTitle = resourceTitle != null ? resourceTitle : "";
+        resourceContent = resourceContent != null ? resourceContent : "";
         Map<String, String> params = Map.of(
             "resourceTitle", resourceTitle,
             "resourceContent", resourceContent

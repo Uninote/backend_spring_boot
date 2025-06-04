@@ -325,6 +325,7 @@ public class ResourceService {
             MultipartFile file = downloadPdfAsMultipartFile(note.getPdfUrl());
 
             Resource re = contentExtractionService.extractContent(file, savedResource);
+            re.setTitle(note.getTitle());
             if (re.getContent() == null || re.getContent().trim().equals("")) {
                 return savedResource;
             }
