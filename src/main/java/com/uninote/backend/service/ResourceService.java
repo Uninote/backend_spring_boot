@@ -326,7 +326,7 @@ public class ResourceService {
     
             Resource re = contentExtractionService.extractContent(file, savedResource);
             if (re.getContent() == null || re.getContent().trim().equals("")) {
-                throw new EmptyContentException("Resource content not found");
+                return savedResource;
             }
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                 @Override
