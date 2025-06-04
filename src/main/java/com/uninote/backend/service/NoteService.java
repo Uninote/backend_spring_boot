@@ -20,6 +20,7 @@ import com.uninote.backend.entity.NoteType;
 import com.uninote.backend.entity.NoteTypeName;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.Season;
+import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.UniscoreIncreaseType;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.UniversityName;
@@ -515,6 +516,12 @@ public class NoteService {
         if (note.getProfessor() != null) {
             dto.setProfessor(note.getProfessor());
         }
+        boolean hasPro = noteRepository.countNotesByUserId(dto.getUserId()) >= 5 ;
+        if (hasPro) {
+            dto.setSubscriptionPlan(SubscriptionPlan.BASIC);
+        } else
+        dto.setSubscriptionPlan(SubscriptionPlan.FREE);
+        
         
         return dto;
     }

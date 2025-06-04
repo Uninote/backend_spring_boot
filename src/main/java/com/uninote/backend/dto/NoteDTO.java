@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
 import com.uninote.backend.validation.NoteValidation.UpdateGroup;
 
@@ -42,6 +43,7 @@ public class NoteDTO {
     private Double grade;
     private Boolean isDigitized;
     private String uuid;
+    private SubscriptionPlan subscriptionPlan;
 
     public NoteDTO(Long noteId, Long courseId, Long userId, String title, String description, String pdfUrl, String filename, Boolean isPublic, 
                    String courseName, String universityName, String departmentName, Long totalLikes, LocalDateTime createdAt) {
@@ -497,5 +499,13 @@ public class NoteDTO {
 
     public String getUuid() {
         return this.uuid;
+    }
+
+    public SubscriptionPlan getSubscriptionPlan(){
+        return this.subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
     }
 }

@@ -998,6 +998,8 @@ List<NoteDTO> findTopInteractedNotesByUser(
    @Query("SELECT n.id FROM Note n WHERE (n.content IS NULL OR TRIM(n.content) = '') AND n.pdfUrl IS NOT NULL AND n.filename IS NOT NULL")
    Page<Long> findNoteIdsWithoutContent(Pageable pageable);
 
+   
+
 }
 
 
