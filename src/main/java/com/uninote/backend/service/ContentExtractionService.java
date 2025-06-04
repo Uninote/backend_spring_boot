@@ -57,11 +57,7 @@ public class ContentExtractionService {
      */
     public Resource extractContent(MultipartFile file, Resource resource) {
         logger.info("Extracting content from file: {}", file.getOriginalFilename());
-        if (resource instanceof NoteResource){
-            NoteResource nr = (NoteResource) resource;
-            nr.setContent(nr.getNote().getContent());
-            return resourceRepository.save(nr);
-        }
+        
         
         // Find an appropriate extractor
         ContentExtractor extractor = findExtractor(file);
