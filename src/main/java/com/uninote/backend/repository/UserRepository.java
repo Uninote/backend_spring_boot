@@ -91,24 +91,26 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = 0) AS totalPublicNotes, " +
         "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes, " +
         "u.certified AS certified, " +
-        "s.plan AS subscriptionPlan, " +
-        "CASE WHEN trial.id IS NOT NULL THEN true ELSE false END AS freeTrialCompleted " +
+        "(SELECT s.plan FROM Subscription s WHERE s.user = u " +
+        " AND s.status = 'active' " +
+        " AND s.startDate <= CURRENT_DATE " +
+        " AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+        " AND s.startDate = (SELECT MAX(s2.startDate) FROM Subscription s2 WHERE s2.user = u " +
+        "                   AND s2.status = 'active' " +
+        "                   AND s2.startDate <= CURRENT_DATE " +
+        "                   AND (s2.endDate IS NULL OR s2.endDate >= CURRENT_DATE))) AS subscriptionPlan, " +
+        "CASE WHEN EXISTS(SELECT 1 FROM Subscription trial WHERE trial.user = u AND trial.duration = 'THREE_DAYS') " +
+        "     THEN true ELSE false END AS freeTrialCompleted " +
         "FROM User u " +
         "JOIN DepartmentName dn ON dn.department = u.department " +
         "JOIN UniversityName un ON un.university = u.university " +
         "JOIN Rank r ON r.id = u.rank.id " +
-        "LEFT JOIN Subscription s ON s.user = u " +
-        "AND s.status = 'active' " +
-        "AND s.startDate <= CURRENT_DATE " +
-        "AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
-        "LEFT JOIN Subscription trial ON trial.user = u AND trial.duration = 'THREE_DAYS' " +
         "WHERE dn.language.code = :languageId " +
         "AND un.language.code = :languageId " +
         "AND u.id = :userId")
-        UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") String languageId);
+UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") String languageId);
 
-
-    @Query("SELECT u.university.id AS universityId, " +
+@Query("SELECT u.university.id AS universityId, " +
         "u.department.id AS departmentId, " +
         "u.uniscore AS uniscore, " +
         "u.username AS username, " +
@@ -118,20 +120,23 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "dn.name AS departmentName, " +
         "un.name AS universityName, " +
         "u.certified AS certified, " +
-        "s.plan AS subscriptionPlan, " +
-        "CASE WHEN trial.id IS NOT NULL THEN true ELSE false END AS freeTrialCompleted " +
+        "(SELECT s.plan FROM Subscription s WHERE s.user = u " +
+        " AND s.status = 'active' " +
+        " AND s.startDate <= CURRENT_DATE " +
+        " AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+        " AND s.startDate = (SELECT MAX(s2.startDate) FROM Subscription s2 WHERE s2.user = u " +
+        "                   AND s2.status = 'active' " +
+        "                   AND s2.startDate <= CURRENT_DATE " +
+        "                   AND (s2.endDate IS NULL OR s2.endDate >= CURRENT_DATE))) AS subscriptionPlan, " +
+        "CASE WHEN EXISTS(SELECT 1 FROM Subscription trial WHERE trial.user = u AND trial.duration = 'THREE_DAYS') " +
+        "     THEN true ELSE false END AS freeTrialCompleted " +
         "FROM User u " +
         "JOIN DepartmentName dn ON dn.department = u.department " +
         "JOIN UniversityName un ON un.university = u.university " +
-        "LEFT JOIN Subscription s ON s.user = u " +
-        "AND s.status = 'active' " +
-        "AND s.startDate <= CURRENT_DATE " +
-        "AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
-        "LEFT JOIN Subscription trial ON trial.user = u AND trial.duration = 'THREE_DAYS' " +
         "WHERE dn.language.code = :language " +
         "AND un.language.code = :language " +
         "AND u.id = :userId")
-        UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("language") String language);
+UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("language") String language);
 
 
    @Query(value = "SELECT rank FROM (" +
