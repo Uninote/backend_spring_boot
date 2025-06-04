@@ -19,6 +19,7 @@ import com.uninote.backend.service.SubscriptionService;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.SubscriptionPlan;
 
 import java.util.List;
@@ -267,7 +268,10 @@ public class UserController {
 
         User user = userRepository.findByFirebaseUid(userUid)
                 .orElseThrow(() -> new RuntimeException("User not found for Firebase UID: " + userUid));
-
+        boolean hasFreeTrial = subscriptionService.existsByUserIdAndDuration(user.getId(), SubscriptionDuration.THREE_DAYS);
+        if (hasFreeTrial) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User has already used the free trial.");
+        }
         Subscription subscription = subscriptionService.createFreeTrialSubscription(
                 user.getId(),
                 SubscriptionPlan.BASIC,
