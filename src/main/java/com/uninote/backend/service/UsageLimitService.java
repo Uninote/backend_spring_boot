@@ -68,8 +68,9 @@ public class UsageLimitService {
     }
 
     private SubscriptionPlan getCurrentPlan(User user) {
-        return subscriptionRepository.findActiveByUser(user)
+        return subscriptionRepository.findLatestActiveByUser(user, LocalDateTime.now(), SubscriptionPlan.FREE)
                 .map(Subscription::getPlan)
                 .orElse(SubscriptionPlan.FREE);
     }
+
 }

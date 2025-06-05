@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.uninote.backend.entity.Subscription;
 import com.uninote.backend.entity.SubscriptionDuration;
+import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 
 @Repository
@@ -21,7 +22,11 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
        "WHERE s.user = :user AND (s.plan = 'FREE' OR s.endDate IS NULL OR s.endDate > CURRENT_TIMESTAMP)")
     boolean existsActiveByUser(@Param("user") User user);
 
-    Optional<Subscription> findActiveByUser(User user);
+    @Query("SELECT s FROM Subscription s WHERE s.user = :user AND s.status = 'active' AND s.startDate <= :now AND (s.endDate IS NULL OR s.endDate >= :now) AND s.plan <> :freePlan ORDER BY s.startDate DESC")
+    Optional<Subscription> findLatestActiveByUser(@Param("user") User user, @Param("now") LocalDateTime now, @Param("freePlan") SubscriptionPlan freePlan);
+
+
+
 
     boolean existsByUser(User savedUser);
 
