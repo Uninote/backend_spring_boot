@@ -4,12 +4,12 @@ package com.uninote.backend.service;
 
 //import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+//import org.springframework.stereotype.Service;
 //import dev.langchain4j.moderation.open.ModerationResult;
 
 import java.util.List;
 
-@Service
+//@Service
 public class PromptModerationService {
 
     /*private final OpenAiModerationModel moderationModel;
