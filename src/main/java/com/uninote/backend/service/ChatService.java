@@ -98,6 +98,8 @@ import org.apache.http.util.EntityUtils;
 
 import org.springframework.http.HttpMethod;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 @Service
 public class ChatService {
@@ -472,79 +474,100 @@ public class ChatService {
                         requestBody.put("response_format", responseFormat);
                     }
                     
+                    // Set streaming to true
+                    requestBody.put("stream", true);
+                    
                     // Convert request to JSON
                     String jsonRequest = objectMapper.writeValueAsString(requestBody);
                     StringEntity entity = new StringEntity(jsonRequest, StandardCharsets.UTF_8);
                     request.setEntity(entity);
                     
-                    
                     HttpResponse response = httpClient.execute(request);
-                    
                     int statusCode = response.getStatusLine().getStatusCode();
-                    org.apache.http.HttpEntity responseEntity = response.getEntity();
-                    String responseBody = EntityUtils.toString(responseEntity);
                     
                     if (statusCode == 200) {
-                        JsonNode responseJson = objectMapper.readTree(responseBody);
-                        finalResponse = responseJson.path("choices").get(0).path("message").path("content").asText();
-                        String fullPrompt = buildFullPrompt(systemPrompt, messages);
-                        langfuseClient.logGeneration(
-                            chatUuid,                  // traceId
-                            isFirstMessage,            // first message flag
-                            null,              // your user id if you have one, or null
-                            fullPrompt,                // your full prompt string
-                            finalResponse,             // the actual model output
-                            deploymentName             // e.g. gpt-4o
-                        );
-                        String[] chunks = finalResponse.split("(?<=\\G.{50})");
-                        for (String chunk : chunks) {
-                            if (!chunk.isEmpty()) {
-                                responseBuffer.append(chunk);
-                                emitter.send(objectMapper.writeValueAsString(chunk));
-                                Thread.sleep(30);
-                            }
-                        }
-                        
-                        if (isFirstMessage) {
-                            try {
-                                String jsonString = finalResponse;
-                                
-                                if (finalResponse.contains("```json")) {
-                                    jsonString = finalResponse.substring(
-                                        finalResponse.indexOf("```json") + 7, 
-                                        finalResponse.lastIndexOf("```")
-                                    ).trim();
-                                } else if (finalResponse.contains("```")) {
-                                    jsonString = finalResponse.substring(
-                                        finalResponse.indexOf("```") + 3, 
-                                        finalResponse.lastIndexOf("```")
-                                    ).trim();
-                                }
-                                
-                                jsonString = jsonString.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
-                                
-                                JsonNode parsedJson = objectMapper.readTree(jsonString);
-                                logger.info(parsedJson.toString());
-                                
-                                aiGeneratedTitle = parsedJson.has("title") ? parsedJson.get("title").asText() : baseChat.getTitle();
-                                textResponse = parsedJson.has("response") ? parsedJson.get("response").asText() : "";
-                                
-                                if (parsedJson.has("sources") && parsedJson.get("sources").isArray()) {
-                                    JsonNode sourcesNode = parsedJson.get("sources");
-                                    for (int i = 0; i < sourcesNode.size(); i++) {
-                                        sources.add(sourcesNode.get(i).asText());
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))) {
+                            String line;
+                            StringBuilder fullResponse = new StringBuilder();
+                            
+                            while ((line = reader.readLine()) != null) {
+                                if (line.startsWith("data: ")) {
+                                    String data = line.substring(6); // Remove "data: " prefix
+                                    if ("[DONE]".equals(data)) {
+                                        break;
+                                    }
+                                    
+                                    try {
+                                        JsonNode chunk = objectMapper.readTree(data);
+                                        String content = chunk.path("choices")
+                                                            .path(0)
+                                                            .path("delta")
+                                                            .path("content")
+                                                            .asText("");
+                                        
+                                        if (!content.isEmpty()) {
+                                            fullResponse.append(content);
+                                            emitter.send(objectMapper.writeValueAsString(content));
+                                        }
+                                    } catch (Exception e) {
+                                        logger.warn("Failed to parse chunk: {}", e.getMessage());
                                     }
                                 }
-                            } catch (Exception e) {
-                                logger.error("Failed to parse JSON response: {}", e.getMessage());
-                                logger.error("Problem response text: {}", finalResponse);
+                            }
+                            
+                            finalResponse = fullResponse.toString();
+                            String fullPrompt = buildFullPrompt(systemPrompt, messages);
+                            langfuseClient.logGeneration(
+                                chatUuid,
+                                isFirstMessage,
+                                null,
+                                fullPrompt,
+                                finalResponse,
+                                deploymentName
+                            );
+                            
+                            // Handle first message JSON parsing if needed
+                            if (isFirstMessage) {
+                                try {
+                                    String jsonString = finalResponse;
+                                    if (finalResponse.contains("```json")) {
+                                        jsonString = finalResponse.substring(
+                                            finalResponse.indexOf("```json") + 7, 
+                                            finalResponse.lastIndexOf("```")
+                                        ).trim();
+                                    } else if (finalResponse.contains("```")) {
+                                        jsonString = finalResponse.substring(
+                                            finalResponse.indexOf("```") + 3, 
+                                            finalResponse.lastIndexOf("```")
+                                        ).trim();
+                                    }
+                                    
+                                    jsonString = jsonString.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
+                                    JsonNode parsedJson = objectMapper.readTree(jsonString);
+                                    logger.info(parsedJson.toString());
+                                    
+                                    aiGeneratedTitle = parsedJson.has("title") ? parsedJson.get("title").asText() : baseChat.getTitle();
+                                    textResponse = parsedJson.has("response") ? parsedJson.get("response").asText() : "";
+                                    
+                                    if (parsedJson.has("sources") && parsedJson.get("sources").isArray()) {
+                                        JsonNode sourcesNode = parsedJson.get("sources");
+                                        for (int i = 0; i < sourcesNode.size(); i++) {
+                                            sources.add(sourcesNode.get(i).asText());
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    logger.error("Failed to parse JSON response: {}", e.getMessage());
+                                    logger.error("Problem response text: {}", finalResponse);
+                                    textResponse = finalResponse;
+                                }
+                            } else {
                                 textResponse = finalResponse;
                             }
-                        } else {
-                            textResponse = finalResponse;
+                            
+                            responseBuffer.append(textResponse);
                         }
                     } else {
-                        throw new RuntimeException("Azure OpenAI API returned status code: " + statusCode + " with message: " + responseBody);
+                        throw new RuntimeException("Azure OpenAI API returned status code: " + statusCode);
                     }
                 } catch (Exception e) {
                     logger.error("Error generating chat completion: {}", e.getMessage());
