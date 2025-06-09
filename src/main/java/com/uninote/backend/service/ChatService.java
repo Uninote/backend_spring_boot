@@ -346,8 +346,8 @@ public class ChatService {
                     systemPrompt = buildSimpleChatSystemPrompt();
                 }
                 
-                boolean isFirstMessage = messageRepository.countByChat(baseChat) == 0;
-                
+                //boolean isFirstMessage = messageRepository.countByChat(baseChat) == 0;
+                boolean isFirstMessage = false;
                 if (isFirstMessage) {
                     systemPrompt += createFirstMessagePrompt();
                 }
