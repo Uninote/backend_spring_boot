@@ -61,7 +61,7 @@ public class PdfContentExtractor implements ContentExtractor {
         try (InputStream inputStream = file.getInputStream();
              PDDocument document = PDDocument.load(inputStream)) {
             
-            return extractText(document);
+            return extractFormattedTextWithPages(document);
             
         } catch (IOException e) {
             logger.error("Failed to extract text from PDF: {}", e.getMessage());
