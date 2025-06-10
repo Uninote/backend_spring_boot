@@ -63,7 +63,7 @@ public class ResourceChatService {
         chat = chatRepository.save(chat);
 
         FileResource fileResource = resourceService.createFileResource(file);
-
+        chat.setTitle(fileResource.getTitle());
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
         resourceChat.setResource(fileResource);
@@ -84,7 +84,7 @@ public class ResourceChatService {
         chat = chatRepository.save(chat);
 
         YouTubeResource ytResource = resourceService.createYouTubeResource(youtubeUrl);
-
+        chat.setTitle(ytResource.getTitle());
         ResourceChat resourceChat = new ResourceChat();
         chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
@@ -130,10 +130,11 @@ public class ResourceChatService {
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
+        Note note = noteRepository.getById(noteId);
+        chat.setTitle(note.getTitle());
         chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
-        Note note = noteRepository.getById(noteId);
         NoteResource nr = resourceService.createNoteResource(note);
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
