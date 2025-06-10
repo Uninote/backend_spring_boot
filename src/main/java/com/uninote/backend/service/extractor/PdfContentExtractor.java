@@ -80,7 +80,7 @@ public class PdfContentExtractor implements ContentExtractor {
             try (InputStream inputStream = connection.getInputStream();
                  PDDocument document = PDDocument.load(inputStream)) {
                 
-                return extractText(document);
+                return extractFormattedTextWithPages(document);
             }
             
         } catch (IOException e) {
@@ -106,4 +106,32 @@ public class PdfContentExtractor implements ContentExtractor {
         logger.info("Successfully extracted {} characters of text", text.length());
         return text;
     }
+
+    private String extractFormattedTextWithPages(PDDocument document) throws IOException {
+        if (document == null) {
+            throw new IllegalArgumentException("PDDocument cannot be null");
+        }
+
+        PDFTextStripper textStripper = new PDFTextStripper();
+        StringBuilder formattedText = new StringBuilder();
+
+        int pageCount = document.getNumberOfPages();
+
+        for (int page = 1; page <= pageCount; page++) {
+            textStripper.setStartPage(page);
+            textStripper.setEndPage(page);
+
+            String pageText = textStripper.getText(document);
+
+            formattedText
+                .append(String.format("--- Page %d ---%n", page))
+                .append(pageText)
+                .append(System.lineSeparator());
+
+            logger.info("Formatted and appended page {}", page);
+        }
+
+        return formattedText.toString();
+    }
+
 }
