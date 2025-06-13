@@ -44,4 +44,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     long countByChat_UserAndCreatedAtBetween(User user, Date start, Date end);
 
+    boolean existsByChat_UserAndCreatedAtAfter(User user, Date date);
+
 }

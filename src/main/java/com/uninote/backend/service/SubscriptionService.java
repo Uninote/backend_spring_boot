@@ -1,27 +1,27 @@
 package com.uninote.backend.service;
 
-import com.stripe.Stripe;
-import com.stripe.exception.StripeException;
-import com.uninote.backend.entity.*;
-import com.uninote.backend.repository.SubscriptionRepository;
-import com.uninote.backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import com.stripe.Stripe;
-import com.stripe.exception.StripeException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionDuration;
+import com.uninote.backend.entity.SubscriptionPlan;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.SubscriptionRepository;
+import com.uninote.backend.repository.UserRepository;
 
 @Service
 public class SubscriptionService {
@@ -212,6 +212,10 @@ public class SubscriptionService {
 
     public boolean existsByUserIdAndDuration(Long id, SubscriptionDuration threeDays) {
         return subscriptionRepository.existsByUser_IdAndDuration(id, threeDays);
+    }
+
+    public Optional<Subscription> findByUser_IdAndDuration(Long userId, SubscriptionDuration duration) {
+        return subscriptionRepository.findByUser_IdAndDuration(userId, duration);
     }
 
 }

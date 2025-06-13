@@ -1,37 +1,45 @@
 package com.uninote.backend.controller;
 
-import com.uninote.backend.dto.UserDTO;
-import com.uninote.backend.dto.UserStatsDTO;
-import com.uninote.backend.converter.EntityToDTOConverter;
-import com.uninote.backend.entity.Department;
-import com.uninote.backend.entity.University;
-import com.uninote.backend.entity.User;
-import com.uninote.backend.interfaceProjection.UserInfoProjection;
-import com.uninote.backend.interfaceProjection.UserProfileProjection;
-import com.uninote.backend.repository.DepartmentRepository;
-import com.uninote.backend.repository.UniversityRepository;
-import com.uninote.backend.repository.UserRepository;
-import com.uninote.backend.service.UserService;
-import com.uninote.backend.dto.MetadataRequest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import com.uninote.backend.service.SubscriptionService;
-
-import com.uninote.backend.config.security.FirebaseAuthentication;
-import com.uninote.backend.entity.Subscription;
-import com.uninote.backend.entity.SubscriptionDuration;
-import com.uninote.backend.entity.SubscriptionPlan;
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.dto.FreeTrialStatusDTO;
+import com.uninote.backend.dto.MetadataRequest;
+import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.dto.UserStatsDTO;
+import com.uninote.backend.entity.Subscription;
+import com.uninote.backend.entity.SubscriptionDuration;
+import com.uninote.backend.entity.SubscriptionPlan;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.UserInfoProjection;
+import com.uninote.backend.interfaceProjection.UserProfileProjection;
+import com.uninote.backend.repository.DepartmentRepository;
+import com.uninote.backend.repository.MessageRepository;
+import com.uninote.backend.repository.UniversityRepository;
+import com.uninote.backend.repository.UserRepository;
+import com.uninote.backend.service.SubscriptionService;
+import com.uninote.backend.service.UserService;
 
 @RestController
 @RequestMapping("/users")
@@ -51,6 +59,9 @@ public class UserController {
 
     @Autowired 
     private SubscriptionService subscriptionService;
+
+    @Autowired
+    private MessageRepository messageRepository;
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
@@ -279,5 +290,53 @@ public class UserController {
         );
 
         return ResponseEntity.ok(subscription);
+    }
+
+    @GetMapping("/free-trial-status")
+    public ResponseEntity<FreeTrialStatusDTO> getFreeTrialStatus() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if user has used free trial
+        boolean hasUsedFreeTrial = subscriptionService.existsByUserIdAndDuration(user.getId(), SubscriptionDuration.THREE_DAYS);
+        
+        // Get the free trial subscription if it exists
+        Optional<Subscription> freeTrialSub = subscriptionService.findByUser_IdAndDuration(user.getId(), SubscriptionDuration.THREE_DAYS);
+        
+        boolean freeTrialEnded = false;
+        LocalDateTime freeTrialEndDate = null;
+        boolean hasUsedChatAfterTrial = false;
+
+        if (freeTrialSub.isPresent()) {
+            Subscription trial = freeTrialSub.get();
+            freeTrialEndDate = trial.getEndDate();
+            freeTrialEnded = freeTrialEndDate != null && freeTrialEndDate.isBefore(LocalDateTime.now());
+            
+            // Check if user has used chat after trial ended
+            if (freeTrialEnded) {
+                hasUsedChatAfterTrial = messageRepository.existsByChat_UserAndCreatedAtAfter(
+                    user, 
+                    java.sql.Timestamp.valueOf(freeTrialEndDate)
+                );
+            }
+        }
+
+        FreeTrialStatusDTO status = new FreeTrialStatusDTO(
+            hasUsedFreeTrial,
+            freeTrialEnded,
+            hasUsedChatAfterTrial,
+            freeTrialEndDate
+        );
+
+        return ResponseEntity.ok(status);
     }
 }

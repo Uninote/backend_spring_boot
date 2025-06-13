@@ -34,4 +34,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     boolean existsByUser_IdAndDuration(Long userId, SubscriptionDuration duration);
 
+    Optional<Subscription> findByUser_IdAndDuration(Long userId, SubscriptionDuration duration);
+
 }
