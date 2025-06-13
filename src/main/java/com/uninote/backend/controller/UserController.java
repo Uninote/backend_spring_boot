@@ -315,11 +315,21 @@ public class UserController {
         boolean freeTrialEnded = false;
         LocalDateTime freeTrialEndDate = null;
         boolean hasUsedChatAfterTrial = false;
+        boolean hasUsedChatDuringTrial = false;
 
         if (freeTrialSub.isPresent()) {
             Subscription trial = freeTrialSub.get();
             freeTrialEndDate = trial.getEndDate();
             freeTrialEnded = freeTrialEndDate != null && freeTrialEndDate.isBefore(LocalDateTime.now());
+            
+            // Check if user has used chat during trial period
+            if (trial.getStartDate() != null && freeTrialEndDate != null) {
+                hasUsedChatDuringTrial = messageRepository.countByChat_UserAndCreatedAtBetween(
+                    user,
+                    java.sql.Timestamp.valueOf(trial.getStartDate()),
+                    java.sql.Timestamp.valueOf(freeTrialEndDate)
+                ) > 0;
+            }
             
             // Check if user has used chat after trial ended
             if (freeTrialEnded) {
@@ -334,7 +344,8 @@ public class UserController {
             hasUsedFreeTrial,
             freeTrialEnded,
             hasUsedChatAfterTrial,
-            freeTrialEndDate
+            freeTrialEndDate,
+            hasUsedChatDuringTrial
         );
 
         return ResponseEntity.ok(status);

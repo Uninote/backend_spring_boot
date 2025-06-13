@@ -7,12 +7,14 @@ public class FreeTrialStatusDTO {
     private boolean freeTrialEnded;
     private boolean hasUsedChatAfterTrial;
     private LocalDateTime freeTrialEndDate;
+    private boolean hasUsedChatDuringTrial;
 
-    public FreeTrialStatusDTO(boolean hasUsedFreeTrial, boolean freeTrialEnded, boolean hasUsedChatAfterTrial, LocalDateTime freeTrialEndDate) {
+    public FreeTrialStatusDTO(boolean hasUsedFreeTrial, boolean freeTrialEnded, boolean hasUsedChatAfterTrial, LocalDateTime freeTrialEndDate, boolean hasUsedChatDuringTrial) {
         this.hasUsedFreeTrial = hasUsedFreeTrial;
         this.freeTrialEnded = freeTrialEnded;
         this.hasUsedChatAfterTrial = hasUsedChatAfterTrial;
         this.freeTrialEndDate = freeTrialEndDate;
+        this.hasUsedChatDuringTrial = hasUsedChatDuringTrial;
     }
 
     public boolean isHasUsedFreeTrial() {
@@ -45,5 +47,13 @@ public class FreeTrialStatusDTO {
 
     public void setFreeTrialEndDate(LocalDateTime freeTrialEndDate) {
         this.freeTrialEndDate = freeTrialEndDate;
+    }
+
+    public boolean isHasUsedChatDuringTrial() {
+        return hasUsedChatDuringTrial;
+    }
+
+    public void setHasUsedChatDuringTrial(boolean hasUsedChatDuringTrial) {
+        this.hasUsedChatDuringTrial = hasUsedChatDuringTrial;
     }
 } 

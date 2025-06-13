@@ -592,11 +592,19 @@ public class ChatService {
                     String finalResponseStr = processStreamingResponse(response, emitter);
                     
                     // Log generation
+                    logger.info("Preparing to log to Langfuse - Chat UUID: {}, Is First Message: {}", chatUuid, isFirstMessage);
+                    logger.info("Langfuse logging - User ID: {}", baseChat.getUser().getId());
+                    logger.info("Langfuse logging - Model: {}", azureConfig.getChatDeployment());
+                    
+                    String fullPrompt = buildFullPrompt(systemPrompt, (List<Map<String, Object>>) requestBody.get("messages"));
+                    logger.info("Langfuse logging - Prompt length: {}", fullPrompt.length());
+                    logger.info("Langfuse logging - Response length: {}", finalResponseStr.length());
+                    
                     langfuseClient.logGeneration(
                         chatUuid,
                         isFirstMessage,
-                        null,
-                        buildFullPrompt(systemPrompt, (List<Map<String, Object>>) requestBody.get("messages")),
+                        baseChat.getUser().getId().toString(),
+                        fullPrompt,
                         finalResponseStr,
                         azureConfig.getChatDeployment()
                     );
