@@ -306,9 +306,6 @@ public class UserController {
         User user = userRepository.findByFirebaseUid(userUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if user has used free trial
-        boolean hasUsedFreeTrial = subscriptionService.existsByUserIdAndDuration(user.getId(), SubscriptionDuration.THREE_DAYS);
-        
         // Get the free trial subscription if it exists
         Optional<Subscription> freeTrialSub = subscriptionService.findByUser_IdAndDuration(user.getId(), SubscriptionDuration.THREE_DAYS);
         
@@ -316,6 +313,7 @@ public class UserController {
         LocalDateTime freeTrialEndDate = null;
         boolean hasUsedChatAfterTrial = false;
         boolean hasUsedChatDuringTrial = false;
+        boolean hasUsedFreeTrial = false;
 
         if (freeTrialSub.isPresent()) {
             Subscription trial = freeTrialSub.get();
@@ -329,6 +327,8 @@ public class UserController {
                     java.sql.Timestamp.valueOf(trial.getStartDate()),
                     java.sql.Timestamp.valueOf(freeTrialEndDate)
                 ) > 0;
+                // Set hasUsedFreeTrial based on whether they used chat during trial
+                hasUsedFreeTrial = hasUsedChatDuringTrial;
             }
             
             // Check if user has used chat after trial ended
