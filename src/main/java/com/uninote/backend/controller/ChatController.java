@@ -119,6 +119,10 @@ public class ChatController {
         Chat chat = chatRepository.findByUuid(chatUuid)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
+        if (!chat.getUser().getId().equals(user.getId())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
         usageLimitService.checkDailyMessageLimit(user, chat);
 
         SseEmitter emitter = chatService.addMessageToChat(chatUuid, userMessage, uploadedImages);
