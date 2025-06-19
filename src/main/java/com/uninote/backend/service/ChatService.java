@@ -407,7 +407,7 @@ public class ChatService {
         return requestBody;
     }
 
-    private void saveChatMessageAndMedia(Chat chat, String userMessage, String textResponse, 
+    private Long saveChatMessageAndMedia(Chat chat, String userMessage, String textResponse, 
             List<Map<String, String>> uploadedMediaMeta) {
         Message message = new Message();
         message.setChat(chat);
@@ -427,6 +427,8 @@ public class ChatService {
         
         chat.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         chatRepository.save(chat);
+        
+        return savedMessage.getId();
     }
 
     private void handleFirstChatMessage(String finalResponse, Chat chat) {
@@ -526,14 +528,16 @@ public class ChatService {
         return fullResponse.toString();
     }
 
-    private void sendFinalResponse(SseEmitter emitter, Chat chat, String userMessage, String finalResponseStr) throws IOException {
+    private void sendFinalResponse(SseEmitter emitter, Chat chat, String userMessage, String finalResponseStr, Long messageId) throws IOException {
         Map<String, Object> finalPayload = new HashMap<>();
         finalPayload.put("user_message", userMessage);
+        finalPayload.put("message_id", messageId);
         
         Map<String, Object> serviceResponse = new HashMap<>();
         serviceResponse.put("title", chat.getTitle() != null ? chat.getTitle() : "General Assistance");
         serviceResponse.put("user_message", userMessage);
         serviceResponse.put("service_response", finalResponseStr.trim());
+        serviceResponse.put("message_id", messageId);
         serviceResponse.put("annotations", new HashMap<>());
         serviceResponse.put("sources", new ArrayList<>());
         
@@ -615,13 +619,13 @@ public class ChatService {
                     }
                     
                     // Save message and update timestamps
-                    saveChatMessageAndMedia(baseChat, userMessage, finalResponseStr, uploadedMediaMeta);
+                    Long savedMessageId = saveChatMessageAndMedia(baseChat, userMessage, finalResponseStr, uploadedMediaMeta);
                     if (specificChat instanceof SpaceChat) {
                         spaceChat.getSpace().setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
                     }
                     
                     // Send final response
-                    sendFinalResponse(emitter, baseChat, userMessage, finalResponseStr);
+                    sendFinalResponse(emitter, baseChat, userMessage, finalResponseStr, savedMessageId);
                 } else {
                     throw new RuntimeException("Azure OpenAI API returned status code: " + response.getStatusLine().getStatusCode());
                 }
@@ -909,6 +913,17 @@ public class ChatService {
             promptBuilder.append(message.get("content")).append("\n");
         }
         return promptBuilder.toString();
+    }
+
+    @Transactional
+    public boolean updateMessageRating(Long messageId, String rating) {
+        try {
+            int updatedRows = messageRepository.updateMessageRating(messageId, rating);
+            return updatedRows > 0;
+        } catch (Exception e) {
+            logger.error("Error updating message rating: {}", e.getMessage(), e);
+            return false;
+        }
     }
 
 }
