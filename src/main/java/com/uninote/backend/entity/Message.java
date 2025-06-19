@@ -44,6 +44,9 @@ public class Message {
     @Column(name = "ANNOTATIONS")
     private String annotations;
 
+    @Column(name = "RATING")
+    private String rating;
+
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MessageMedia> media = new ArrayList<>();
 
@@ -133,6 +136,14 @@ public class Message {
 
     public void setAnnotations(String annotations) {
         this.annotations = annotations;
+    }
+
+    public String getRating() {
+        return rating;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
     }
 
     public List<MessageMedia> getMedia() {

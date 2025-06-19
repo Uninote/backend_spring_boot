@@ -4,8 +4,10 @@ import com.azure.ai.openai.models.ChatResponseMessage;
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.dto.ChatHistoryDto;
 import com.uninote.backend.dto.ChatRequest;
+import com.uninote.backend.dto.MessageRatingDTO;
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
+import com.uninote.backend.entity.MessageRating;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.ChatRepository;
@@ -148,6 +150,36 @@ public class ChatController {
     public ResponseEntity<ChatRequest> updateChat(@PathVariable String chatUuid, @RequestBody ChatRequest chatDto) {
         ChatRequest req = chatService.updateChat(chatUuid, chatDto);
         return ResponseEntity.ok(req);
+    }
+
+    @PostMapping("/message/rate")
+    public ResponseEntity<String> rateMessage(@RequestBody MessageRatingDTO ratingRequest) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        
+
+        try {
+            boolean success = chatService.updateMessageRating(ratingRequest.getMessageId(), ratingRequest.getRating());
+            if (success) {
+                return ResponseEntity.ok("Message rated successfully");
+            } else {
+                return ResponseEntity.badRequest().body("Failed to rate message");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error rating message: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/message/rating-options")
+    public ResponseEntity<List<String>> getRatingOptions() {
+        List<String> ratingOptions = java.util.Arrays.stream(MessageRating.values())
+            .map(MessageRating::getValue)
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(ratingOptions);
     }
 
     @PostMapping("/{resourceId}/generate")

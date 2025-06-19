@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.Message;
@@ -45,5 +47,10 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     long countByChat_UserAndCreatedAtBetween(User user, Date start, Date end);
 
     boolean existsByChat_UserAndCreatedAtAfter(User user, Date date);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Message m SET m.rating = :rating WHERE m.id = :messageId")
+    int updateMessageRating(@Param("messageId") Long messageId, @Param("rating") String rating);
 
 }
