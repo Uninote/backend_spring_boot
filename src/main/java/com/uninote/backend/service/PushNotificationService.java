@@ -1,20 +1,20 @@
 package com.uninote.backend.service;
 
-import nl.martijndwars.webpush.Notification;
-import nl.martijndwars.webpush.PushService;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.entity.PushSubscription;
 import com.uninote.backend.repository.PushSubscriptionRepository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Map;
+import nl.martijndwars.webpush.Notification;
+import nl.martijndwars.webpush.PushService;
 
 @Service
 public class PushNotificationService {
@@ -25,6 +25,11 @@ public class PushNotificationService {
     private final PushService pushService;
 
     public PushNotificationService() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
+        // Register BouncyCastle provider if not already registered
+        if (Security.getProvider("BC") == null) {
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        }
+        
         this.pushService = new PushService();
         pushService.setPublicKey("BKx2CN9aZTw3v7v_8KkZSKifgQ6SD5TKtAbEaYTXHMRIXuPk22FEGSyrwuJVD2X5sEWRekfUK0uggDazd0Iigt4");
         pushService.setPrivateKey("uLWs8QfAWI8n5HeC8He80vRpvvl76o2Nv7_QRiVL9GU");

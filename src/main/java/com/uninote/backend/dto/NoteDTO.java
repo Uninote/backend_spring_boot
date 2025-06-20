@@ -1,16 +1,13 @@
 package com.uninote.backend.dto;
 
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
 import com.uninote.backend.validation.NoteValidation.UpdateGroup;
+
+import jakarta.validation.constraints.NotNull;
 
 public class NoteDTO {
 
