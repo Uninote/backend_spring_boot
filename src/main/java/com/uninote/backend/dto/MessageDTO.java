@@ -5,21 +5,32 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.uninote.backend.entity.Message;
-import com.uninote.backend.entity.MessageMedia;
 
 public class MessageDTO {
+    private Long messageId;
     private String userMessage;
     private String serviceResponse;
     private Timestamp createdAt;
+    private String rating;
     private List<MessageMediaDTO> media;
 
     public MessageDTO(Message msg) {
+        this.messageId = msg.getId();
         this.userMessage = msg.getUserMessage();
         this.serviceResponse = msg.getServiceResponse();
         this.createdAt = msg.getCreatedAt();
+        this.rating = msg.getRating();
         this.media = msg.getMedia().stream()
             .map(MessageMediaDTO::new)
             .collect(Collectors.toList());
+    }
+
+    public Long getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(Long messageId) {
+        this.messageId = messageId;
     }
 
     public String getUserMessage() {
@@ -32,6 +43,14 @@ public class MessageDTO {
 
     public Timestamp getCreatedAt() {
         return createdAt;
+    }
+
+    public String getRating() {
+        return rating;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
     }
 
     public List<MessageMediaDTO> getMedia() {
@@ -59,9 +78,11 @@ public class MessageDTO {
     @Override
     public String toString() {
         return "MessageDTO{" +
-                "userMessage='" + userMessage + '\'' +
+                "messageId=" + messageId +
+                ", userMessage='" + userMessage + '\'' +
                 ", serviceResponse='" + serviceResponse + '\'' +
                 ", createdAt=" + createdAt +
+                ", rating='" + rating + '\'' +
                 ", media=" + media +
                 '}';
     }

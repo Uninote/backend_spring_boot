@@ -1,6 +1,33 @@
 package com.uninote.backend.controller;
 
-import com.google.api.gax.rpc.InvalidArgumentException;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.uninote.backend.config.ContentAccessPolicy;
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.converter.EntityToDTOConverter;
@@ -12,41 +39,17 @@ import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
-import com.uninote.backend.exceptions.ErrorResponse;
 import com.uninote.backend.interfaceProjection.NoteProjection;
 import com.uninote.backend.repository.CourseRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.NoteService;
 import com.uninote.backend.service.NoteViewService;
+import com.uninote.backend.service.UserFilterSearchService;
 import com.uninote.backend.service.UserService;
+import com.uninote.backend.service.UserSessionService;
 import com.uninote.backend.utils.EncryptionUtil;
 import com.uninote.backend.validation.NoteValidation.CreateGroup;
-import com.uninote.backend.validation.NoteValidation.UpdateGroup;
-
-import org.springframework.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import java.net.http.HttpRequest;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/notes")
@@ -72,6 +75,12 @@ public class NoteController {
 
     @Autowired
     private NoteViewService noteViewService;
+
+    @Autowired
+    private UserSessionService userSessionService;
+
+    @Autowired
+    private UserFilterSearchService userFilterSearchService;
 
     private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
 
@@ -633,6 +642,23 @@ public class NoteController {
             @RequestParam(defaultValue = "EN") String language) {
 
         try {
+            Long userId = null;
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) auth;
+                String userUid = firebaseAuth.getUid();
+                User user = userRepository.findByFirebaseUid(userUid).orElse(null);
+                if (user != null) {
+                    userId = user.getId();
+                }
+            }
+
+            // Only log search if user is authenticated
+            if (userId != null) {
+                Long sessionId = userSessionService.findLastSessionForUser(userId);
+                userFilterSearchService.logSearch(userId, universityId, departmentId, semester, courseId, sessionId);
+            }
+            
             // Handle type filtering if typeId is provided
             if (typeId != null && publicOnly) {
                 // Process by type with various filters
