@@ -916,9 +916,10 @@ public class ChatService {
     }
 
     @Transactional
-    public boolean updateMessageRating(Long messageId, String rating) {
+    public boolean updateMessageRating(Long messageId, Map<String, Object> rating) {
         try {
-            int updatedRows = messageRepository.updateMessageRating(messageId, rating);
+            String ratingAsString = objectMapper.writeValueAsString(rating);
+            int updatedRows = messageRepository.updateMessageRating(messageId, ratingAsString);
             return updatedRows > 0;
         } catch (Exception e) {
             logger.error("Error updating message rating: {}", e.getMessage(), e);

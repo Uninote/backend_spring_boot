@@ -1,12 +1,14 @@
 package com.uninote.backend.dto;
 
+import java.util.Map;
+
 public class MessageRatingDTO {
     private Long messageId;
-    private String rating;
+    private Map<String, Object> rating;
 
     public MessageRatingDTO() {}
 
-    public MessageRatingDTO(Long messageId, String rating) {
+    public MessageRatingDTO(Long messageId, Map<String, Object> rating) {
         this.messageId = messageId;
         this.rating = rating;
     }
@@ -19,11 +21,11 @@ public class MessageRatingDTO {
         this.messageId = messageId;
     }
 
-    public String getRating() {
+    public Map<String, Object> getRating() {
         return rating;
     }
 
-    public void setRating(String rating) {
+    public void setRating(Map<String, Object> rating) {
         this.rating = rating;
     }
 } 

@@ -2,10 +2,9 @@ package com.uninote.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
 import org.springframework.scheduling.annotation.EnableAsync;
+
 import io.github.cdimascio.dotenv.Dotenv;
-import com.uninote.backend.config.StripeConfig; // Add this import
 
 
 
@@ -16,7 +15,7 @@ public class DemoApplication {
         String profile = System.getenv("SPRING_PROFILES_ACTIVE");
 
         if (profile == null || profile.isEmpty()) {
-            profile = "development";
+            profile = "dev";
         }
 
         Dotenv dotenv = Dotenv.configure()
