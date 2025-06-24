@@ -25,6 +25,7 @@ import com.uninote.backend.entity.FileResource;
 import com.uninote.backend.entity.Message;
 import com.uninote.backend.entity.MessageMedia;
 import com.uninote.backend.entity.NoteResource;
+import com.uninote.backend.entity.PromptVariant;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.SpaceChat;
@@ -144,6 +145,9 @@ public class ChatService {
 
     @Autowired
     private PromptService promptService;
+
+    @Autowired
+    private PromptABTestService promptABTestService;
 
     @Autowired
     private PdfContentAnalyzerService pdfContentAnalyzerService;
@@ -576,9 +580,18 @@ public class ChatService {
                 SpaceChat spaceChat = spaceChatRepository.findById(baseChat.getId()).orElse(null);
                 Object specificChat = resourceChat != null ? resourceChat : (spaceChat != null ? spaceChat : baseChat);
                 
-                // Build system prompt
+                // Build system prompt and track which variant was used
                 boolean isFirstMessage = false;
                 String systemPrompt = determineAndBuildSystemPrompt(baseChat, resourceChat, spaceChat, userMessage, isFirstMessage);
+                
+                // Track which prompt variant was used (for simple chats)
+                String usedVariantName = null;
+                if (resourceChat == null && spaceChat == null) {
+                    // This is a simple chat, so we used a variant
+                    PromptVariant variant = promptABTestService.getRandomPromptVariant();
+                    systemPrompt = variant.getContent();
+                    usedVariantName = variant.getName();
+                }
                 
                 // Process images and prepare request
                 List<Map<String, String>> uploadedMediaMeta = processUploadedImagesForChat(uploadedImages, baseChat);
@@ -624,6 +637,24 @@ public class ChatService {
                         spaceChat.getSpace().setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
                     }
                     
+                    // Log which prompt variant was used (for simple chats)
+                    if (usedVariantName != null) {
+                        String userId = baseChat.getUser().getId().toString();
+                        String messageId = savedMessageId.toString();
+                        String requestId = "req_" + System.currentTimeMillis();
+                        
+                        promptABTestService.logVariantUsage(
+                            usedVariantName,
+                            userId,
+                            messageId,
+                            requestId,
+                            "{\"chatType\": \"simple\", \"chatUuid\": \"" + chatUuid + "\"}"
+                        );
+                        
+                        logger.info("Logged prompt variant usage: {} for user: {}, message: {}", 
+                                  usedVariantName, userId, messageId);
+                    }
+                    
                     // Send final response
                     sendFinalResponse(emitter, baseChat, userMessage, finalResponseStr, savedMessageId);
                 } else {
@@ -643,15 +674,14 @@ public class ChatService {
     }
 
     private String buildSimpleChatSystemPrompt() {
-        String prompt;
-            try {
-                prompt = promptService.createSimpleSystemPrompt();
-            } catch (IOException e) {
-                System.err.println("Failed to load resource prompt: " + e.getMessage());
-
-                prompt = "An error occured";
-            }        
-            return prompt;
+        // This method is now only used as a fallback
+        // The actual variant selection happens in addMessageToChat
+        try {
+            return promptService.createSimpleSystemPrompt();
+        } catch (IOException e) {
+            logger.error("Failed to load fallback prompt: {}", e.getMessage());
+            return "You are a helpful assistant.";
+        }
     }
 
     private String buildResourceChatSystemPrompt(ResourceChat resourceChat, String userMessage) {
