@@ -661,8 +661,13 @@ public class ChatService {
                         
                         String resourcesSummary = formatResourceChunks(topChunks);
                         
-                        // Append space information to the base prompt
-                        systemPrompt = variant.getContent() + "\n\nThis is the information you have available for the space:\n" +
+                        // Append space information to the base prompt with description
+                        systemPrompt = variant.getContent() + "\n\nSpace-Based Chat Content\n" +
+                                      "A Space is a collection of multiple educational resources that the learner has organized together. " +
+                                      "This allows you to access and combine knowledge from multiple documents, notes, or materials " +
+                                      "to provide comprehensive and thorough responses. The learner expects you to synthesize information " +
+                                      "across all the provided resources and give complete answers based on the aggregated knowledge.\n\n" +
+                                      "This is the information you have available for the space:\n" +
                                       "Resource summaries: " + summariesText.toString() + "\n" +
                                       "and the you also have the following chunks: " + resourcesSummary;
                     }
