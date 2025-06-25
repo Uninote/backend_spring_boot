@@ -775,6 +775,49 @@ public class ChatService {
                             retrievalChunks = topChunks;
                         }
                         
+                        // Prepare enhanced additional data for evaluation
+                        Map<String, Object> additionalData = new HashMap<>();
+                        additionalData.put("chatUuid", chatUuid);
+                        additionalData.put("isFirstMessage", isFirstMessage ? 1 : 0); // Oracle boolean as integer
+                        additionalData.put("sessionId", "session_" + System.currentTimeMillis()); // Generate session ID
+                        additionalData.put("userAgent", "UniNote-Client"); // Default user agent
+                        additionalData.put("ipAddress", "unknown"); // Will be set from request context if available
+                        additionalData.put("errorOccurred", 0); // Oracle boolean as integer: 0=false
+                        additionalData.put("errorMessage", null);
+                        
+                        // Model and deployment information
+                        additionalData.put("modelName", "gpt-4"); // Default model name
+                        additionalData.put("modelDeployment", azureConfig.getChatDeployment());
+                        
+                        // Model parameters (default values - can be enhanced later)
+                        additionalData.put("temperature", 0.7);
+                        additionalData.put("maxTokens", 4000);
+                        additionalData.put("topP", 0.95);
+                        additionalData.put("frequencyPenalty", 0.0);
+                        additionalData.put("presencePenalty", 0.0);
+                        
+                        // Token counts (approximate - can be enhanced with actual token counting)
+                        int systemPromptLength = systemPrompt != null ? systemPrompt.length() : 0;
+                        int questionLength = userMessage != null ? userMessage.length() : 0;
+                        int responseLength = finalResponseStr != null ? finalResponseStr.length() : 0;
+                        
+                        // Rough token estimation (1 token ≈ 4 characters for English text)
+                        int estimatedInputTokens = (systemPromptLength + questionLength) / 4;
+                        int estimatedOutputTokens = responseLength / 4;
+                        int estimatedTotalTokens = estimatedInputTokens + estimatedOutputTokens;
+                        
+                        additionalData.put("inputTokens", estimatedInputTokens);
+                        additionalData.put("outputTokens", estimatedOutputTokens);
+                        additionalData.put("totalTokens", estimatedTotalTokens);
+                        additionalData.put("systemPromptLength", systemPromptLength);
+                        
+                        // Timing breakdown (approximate - can be enhanced with actual timing)
+                        long retrievalTimeMs = 0; // Will be enhanced with actual retrieval timing
+                        long generationTimeMs = responseTimeMs - retrievalTimeMs;
+                        
+                        additionalData.put("retrievalTimeMs", retrievalTimeMs);
+                        additionalData.put("generationTimeMs", generationTimeMs);
+                        
                         // Log the RAG evaluation
                         ragEvaluationService.logRAGEvaluation(
                             usedVariantName,
@@ -787,11 +830,12 @@ public class ChatService {
                             null, // evaluationMetrics - will be added later when user rates
                             null, // userRating - will be updated when user provides rating
                             responseTimeMs,
-                            Map.of("chatUuid", chatUuid, "isFirstMessage", isFirstMessage)
+                            additionalData
                         );
                         
-                        logger.info("Logged RAG evaluation: variant={}, user={}, message={}, responseTime={}ms", 
-                                  usedVariantName, userId, messageId, responseTimeMs);
+                        logger.info("Logged enhanced RAG evaluation: variant={}, user={}, message={}, responseTime={}ms, tokens={}, chunks={}", 
+                                  usedVariantName, userId, messageId, responseTimeMs, estimatedTotalTokens, 
+                                  retrievalChunks != null ? retrievalChunks.size() : 0);
                     } catch (Exception e) {
                         logger.error("Error logging RAG evaluation: {}", e.getMessage(), e);
                         // Don't fail the chat if evaluation logging fails
