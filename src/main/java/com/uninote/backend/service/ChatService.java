@@ -580,17 +580,92 @@ public class ChatService {
                 SpaceChat spaceChat = spaceChatRepository.findById(baseChat.getId()).orElse(null);
                 Object specificChat = resourceChat != null ? resourceChat : (spaceChat != null ? spaceChat : baseChat);
                 
-                // Build system prompt and track which variant was used
-                boolean isFirstMessage = false;
-                String systemPrompt = determineAndBuildSystemPrompt(baseChat, resourceChat, spaceChat, userMessage, isFirstMessage);
-                
-                // Track which prompt variant was used (for simple chats)
+                // Use one unified base prompt for all chat types
                 String usedVariantName = null;
+                String chatType = null;
+                String systemPrompt = null;
+                boolean isFirstMessage = false;
+                
+                // Get a random prompt variant (unified for all chat types)
+                PromptVariant variant = promptABTestService.getRandomPromptVariant();
+                usedVariantName = variant.getName();
+                systemPrompt = variant.getContent();
+                
+                // Determine chat type for logging
                 if (resourceChat == null && spaceChat == null) {
-                    // This is a simple chat, so we used a variant
-                    PromptVariant variant = promptABTestService.getRandomPromptVariant();
-                    systemPrompt = variant.getContent();
-                    usedVariantName = variant.getName();
+                    chatType = "simple";
+                } else if (resourceChat != null) {
+                    chatType = "resource";
+                    
+                    // Add resource-specific content to the base prompt
+                    Resource resource = resourceChat.getResource();
+                    if (resource != null) {
+                        String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Unknown Resource";
+                        String resourceContent = resource.getContent() != null ? resource.getContent() : "No content available";
+                        
+                        // Unified resource handling for both small and large resources
+                        String resourceInfo;
+                        if (resourceContent.length() <= MAX_RESOURCE_CHARS) {
+                            // Small resource - use full content
+                            resourceInfo = "This chat is based on a resource titled: " + resourceTitle + "\n" +
+                                          "The learner has provided the following educational material:\n" + resourceContent;
+                        } else {
+                            // Large resource - use summary + relevant chunks
+                            List<Map<String, String>> topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
+                            logger.info("Number of top chunks retrieved for large resource: {}", topChunks.size());
+                            
+                            String resourcesSummary = resource.getSummary() != null ? resource.getSummary() : "No summary available";
+                            String limitedContent = resourceContent.substring(0, Math.min(resourceContent.length(), 5000));
+                            
+                            StringBuilder chunksSection = new StringBuilder();
+                            if (topChunks != null && !topChunks.isEmpty()) {
+                                chunksSection.append("\n### **Most Relevant Excerpts from the Resource**\n");
+                                for (int i = 0; i < topChunks.size(); i++) {
+                                    Map<String, String> chunk = topChunks.get(i);
+                                    String chunkText = chunk != null
+                                            ? Optional.ofNullable(chunk.get("chunk_text")).orElse("").trim()
+                                            : "";
+                                    if (!chunkText.isEmpty()) {
+                                        chunksSection.append("- Excerpt ").append(i + 1).append(": ").append(chunkText).append("\n\n");
+                                    }
+                                }
+                            } else {
+                                chunksSection.append("\n### **The start of the resource:**\n");
+                                chunksSection.append(limitedContent);
+                            }
+                            
+                            resourceInfo = "This chat is based on a resource titled: " + resourceTitle + "\n" +
+                                          "Resource Summary: " + resourcesSummary + "\n" +
+                                          chunksSection.toString();
+                        }
+                        
+                        // Append resource information to the base prompt
+                        systemPrompt = variant.getContent() + "\n\nResource-Based Chat Content\n" + resourceInfo;
+                    }
+                } else if (spaceChat != null) {
+                    chatType = "space";
+                    
+                    // Add space-specific content to the base prompt
+                    Space space = spaceChat.getSpace();
+                    if (space != null) {
+                        // Get space summaries and chunks
+                        Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
+                        List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
+                        
+                        StringBuilder summariesText = new StringBuilder("Resource Summaries:\n\n");
+                        resourceRepository.findAllById(resourceIds).forEach(resource -> {
+                            String contentToUse = (resource.getSummary() != null ? resource.getSummary().trim() : "(no summary)");
+                            summariesText.append("- Resource Title ").append(resource.getTitle()).append(": ")
+                                        .append(contentToUse).append("\n");
+                        });
+                        
+                        String resourcesSummary = formatResourceChunks(topChunks);
+                        
+                        // Append space information to the base prompt
+                        systemPrompt = variant.getContent() + "\n\nThis is the information you have available for the space:\n" +
+                                      "Resource summaries: " + summariesText.toString() + "\n" +
+                                      "and the you also have the following chunks: " + resourcesSummary;
+                    }
                 }
                 
                 // Process images and prepare request
@@ -637,7 +712,7 @@ public class ChatService {
                         spaceChat.getSpace().setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
                     }
                     
-                    // Log which prompt variant was used (for simple chats)
+                    // Log which prompt variant was used (for all chat types)
                     if (usedVariantName != null) {
                         String userId = baseChat.getUser().getId().toString();
                         String messageId = savedMessageId.toString();
@@ -648,11 +723,11 @@ public class ChatService {
                             userId,
                             messageId,
                             requestId,
-                            "{\"chatType\": \"simple\", \"chatUuid\": \"" + chatUuid + "\"}"
+                            "{\"chatType\": \"" + chatType + "\", \"chatUuid\": \"" + chatUuid + "\"}"
                         );
                         
-                        logger.info("Logged prompt variant usage: {} for user: {}, message: {}", 
-                                  usedVariantName, userId, messageId);
+                        logger.info("Logged prompt variant usage: {} for user: {}, message: {}, chatType: {}", 
+                                  usedVariantName, userId, messageId, chatType);
                     }
                     
                     // Send final response

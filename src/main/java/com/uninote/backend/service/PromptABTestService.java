@@ -24,7 +24,7 @@ public class PromptABTestService {
     private final Random random = new Random();
 
     /**
-     * Get a random prompt variant
+     * Get a random prompt variant for all chat types
      * @return Randomly selected prompt variant
      */
     public PromptVariant getRandomPromptVariant() {
@@ -36,6 +36,18 @@ public class PromptABTestService {
 
         int index = random.nextInt(activeVariants.size());
         return activeVariants.get(index);
+    }
+
+    /**
+     * Get a random prompt variant for a specific chat type (DEPRECATED - use getRandomPromptVariant() instead)
+     * @param chatType The type of chat (simple, resource, space)
+     * @return Randomly selected prompt variant for the chat type
+     * @deprecated Use getRandomPromptVariant() for unified prompt approach
+     */
+    @Deprecated
+    public PromptVariant getRandomPromptVariantForChatType(String chatType) {
+        // For backward compatibility, but now just returns a random variant
+        return getRandomPromptVariant();
     }
 
     /**
@@ -80,6 +92,19 @@ public class PromptABTestService {
      */
     public List<Object[]> getUserUsageStatistics(String userId) {
         return evaluationLogRepository.getUsageCountByUser(userId);
+    }
+
+    /**
+     * Get usage statistics by chat type
+     * @param chatType The chat type to filter by
+     * @param startDate Start of the time range
+     * @param endDate End of the time range
+     * @return List of usage counts by variant for the chat type
+     */
+    public List<Object[]> getUsageStatisticsByChatType(String chatType, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        // This would require a custom query in the repository
+        // For now, return general statistics
+        return getUsageStatistics(startDate, endDate);
     }
 
     /**
