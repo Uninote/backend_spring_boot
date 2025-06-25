@@ -590,6 +590,7 @@ public class ChatService {
                 String chatType = null;
                 String systemPrompt = null;
                 boolean isFirstMessage = false;
+                List<Map<String, String>> topChunks = null; // Declare chunks variable for reuse
                 
                 // Get a random prompt variant (unified for all chat types)
                 PromptVariant variant = promptABTestService.getRandomPromptVariant();
@@ -616,7 +617,7 @@ public class ChatService {
                                           "The learner has provided the following educational material:\n" + resourceContent;
                         } else {
                             // Large resource - use summary + relevant chunks
-                            List<Map<String, String>> topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
+                            topChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
                             logger.info("Number of top chunks retrieved for large resource: {}", topChunks.size());
                             
                             String resourcesSummary = resource.getSummary() != null ? resource.getSummary() : "No summary available";
@@ -655,7 +656,7 @@ public class ChatService {
                     if (space != null) {
                         // Get space summaries and chunks
                         Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
-                        List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
+                        topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
                         
                         StringBuilder summariesText = new StringBuilder("Resource Summaries:\n\n");
                         StringBuilder resourceStartsText = new StringBuilder("Resource Content Starts:\n\n");
@@ -761,19 +762,17 @@ public class ChatService {
                         String userId = baseChat.getUser().getId().toString();
                         String messageId = savedMessageId.toString();
                         
-                        // Prepare retrieval chunks for logging
+                        // Use the chunks that were already retrieved for building the system prompt
                         List<Map<String, String>> retrievalChunks = null;
                         if (resourceChat != null) {
                             Resource resource = resourceChat.getResource();
                             if (resource != null && resource.getContent().length() > MAX_RESOURCE_CHARS) {
-                                retrievalChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
+                                // For large resources, reuse the chunks that were already retrieved
+                                retrievalChunks = topChunks;
                             }
                         } else if (spaceChat != null) {
-                            Space space = spaceChat.getSpace();
-                            if (space != null) {
-                                Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
-                                retrievalChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
-                            }
+                            // For space chats, reuse the chunks that were already retrieved
+                            retrievalChunks = topChunks;
                         }
                         
                         // Log the RAG evaluation
