@@ -155,6 +155,9 @@ public class ChatService {
     @Autowired
     private LangfuseClient langfuseClient;
 
+    @Autowired
+    private RAGEvaluationService ragEvaluationService;
+
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
     private static final int MAX_RESOURCE_CHARS = 130000;
 
@@ -569,6 +572,8 @@ public class ChatService {
             logger.info("Uploaded images count: {}", uploadedImages.size());
         }
         
+        long startTime = System.currentTimeMillis(); // Track start time for response time calculation
+        
         SseEmitter emitter = new SseEmitter(300000L); // 5 minute timeout
         ExecutorService executor = Executors.newSingleThreadExecutor();
         
@@ -748,6 +753,49 @@ public class ChatService {
                         
                         logger.info("Logged prompt variant usage: {} for user: {}, message: {}, chatType: {}", 
                                   usedVariantName, userId, messageId, chatType);
+                    }
+                    
+                    // Log RAG evaluation metrics
+                    try {
+                        long responseTimeMs = System.currentTimeMillis() - startTime;
+                        String userId = baseChat.getUser().getId().toString();
+                        String messageId = savedMessageId.toString();
+                        
+                        // Prepare retrieval chunks for logging
+                        List<Map<String, String>> retrievalChunks = null;
+                        if (resourceChat != null) {
+                            Resource resource = resourceChat.getResource();
+                            if (resource != null && resource.getContent().length() > MAX_RESOURCE_CHARS) {
+                                retrievalChunks = embeddingService.searchSimilarChunks(userMessage, resource.getId(), 5);
+                            }
+                        } else if (spaceChat != null) {
+                            Space space = spaceChat.getSpace();
+                            if (space != null) {
+                                Set<Long> resourceIds = new HashSet<>(spaceResourceRepository.findResourceIdsBySpaceId(space.getId()));
+                                retrievalChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
+                            }
+                        }
+                        
+                        // Log the RAG evaluation
+                        ragEvaluationService.logRAGEvaluation(
+                            usedVariantName,
+                            userId,
+                            messageId,
+                            chatType,
+                            userMessage,
+                            finalResponseStr,
+                            retrievalChunks,
+                            null, // evaluationMetrics - will be added later when user rates
+                            null, // userRating - will be updated when user provides rating
+                            responseTimeMs,
+                            Map.of("chatUuid", chatUuid, "isFirstMessage", isFirstMessage)
+                        );
+                        
+                        logger.info("Logged RAG evaluation: variant={}, user={}, message={}, responseTime={}ms", 
+                                  usedVariantName, userId, messageId, responseTimeMs);
+                    } catch (Exception e) {
+                        logger.error("Error logging RAG evaluation: {}", e.getMessage(), e);
+                        // Don't fail the chat if evaluation logging fails
                     }
                     
                     // Send final response
