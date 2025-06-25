@@ -653,10 +653,24 @@ public class ChatService {
                         List<Map<String, String>> topChunks = embeddingService.searchSimilarChunksAcrossResources(userMessage, resourceIds, 5);
                         
                         StringBuilder summariesText = new StringBuilder("Resource Summaries:\n\n");
+                        StringBuilder resourceStartsText = new StringBuilder("Resource Content Starts:\n\n");
+                        
                         resourceRepository.findAllById(resourceIds).forEach(resource -> {
+                            // Add summary
                             String contentToUse = (resource.getSummary() != null ? resource.getSummary().trim() : "(no summary)");
                             summariesText.append("- Resource Title ").append(resource.getTitle()).append(": ")
                                         .append(contentToUse).append("\n");
+                            
+                            // Add start of resource content
+                            if (resource.getContent() != null && !resource.getContent().trim().isEmpty()) {
+                                String resourceStart = resource.getContent().trim();
+                                // Limit to first 2000 characters to avoid token limits
+                                if (resourceStart.length() > 2000) {
+                                    resourceStart = resourceStart.substring(0, 2000) + "...";
+                                }
+                                resourceStartsText.append("### **Start of ").append(resource.getTitle()).append(":**\n")
+                                                .append(resourceStart).append("\n\n");
+                            }
                         });
                         
                         String resourcesSummary = formatResourceChunks(topChunks);
@@ -668,8 +682,9 @@ public class ChatService {
                                       "to provide comprehensive and thorough responses. The learner expects you to synthesize information " +
                                       "across all the provided resources and give complete answers based on the aggregated knowledge.\n\n" +
                                       "This is the information you have available for the space:\n" +
-                                      "Resource summaries: " + summariesText.toString() + "\n" +
-                                      "and the you also have the following chunks: " + resourcesSummary;
+                                      summariesText.toString() + "\n" +
+                                      resourceStartsText.toString() + "\n" +
+                                      "Relevant chunks from semantic search: " + resourcesSummary;
                     }
                 }
                 
