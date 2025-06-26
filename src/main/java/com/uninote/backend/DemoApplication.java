@@ -3,6 +3,7 @@ package com.uninote.backend;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -10,6 +11,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
 @EnableAsync
+@EnableScheduling
 public class DemoApplication {
     public static void main(String[] args) {
         String profile = System.getenv("SPRING_PROFILES_ACTIVE");

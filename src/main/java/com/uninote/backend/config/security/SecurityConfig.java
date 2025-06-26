@@ -9,12 +9,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.google.firebase.auth.FirebaseAuth;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.google.firebase.auth.FirebaseAuth;
 
 @Configuration
 @EnableWebSecurity
@@ -41,6 +40,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
+                .antMatchers("/ws/**", "/topic/**", "/app/**").permitAll()
                 .antMatchers("/chat/**", "/spaces/**").authenticated()
                 .antMatchers("/notes/**", "/api/**/**").permitAll()
                 .anyRequest().permitAll();
@@ -51,12 +51,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
+                "http://localhost:8080",
                 "https://uninote.gr",
                 "https://www.uninote.gr",
                 "https://uninote-creators-portal.vercel.app",
                 "https://uninote-creators-portal-eiz6j2q68-uninotes-projects.vercel.app",
                 "https://uninote-node-dashboard-2fa17dd3fc4c.herokuapp.com",
-                "https://uninote-web-official-y7b7-git-main-crissel04s-projects.vercel.app"
+                "https://uninote-web-official-y7b7-git-main-crissel04s-projects.vercel.app",
+                "file://"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

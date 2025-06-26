@@ -34,7 +34,7 @@ public class VerificationCheckService {
     }
    
   
-    @Scheduled(fixedRate = 3600000) 
+    //@Scheduled(fixedRate = 3600000) 
     public void checkEmailVerifications() {
         logger.info("Starting scheduled email verification check");
         
