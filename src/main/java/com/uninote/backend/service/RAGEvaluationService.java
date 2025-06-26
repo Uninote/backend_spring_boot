@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -74,7 +75,7 @@ public class RAGEvaluationService {
                     .map(chunk -> chunk.get("resource_id"))
                     .filter(id -> id != null)
                     .distinct()
-                    .toList();
+                    .collect(Collectors.toList());
                 log.setChunkSources(objectMapper.writeValueAsString(resourceIds));
             } catch (JsonProcessingException e) {
                 log.setChunkSources("[]");

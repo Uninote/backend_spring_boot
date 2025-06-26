@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +137,7 @@ public class QuestionnaireTriggerService {
         logger.debug("Starting to filter {} eligible users against {} target IDs", eligibleUsers.size(), targetUserIds.size());
         List<User> qualifiedUsers = eligibleUsers.stream()
                 .filter(user -> targetUserIds.contains(user.getId()))
-                .toList();
+                .collect(Collectors.toList());
         
         logger.debug("Found {} users who meet criteria for questionnaire {} out of {} eligible users", 
             qualifiedUsers.size(), questionnaireId, eligibleUsers.size());
@@ -183,7 +184,7 @@ public class QuestionnaireTriggerService {
                 List<String> offlineUserIds = offlineUsers.stream()
                     .filter(user -> user.getId() == 330L)
                     .map(user -> String.format("ID:%d(Firebase:%s)", user.getId(), user.getFirebaseUid()))
-                    .toList();
+                    .collect(Collectors.toList());
                 if (!offlineUserIds.isEmpty()) {
                     logger.info("Target user 330 is OFFLINE (no questionnaire sent): {}", offlineUserIds);
                 }
@@ -295,7 +296,7 @@ public class QuestionnaireTriggerService {
         // Filter users who meet the criteria
         List<User> qualifiedUsers = eligibleUsers.stream()
                 .filter(user -> userMeetsCriteria(user, questionnaire))
-                .toList();
+                .collect(Collectors.toList());
         logger.debug("Found {} users who meet criteria for questionnaire {}", qualifiedUsers.size(), questionnaireId);
         
         // Filter active users if presence checking is enabled
@@ -340,7 +341,7 @@ public class QuestionnaireTriggerService {
                 List<String> offlineUserIds = offlineUsers.stream()
                     .filter(user -> user.getId() == 330L)
                     .map(user -> String.format("ID:%d(Firebase:%s)", user.getId(), user.getFirebaseUid()))
-                    .toList();
+                    .collect(Collectors.toList());
                 if (!offlineUserIds.isEmpty()) {
                     logger.info("Target user 330 is OFFLINE (no questionnaire sent - immediate): {}", offlineUserIds);
                 }
@@ -419,7 +420,7 @@ public class QuestionnaireTriggerService {
         List<Questionnaire> eligibleQuestionnaires = allQuestionnaires.stream()
                 .filter(questionnaire -> userMeetsCriteria(user, questionnaire))
                 .filter(questionnaire -> !hasUserAnsweredQuestionnaire(userId, questionnaire.getId()))
-                .toList();
+                .collect(Collectors.toList());
         
         logger.debug("User {} is eligible for {} questionnaires out of {} active questionnaires", 
             userId, eligibleQuestionnaires.size(), allQuestionnaires.size());

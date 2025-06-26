@@ -2,6 +2,7 @@ package com.uninote.backend.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,7 +140,7 @@ public class QuestionnaireController {
         try {
             List<QuestionnaireDTO> questionnaires = questionnaireService.getAllActiveQuestionnaires();
             logger.debug("Found {} active questionnaires", questionnaires.size());
-            logger.debug("Questionnaire IDs: {}", questionnaires.stream().map(q -> q.getId()).toList());
+            logger.debug("Questionnaire IDs: {}", questionnaires.stream().map(q -> q.getId()).collect(Collectors.toList()));
             
             return ResponseEntity.ok(questionnaires);
 

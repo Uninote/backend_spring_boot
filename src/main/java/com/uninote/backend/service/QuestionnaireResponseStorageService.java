@@ -10,8 +10,12 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import com.uninote.backend.entity.Questionnaire;
 import com.uninote.backend.entity.QuestionnaireResponse;
 import com.uninote.backend.entity.User;
@@ -23,9 +27,6 @@ import com.uninote.backend.repository.UserRepository;
 public class QuestionnaireResponseStorageService {
 
     @Autowired
-    private FirebaseDatabase firebaseDatabase;
-
-    @Autowired
     private QuestionnaireRepository questionnaireRepository;
 
     @Autowired
@@ -34,9 +35,12 @@ public class QuestionnaireResponseStorageService {
     @Autowired
     private UserRepository userRepository;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Storage storage = StorageOptions.getDefaultInstance().getService();
+
     /**
-     * Store questionnaire response in both Firebase and database
-     * Path: /questionnaires/{questionnaire_name}_{date}/users/{firebase_uid}.json
+     * Store questionnaire response in Firebase Storage and database
+     * Path: questionnaire-responses/{questionnaire_name}_{date}/{firebase_uid}_{timestamp}.json
      */
     public String storeQuestionnaireResponse(Long questionnaireId, Long userId, Map<String, Object> responses, String sessionId) {
         try {
@@ -47,8 +51,8 @@ public class QuestionnaireResponseStorageService {
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-            // Generate Firebase path
-            String firebasePath = generateFirebasePath(questionnaire);
+            // Generate Firebase Storage path
+            String firebaseStoragePath = generateFirebaseStoragePath(questionnaire, user);
             String firebaseResponseId = UUID.randomUUID().toString();
 
             // Create response data structure
@@ -62,30 +66,30 @@ public class QuestionnaireResponseStorageService {
                 "firebaseResponseId", firebaseResponseId
             );
 
-            // Try to store in Firebase first
+            // Try to store in Firebase Storage first
             boolean firebaseSuccess = false;
             try {
-                System.out.println("Attempting to store in Firebase at path: " + firebasePath + "/users/" + user.getFirebaseUid());
+                System.out.println("Attempting to store in Firebase Storage at path: " + firebaseStoragePath);
                 
-                DatabaseReference responseRef = firebaseDatabase.getReference(firebasePath + "/users/" + user.getFirebaseUid());
+                // Convert response data to JSON
+                String jsonData = objectMapper.writeValueAsString(responseData);
                 
-                CompletableFuture<Void> future = new CompletableFuture<>();
+                // Create blob info
+                BlobId blobId = BlobId.of("uninote-app.appspot.com", firebaseStoragePath);
+                BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                    .setContentType("application/json")
+                    .build();
                 
-                responseRef.setValue(responseData, (databaseError, databaseReference) -> {
-                    if (databaseError != null) {
-                        future.completeExceptionally(new RuntimeException("Failed to store response in Firebase: " + databaseError.getMessage()));
-                    } else {
-                        future.complete(null);
-                    }
-                });
-
-                // Wait for Firebase operation to complete
-                future.get(10, TimeUnit.SECONDS);
+                // Upload to Firebase Storage
+                Blob blob = storage.create(blobInfo, jsonData.getBytes("UTF-8"));
+                
                 firebaseSuccess = true;
-                System.out.println("✅ Successfully stored in Firebase");
+                System.out.println("✅ Successfully stored in Firebase Storage");
+                System.out.println("  Storage URL: " + blob.getMediaLink());
+                System.out.println("  Storage Path: " + firebaseStoragePath);
                 
             } catch (Exception firebaseError) {
-                System.out.println("⚠️ Firebase storage failed: " + firebaseError.getMessage());
+                System.out.println("⚠️ Firebase Storage failed: " + firebaseError.getMessage());
                 System.out.println("Falling back to database-only storage");
                 firebaseSuccess = false;
             }
@@ -120,10 +124,10 @@ public class QuestionnaireResponseStorageService {
     }
 
     /**
-     * Generate Firebase path based on questionnaire name and current date
-     * Format: /questionnaires/{questionnaire_name}_{date}
+     * Generate Firebase Storage path based on questionnaire name, user, and timestamp
+     * Format: questionnaire-responses/{questionnaire_name}_{date}/{firebase_uid}_{timestamp}.json
      */
-    private String generateFirebasePath(Questionnaire questionnaire) {
+    private String generateFirebaseStoragePath(Questionnaire questionnaire, User user) {
         // Extract questionnaire name from name (remove spaces, special chars)
         String questionnaireName = questionnaire.getName()
             .toLowerCase()
@@ -133,103 +137,53 @@ public class QuestionnaireResponseStorageService {
 
         // Get current date in format dd_MM_yyyy
         String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd_MM_yyyy"));
+        
+        // Get current timestamp for unique filename
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
 
-        return "/questionnaires/" + questionnaireName + "_" + currentDate;
+        return String.format("questionnaire-responses/%s_%s/%s_%s.json", 
+            questionnaireName, currentDate, user.getFirebaseUid(), timestamp);
     }
 
     /**
-     * Get questionnaire response from Firebase
+     * Get questionnaire response from Firebase Storage
      */
-    public Map<String, Object> getQuestionnaireResponse(String firebasePath, String firebaseUid) {
+    public Map<String, Object> getQuestionnaireResponse(String firebaseStoragePath) {
         try {
-            DatabaseReference responseRef = firebaseDatabase.getReference(firebasePath + "/users/" + firebaseUid);
+            BlobId blobId = BlobId.of("uninote-app.appspot.com", firebaseStoragePath);
+            Blob blob = storage.get(blobId);
             
-            CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
+            if (blob == null) {
+                System.out.println("Response not found in Firebase Storage: " + firebaseStoragePath);
+                return null;
+            }
             
-            responseRef.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                @Override
-                public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
-                    if (dataSnapshot.exists()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> data = (Map<String, Object>) dataSnapshot.getValue();
-                        future.complete(data);
-                    } else {
-                        future.complete(null);
-                    }
-                }
-                
-                @Override
-                public void onCancelled(com.google.firebase.database.DatabaseError databaseError) {
-                    future.completeExceptionally(new RuntimeException("Failed to get response: " + databaseError.getMessage()));
-                }
-            });
-
-            return future.get(10, TimeUnit.SECONDS);
+            String jsonData = new String(blob.getContent());
+            return objectMapper.readValue(jsonData, Map.class);
 
         } catch (Exception e) {
-            System.err.println("Error retrieving questionnaire response: " + e.getMessage());
+            System.err.println("Error retrieving questionnaire response from Firebase Storage: " + e.getMessage());
             return null;
         }
     }
 
     /**
-     * Get all responses for a specific questionnaire path
+     * Delete questionnaire response from Firebase Storage
      */
-    public Map<String, Object> getAllResponsesForQuestionnaire(String firebasePath) {
+    public void deleteQuestionnaireResponse(String firebaseStoragePath) {
         try {
-            DatabaseReference questionnaireRef = firebaseDatabase.getReference(firebasePath);
+            BlobId blobId = BlobId.of("uninote-app.appspot.com", firebaseStoragePath);
+            boolean deleted = storage.delete(blobId);
             
-            CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
-            
-            questionnaireRef.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                @Override
-                public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
-                    if (dataSnapshot.exists()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> data = (Map<String, Object>) dataSnapshot.getValue();
-                        future.complete(data);
-                    } else {
-                        future.complete(null);
-                    }
-                }
-                
-                @Override
-                public void onCancelled(com.google.firebase.database.DatabaseError databaseError) {
-                    future.completeExceptionally(new RuntimeException("Failed to get responses: " + databaseError.getMessage()));
-                }
-            });
-
-            return future.get(10, TimeUnit.SECONDS);
+            if (deleted) {
+                System.out.println("✅ Questionnaire response deleted from Firebase Storage: " + firebaseStoragePath);
+            } else {
+                System.out.println("⚠️ Response not found in Firebase Storage for deletion: " + firebaseStoragePath);
+            }
 
         } catch (Exception e) {
-            System.err.println("Error retrieving all responses: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Delete questionnaire response from Firebase
-     */
-    public void deleteQuestionnaireResponse(String firebasePath, String firebaseUid) {
-        try {
-            DatabaseReference responseRef = firebaseDatabase.getReference(firebasePath + "/users/" + firebaseUid);
-            
-            CompletableFuture<Void> future = new CompletableFuture<>();
-            
-            responseRef.removeValue((databaseError, databaseReference) -> {
-                if (databaseError != null) {
-                    future.completeExceptionally(new RuntimeException("Failed to delete response: " + databaseError.getMessage()));
-                } else {
-                    future.complete(null);
-                }
-            });
-
-            future.get(10, TimeUnit.SECONDS);
-            System.out.println("Questionnaire response deleted successfully: " + firebasePath + "/users/" + firebaseUid);
-
-        } catch (Exception e) {
-            System.err.println("Error deleting questionnaire response: " + e.getMessage());
-            throw new RuntimeException("Failed to delete questionnaire response", e);
+            System.err.println("Error deleting questionnaire response from Firebase Storage: " + e.getMessage());
+            throw new RuntimeException("Failed to delete questionnaire response from Firebase Storage", e);
         }
     }
 } 

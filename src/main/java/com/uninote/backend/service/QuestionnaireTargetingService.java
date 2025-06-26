@@ -1,6 +1,7 @@
 package com.uninote.backend.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +88,7 @@ public class QuestionnaireTargetingService {
             
             return allActiveQuestionnaires.stream()
                     .filter(questionnaire -> userMatchesCriteria(userId, questionnaire.getId()))
-                    .toList();
+                    .collect(Collectors.toList());
                     
         } catch (Exception e) {
             logger.error("Error getting eligible questionnaires for user {}: {}", userId, e.getMessage());
