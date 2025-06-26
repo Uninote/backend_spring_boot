@@ -46,8 +46,8 @@ public interface QuestionnaireResponseRepository extends JpaRepository<Questionn
     // Count responses for a questionnaire by ID
     long countByQuestionnaire_Id(Long questionnaireId);
     
-    // Get responses by Firebase response ID
-    Optional<QuestionnaireResponse> findByFirebaseResponseId(String firebaseResponseId);
+    // Get responses by response ID
+    Optional<QuestionnaireResponse> findByResponseId(String responseId);
     
     // Get incomplete responses for a user
     List<QuestionnaireResponse> findByUserAndIsCompleteFalse(User user);

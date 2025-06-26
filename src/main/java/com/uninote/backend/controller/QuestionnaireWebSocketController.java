@@ -33,11 +33,13 @@ public class QuestionnaireWebSocketController {
      */
     public void sendQuestionnaireToUser(String uuid, QuestionnaireDTO questionnaire, QuestionnaireContentDTO content) {
         String destination = "/topic/questionnaires/" + uuid;
+        
+        // Create payload with null checks
         Map<String, Object> payload = Map.of(
             "type", "QUESTIONNAIRE",
             "action", "NEW_QUESTIONNAIRE",
-            "questionnaire", questionnaire,
-            "content", content,
+            "questionnaire", questionnaire != null ? questionnaire : new QuestionnaireDTO(),
+            "content", content != null ? content : new QuestionnaireContentDTO(),
             "timestamp", System.currentTimeMillis()
         );
         
@@ -46,7 +48,8 @@ public class QuestionnaireWebSocketController {
         
         try {
             this.template.convertAndSend(destination, payload);
-            logger.info("Successfully sent questionnaire {} to user {} at destination {}", questionnaire.getId(), uuid, destination);
+            logger.info("Successfully sent questionnaire {} to user {} at destination {}", 
+                questionnaire != null ? questionnaire.getId() : "null", uuid, destination);
         } catch (Exception e) {
             logger.error("Failed to send questionnaire to user {} at destination {}: {}", uuid, destination, e.getMessage(), e);
         }
@@ -90,7 +93,7 @@ public class QuestionnaireWebSocketController {
      * Send questionnaire reminder to a user
      */
     public void sendQuestionnaireReminder(String uuid, QuestionnaireDTO questionnaire) {
-        String destination = "/topic/questionnaires/" + uuid;
+        String destination = "/topic/questionnaire/" + uuid;
         Map<String, Object> payload = Map.of(
             "type", "QUESTIONNAIRE",
             "action", "REMINDER",
@@ -114,7 +117,7 @@ public class QuestionnaireWebSocketController {
      * Send questionnaire completion notification
      */
     public void sendQuestionnaireCompletionNotification(String uuid, Long questionnaireId, String message) {
-        String destination = "/topic/questionnaires/" + uuid;
+        String destination = "/topic/questionnaire/" + uuid;
         Map<String, Object> payload = Map.of(
             "type", "QUESTIONNAIRE",
             "action", "COMPLETION_NOTIFICATION",
@@ -138,7 +141,7 @@ public class QuestionnaireWebSocketController {
      * Send questionnaire expiration notification
      */
     public void sendQuestionnaireExpirationNotification(String uuid, QuestionnaireDTO questionnaire) {
-        String destination = "/topic/questionnaires/" + uuid;
+        String destination = "/topic/questionnaire/" + uuid;
         Map<String, Object> payload = Map.of(
             "type", "QUESTIONNAIRE",
             "action", "EXPIRATION_NOTIFICATION",
@@ -162,7 +165,7 @@ public class QuestionnaireWebSocketController {
      * Send questionnaire status update
      */
     public void sendQuestionnaireStatusUpdate(String uuid, Long questionnaireId, String status, String message) {
-        String destination = "/topic/questionnaires/" + uuid;
+        String destination = "/topic/questionnaire/" + uuid;
         Map<String, Object> payload = Map.of(
             "type", "QUESTIONNAIRE",
             "action", "STATUS_UPDATE",

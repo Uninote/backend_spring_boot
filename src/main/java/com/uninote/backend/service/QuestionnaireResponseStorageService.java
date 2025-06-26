@@ -29,18 +29,6 @@ public class QuestionnaireResponseStorageService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * Generate Firebase Storage path based on questionnaire name, user, and timestamp
-     * Format: questionnaire-responses/{questionnaire_name}_{date}/{firebase_uid}_{timestamp}.json
-     */
-    private String generateFirebaseStoragePath(Questionnaire questionnaire, User user) {
-        String sanitizedName = questionnaire.getName().replaceAll("[^a-zA-Z0-9_]", "_");
-        String date = LocalDateTime.now().toLocalDate().toString();
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        return String.format("questionnaire-responses/%s_%s/%s_%s.json", 
-            sanitizedName, date, user.getFirebaseUid(), timestamp);
-    }
-
-    /**
      * Convert object to JSON string
      */
     private String convertToJson(Object data) {
@@ -52,8 +40,7 @@ public class QuestionnaireResponseStorageService {
     }
 
     /**
-     * Store questionnaire response in database only (Firebase Storage temporarily disabled)
-     * Path: questionnaire-responses/{questionnaire_name}_{date}/{firebase_uid}_{timestamp}.json
+     * Store questionnaire response in database
      */
     public String storeQuestionnaireResponse(Long questionnaireId, Long userId, Map<String, Object> responses) {
         try {
@@ -64,31 +51,24 @@ public class QuestionnaireResponseStorageService {
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-            // Generate Firebase Storage path (for reference only)
-            String firebaseStoragePath = generateFirebaseStoragePath(questionnaire, user);
-            String firebaseResponseId = UUID.randomUUID().toString();
+            // Generate unique response ID
+            String responseId = UUID.randomUUID().toString();
 
-            // Create response data structure (for database storage)
+            // Create response data structure
             Map<String, Object> responseData = Map.of(
                 "questionnaireId", questionnaireId,
                 "userId", userId,
-                "firebaseUid", user.getFirebaseUid(),
                 "responses", responses,
                 "completedAt", LocalDateTime.now().toString(),
-                "firebaseResponseId", firebaseResponseId
+                "responseId", responseId
             );
 
-            // Temporarily disable Firebase Storage to prevent native crashes
-            System.out.println("⚠️ Firebase Storage temporarily disabled to prevent native crashes");
-            System.out.println("Would store at Firebase Storage path: " + firebaseStoragePath);
-            boolean firebaseSuccess = false;
-
-            // Store metadata in database (always do this)
+            // Store in database
             QuestionnaireResponse dbResponse = new QuestionnaireResponse();
             dbResponse.setQuestionnaire(questionnaire);
             dbResponse.setUser(user);
             dbResponse.setResponseData(convertToJson(responseData));
-            dbResponse.setFirebaseResponseId(firebaseResponseId);
+            dbResponse.setResponseId(responseId);
             dbResponse.setIsComplete(true);
             dbResponse.setCompletedAt(LocalDateTime.now());
             dbResponse.setCreatedAt(LocalDateTime.now());
@@ -97,12 +77,11 @@ public class QuestionnaireResponseStorageService {
 
             System.out.println("✅ Questionnaire response stored successfully:");
             System.out.println("  Database ID: " + savedResponse.getId());
-            System.out.println("  Firebase Response ID: " + firebaseResponseId);
-            System.out.println("  User: " + user.getFirebaseUid());
+            System.out.println("  Response ID: " + responseId);
+            System.out.println("  User: " + user.getId());
             System.out.println("  Questionnaire: " + questionnaire.getName());
-            System.out.println("  Firebase Storage: DISABLED (database only)");
 
-            return firebaseResponseId;
+            return responseId;
 
         } catch (Exception e) {
             System.err.println("Error storing questionnaire response: " + e.getMessage());

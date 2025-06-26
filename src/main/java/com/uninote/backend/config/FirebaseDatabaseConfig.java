@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.google.firebase.database.FirebaseDatabase;
 
-@Configuration
+//@Configuration
 public class FirebaseDatabaseConfig {
 
     @Value("${firebase.database.url:https://uninote-app-default-rtdb.firebaseio.com}")

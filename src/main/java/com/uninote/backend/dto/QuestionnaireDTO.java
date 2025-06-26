@@ -9,22 +9,20 @@ public class QuestionnaireDTO {
     private Long id;
     private String name;
     private String description;
-    private String firebasePath;
+    private QuestionnaireStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime triggerTime;
-    private QuestionnaireStatus status;
     private Map<String, Object> parameters;
 
     // Constructors
     public QuestionnaireDTO() {}
 
-    public QuestionnaireDTO(Long id, String name, String description, String firebasePath, 
+    public QuestionnaireDTO(Long id, String name, String description, 
                            LocalDateTime createdAt, LocalDateTime triggerTime, 
                            QuestionnaireStatus status, Map<String, Object> parameters) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.firebasePath = firebasePath;
         this.createdAt = createdAt;
         this.triggerTime = triggerTime;
         this.status = status;
@@ -56,12 +54,12 @@ public class QuestionnaireDTO {
         this.description = description;
     }
 
-    public String getFirebasePath() {
-        return firebasePath;
+    public QuestionnaireStatus getStatus() {
+        return status;
     }
 
-    public void setFirebasePath(String firebasePath) {
-        this.firebasePath = firebasePath;
+    public void setStatus(QuestionnaireStatus status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -78,14 +76,6 @@ public class QuestionnaireDTO {
 
     public void setTriggerTime(LocalDateTime triggerTime) {
         this.triggerTime = triggerTime;
-    }
-
-    public QuestionnaireStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(QuestionnaireStatus status) {
-        this.status = status;
     }
 
     public Map<String, Object> getParameters() {

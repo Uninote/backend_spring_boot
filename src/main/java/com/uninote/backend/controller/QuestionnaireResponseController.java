@@ -1,6 +1,7 @@
 package com.uninote.backend.controller;
 
 import java.util.Map;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,11 +59,11 @@ public class QuestionnaireResponseController {
             }
 
             // Store the response in database and Firebase
-            String firebaseResponseId = questionnaireResponseStorageService.storeQuestionnaireResponse(
+            String responseId = questionnaireResponseStorageService.storeQuestionnaireResponse(
                 questionnaireId, userId, responses
             );
             
-            logger.info("Questionnaire response stored successfully with Firebase ID: {}", firebaseResponseId);
+            logger.info("Questionnaire response stored successfully with Response ID: {}", responseId);
 
             // Send completion notification via WebSocket (if user is online)
             try {
@@ -77,13 +78,15 @@ public class QuestionnaireResponseController {
 
             logger.info("Questionnaire response processed successfully for user: {}", userId);
 
-            return Map.of(
+            // Return success response
+            Map<String, Object> response = Map.of(
                 "success", true,
                 "message", "Questionnaire response submitted successfully",
-                "firebaseResponseId", firebaseResponseId,
-                "questionnaireId", questionnaireId,
-                "userId", userId
+                "responseId", responseId,
+                "timestamp", LocalDateTime.now().toString()
             );
+
+            return response;
 
         } catch (Exception e) {
             logger.error("Error processing questionnaire response", e);
@@ -114,11 +117,11 @@ public class QuestionnaireResponseController {
             }
 
             // Store the response in database and Firebase
-            String firebaseResponseId = questionnaireResponseStorageService.storeQuestionnaireResponse(
+            String responseId = questionnaireResponseStorageService.storeQuestionnaireResponse(
                 questionnaireId, userId, responses
             );
             
-            logger.info("Questionnaire response stored successfully with Firebase ID: {}", firebaseResponseId);
+            logger.info("Questionnaire response stored successfully with Response ID: {}", responseId);
 
             // Send completion notification
             webSocketController.sendQuestionnaireCompletionNotification(

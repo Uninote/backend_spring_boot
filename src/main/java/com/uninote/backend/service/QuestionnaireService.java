@@ -31,25 +31,18 @@ public class QuestionnaireService {
     private QuestionnaireRepository questionnaireRepository;
     
     @Autowired
-    private FirebaseQuestionnaireService firebaseQuestionnaireService;
-    
-    @Autowired
     private UserRepository userRepository;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
-     * Create a new questionnaire with content stored in both database and Firebase
+     * Create a new questionnaire with content stored in database only
      */
     @Transactional
     public QuestionnaireDTO createQuestionnaire(QuestionnaireDTO questionnaireDTO, QuestionnaireContentDTO contentDTO) {
         try {
-            // Store content in Firebase first
-            String firebasePath = firebaseQuestionnaireService.storeQuestionnaireContent(contentDTO);
-            
             // Create questionnaire entity
             Questionnaire questionnaire = new Questionnaire(questionnaireDTO.getName(), questionnaireDTO.getDescription());
-            questionnaire.setFirebasePath(firebasePath);
             questionnaire.setStatus(QuestionnaireStatus.ACTIVE);
             questionnaire.setTriggerTime(questionnaireDTO.getTriggerTime());
             
@@ -119,25 +112,20 @@ public class QuestionnaireService {
     }
     
     /**
-     * Get questionnaire content from database JSON or Firebase
+     * Get questionnaire content from database JSON
      */
     public QuestionnaireContentDTO getQuestionnaireContent(Long questionnaireId) {
         Optional<Questionnaire> questionnaireOpt = questionnaireRepository.findById(questionnaireId);
         if (questionnaireOpt.isPresent()) {
             Questionnaire questionnaire = questionnaireOpt.get();
             
-            // Try to get content from database JSON first
+            // Get content from database JSON
             if (questionnaire.getQuestionnaireJson() != null) {
                 try {
                     return objectMapper.readValue(questionnaire.getQuestionnaireJson(), QuestionnaireContentDTO.class);
                 } catch (JsonProcessingException e) {
                     logger.warn("Could not parse questionnaire JSON from database for ID {}", questionnaireId);
                 }
-            }
-            
-            // Fallback to Firebase if database JSON is not available
-            if (questionnaire.getFirebasePath() != null) {
-                return firebaseQuestionnaireService.getQuestionnaireContent(questionnaire.getFirebasePath());
             }
         }
         return null;
@@ -179,13 +167,6 @@ public class QuestionnaireService {
     }
     
     /**
-     * Update questionnaire content in Firebase
-     */
-    public void updateQuestionnaireContent(String firebasePath, QuestionnaireContentDTO contentDTO) {
-        firebaseQuestionnaireService.updateQuestionnaireContent(firebasePath, contentDTO);
-    }
-    
-    /**
      * Update questionnaire JSON in database
      */
     @Transactional
@@ -207,11 +188,6 @@ public class QuestionnaireService {
         Optional<Questionnaire> questionnaireOpt = questionnaireRepository.findById(id);
         if (questionnaireOpt.isPresent()) {
             Questionnaire questionnaire = questionnaireOpt.get();
-            
-            // Delete from Firebase if path exists
-            if (questionnaire.getFirebasePath() != null) {
-                firebaseQuestionnaireService.deleteQuestionnaireContent(questionnaire.getFirebasePath());
-            }
             
             // Delete from database
             questionnaireRepository.delete(questionnaire);
@@ -266,7 +242,6 @@ public class QuestionnaireService {
         dto.setId(questionnaire.getId());
         dto.setName(questionnaire.getName());
         dto.setDescription(questionnaire.getDescription());
-        dto.setFirebasePath(questionnaire.getFirebasePath());
         dto.setCreatedAt(questionnaire.getCreatedAt());
         dto.setTriggerTime(questionnaire.getTriggerTime());
         dto.setStatus(questionnaire.getStatus());

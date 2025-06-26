@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,10 +51,10 @@ public class QuestionnaireTriggerService {
     private QuestionnaireCriteriaService questionnaireCriteriaService;
 
     @Autowired
-    private FirebasePresenceService firebasePresenceService;
+    private QuestionnaireService questionnaireService;
 
     @Autowired
-    private QuestionnaireService questionnaireService;
+    private ObjectMapper objectMapper;
 
     /**
      * Check if a user meets the criteria for a specific questionnaire
@@ -156,7 +157,7 @@ public class QuestionnaireTriggerService {
             List<User> offlineUsers = new ArrayList<>();
             
             for (User user : qualifiedUsers) {
-                boolean isActive = firebasePresenceService.isUserActive(user.getId());
+                boolean isActive = true; // Assuming all users are active for now
                 boolean isTargetUser = user.getId() == 330L;
                 
                 if (isActive) {
@@ -235,7 +236,7 @@ public class QuestionnaireTriggerService {
                     QuestionnaireDTO questionnaireDTO = convertToDTO(questionnaire);
                     QuestionnaireContentDTO contentDTO = getQuestionnaireContent(questionnaire);
                     
-                    questionnaireWebSocketController.sendQuestionnaireToUser(user.getFirebaseUid(), questionnaireDTO, contentDTO);
+                    questionnaireWebSocketController.sendQuestionnaireToUser(user.getId().toString(), questionnaireDTO, contentDTO);
                     
                     if (isTargetUser) {
                         logger.info("=== SUCCESSFULLY SENT QUESTIONNAIRE TO TARGET USER 330 ===");
@@ -313,7 +314,7 @@ public class QuestionnaireTriggerService {
             List<User> offlineUsers = new ArrayList<>();
             
             for (User user : qualifiedUsers) {
-                boolean isActive = firebasePresenceService.isUserActive(user.getId());
+                boolean isActive = true; // Assuming all users are active for now
                 boolean isTargetUser = user.getId() == 330L;
                 
                 if (isActive) {
@@ -372,7 +373,7 @@ public class QuestionnaireTriggerService {
                 QuestionnaireDTO questionnaireDTO = convertToDTO(questionnaire);
                 QuestionnaireContentDTO contentDTO = getQuestionnaireContent(questionnaire);
                 
-                questionnaireWebSocketController.sendQuestionnaireToUser(user.getFirebaseUid(), questionnaireDTO, contentDTO);
+                questionnaireWebSocketController.sendQuestionnaireToUser(user.getId().toString(), questionnaireDTO, contentDTO);
                 
                 if (isTargetUser) {
                     logger.info("=== SUCCESSFULLY SENT QUESTIONNAIRE IMMEDIATELY TO TARGET USER 330 ===");
@@ -493,73 +494,136 @@ public class QuestionnaireTriggerService {
         dto.setId(questionnaire.getId());
         dto.setName(questionnaire.getName());
         dto.setDescription(questionnaire.getDescription());
-        dto.setFirebasePath(questionnaire.getFirebasePath());
-        dto.setTriggerTime(questionnaire.getTriggerTime());
         dto.setStatus(questionnaire.getStatus());
+        dto.setCreatedAt(questionnaire.getCreatedAt());
+        dto.setTriggerTime(questionnaire.getTriggerTime());
         return dto;
     }
     
     /**
-     * Get questionnaire content from Firebase or JSON
+     * Get questionnaire content from database JSON
      */
     private QuestionnaireContentDTO getQuestionnaireContent(Questionnaire questionnaire) {
+        try {
+            // Try to get content from database JSON
+            if (questionnaire.getQuestionnaireJson() != null && !questionnaire.getQuestionnaireJson().trim().isEmpty()) {
+                logger.debug("Using stored JSON content for questionnaire {}", questionnaire.getId());
+                
+                // First try to parse as QuestionnaireContentDTO
+                try {
+                    return objectMapper.readValue(questionnaire.getQuestionnaireJson(), QuestionnaireContentDTO.class);
+                } catch (Exception e) {
+                    logger.warn("Could not parse as QuestionnaireContentDTO, trying to parse as generic JSON: {}", e.getMessage());
+                    
+                    // Try to parse as generic JSON and convert
+                    return parseGenericJsonToContent(questionnaire.getQuestionnaireJson(), questionnaire);
+                }
+            } else {
+                logger.warn("No questionnaire JSON content found for questionnaire {}", questionnaire.getId());
+                return createFallbackContent(questionnaire);
+            }
+        } catch (Exception e) {
+            logger.error("Error parsing questionnaire JSON for ID {}: {}", questionnaire.getId(), e.getMessage());
+            return createFallbackContent(questionnaire);
+        }
+    }
+    
+    /**
+     * Parse generic JSON and convert to QuestionnaireContentDTO
+     */
+    private QuestionnaireContentDTO parseGenericJsonToContent(String json, Questionnaire questionnaire) {
+        try {
+            Map<String, Object> jsonMap = objectMapper.readValue(json, Map.class);
+            
+            QuestionnaireContentDTO contentDTO = new QuestionnaireContentDTO();
+            contentDTO.setQuestionnaireId(questionnaire.getId().toString());
+            contentDTO.setTitle((String) jsonMap.getOrDefault("title", questionnaire.getName()));
+            contentDTO.setDescription((String) jsonMap.getOrDefault("description", questionnaire.getDescription()));
+            contentDTO.setQuestionnaireType("SURVEY");
+            contentDTO.setVersion("1.0");
+            
+            // Try to extract questions if they exist
+            if (jsonMap.containsKey("questions") && jsonMap.get("questions") instanceof List) {
+                List<QuestionnaireQuestionDTO> questions = new ArrayList<>();
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> questionsData = (List<Map<String, Object>>) jsonMap.get("questions");
+                
+                for (int i = 0; i < questionsData.size(); i++) {
+                    Map<String, Object> questionData = questionsData.get(i);
+                    QuestionnaireQuestionDTO question = new QuestionnaireQuestionDTO();
+                    question.setQuestionId((String) questionData.getOrDefault("id", "q" + (i + 1)));
+                    question.setQuestionText((String) questionData.getOrDefault("question", "Question " + (i + 1)));
+                    question.setQuestionType((String) questionData.getOrDefault("type", "TEXT"));
+                    question.setOrder(i + 1);
+                    question.setIsRequired(true);
+                    question.setIsVisible(true);
+                    
+                    // Handle options field - it might be an array or map
+                    if (questionData.containsKey("options")) {
+                        Object optionsObj = questionData.get("options");
+                        if (optionsObj instanceof List) {
+                            // Convert array to map format
+                            @SuppressWarnings("unchecked")
+                            List<String> optionsList = (List<String>) optionsObj;
+                            Map<String, Object> optionsMap = new HashMap<>();
+                            for (int j = 0; j < optionsList.size(); j++) {
+                                optionsMap.put("option" + (j + 1), optionsList.get(j));
+                            }
+                            question.setOptions(optionsMap);
+                        } else if (optionsObj instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> optionsMap = (Map<String, Object>) optionsObj;
+                            question.setOptions(optionsMap);
+                        }
+                    }
+                    
+                    questions.add(question);
+                }
+                contentDTO.setQuestions(questions);
+            } else {
+                // Create fallback question if no questions found
+                List<QuestionnaireQuestionDTO> questions = new ArrayList<>();
+                QuestionnaireQuestionDTO question = new QuestionnaireQuestionDTO();
+                question.setQuestionId("q1");
+                question.setQuestionText("Please provide your feedback");
+                question.setQuestionType("TEXT");
+                question.setOrder(1);
+                question.setIsRequired(true);
+                question.setIsVisible(true);
+                questions.add(question);
+                contentDTO.setQuestions(questions);
+            }
+            
+            return contentDTO;
+            
+        } catch (Exception e) {
+            logger.error("Error parsing generic JSON for questionnaire {}: {}", questionnaire.getId(), e.getMessage());
+            return createFallbackContent(questionnaire);
+        }
+    }
+    
+    /**
+     * Create fallback content when JSON parsing fails
+     */
+    private QuestionnaireContentDTO createFallbackContent(Questionnaire questionnaire) {
         QuestionnaireContentDTO contentDTO = new QuestionnaireContentDTO();
-        
-        // Set basic information
         contentDTO.setQuestionnaireId(questionnaire.getId().toString());
         contentDTO.setTitle(questionnaire.getName());
         contentDTO.setDescription(questionnaire.getDescription());
         contentDTO.setQuestionnaireType("SURVEY");
         contentDTO.setVersion("1.0");
         
-        // If we have JSON content stored directly, try to parse it
-        if (questionnaire.getQuestionnaireJson() != null && !questionnaire.getQuestionnaireJson().trim().isEmpty()) {
-            try {
-                // Try to parse the JSON and extract questions
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, Object> jsonData = objectMapper.readValue(questionnaire.getQuestionnaireJson(), Map.class);
-                
-                // Extract questions if they exist
-                if (jsonData.containsKey("questions")) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> questionsData = (List<Map<String, Object>>) jsonData.get("questions");
-                    List<QuestionnaireQuestionDTO> questions = new ArrayList<>();
-                    
-                    for (Map<String, Object> questionData : questionsData) {
-                        QuestionnaireQuestionDTO question = new QuestionnaireQuestionDTO();
-                        question.setQuestionId((String) questionData.get("id"));
-                        question.setQuestionText((String) questionData.get("question"));
-                        question.setQuestionType((String) questionData.get("type"));
-                        question.setOrder((Integer) questionData.get("order"));
-                        question.setIsRequired(true);
-                        question.setIsVisible(true);
-                        questions.add(question);
-                    }
-                    contentDTO.setQuestions(questions);
-                }
-                
-                logger.debug("Using stored JSON content for questionnaire {}", questionnaire.getId());
-            } catch (Exception e) {
-                logger.warn("Could not parse questionnaire JSON for questionnaire {}: {}", questionnaire.getId(), e.getMessage());
-            }
-        } else if (questionnaire.getFirebasePath() != null && !questionnaire.getFirebasePath().trim().isEmpty()) {
-            // TODO: Implement Firebase content retrieval
-            logger.debug("Using Firebase path for questionnaire {}: {}", questionnaire.getId(), questionnaire.getFirebasePath());
-        } else {
-            // Create fallback content
-            List<QuestionnaireQuestionDTO> questions = new ArrayList<>();
-            QuestionnaireQuestionDTO question = new QuestionnaireQuestionDTO();
-            question.setQuestionId("q1");
-            question.setQuestionText("Please provide your feedback");
-            question.setQuestionType("TEXT");
-            question.setOrder(1);
-            question.setIsRequired(true);
-            question.setIsVisible(true);
-            questions.add(question);
-            contentDTO.setQuestions(questions);
-            
-            logger.debug("Using fallback content for questionnaire {}", questionnaire.getId());
-        }
+        // Create a simple fallback question
+        List<QuestionnaireQuestionDTO> questions = new ArrayList<>();
+        QuestionnaireQuestionDTO question = new QuestionnaireQuestionDTO();
+        question.setQuestionId("q1");
+        question.setQuestionText("Please provide your feedback");
+        question.setQuestionType("TEXT");
+        question.setOrder(1);
+        question.setIsRequired(true);
+        question.setIsVisible(true);
+        questions.add(question);
+        contentDTO.setQuestions(questions);
         
         return contentDTO;
     }
@@ -624,9 +688,10 @@ public class QuestionnaireTriggerService {
             
             // Convert questionnaire to DTO
             QuestionnaireDTO questionnaireDTO = convertToDTO(questionnaire);
+            QuestionnaireContentDTO contentDTO = getQuestionnaireContent(questionnaire);
             
             // Send via WebSocket (no presence check)
-            questionnaireWebSocketService.sendQuestionnaireToUser(user.getFirebaseUid(), questionnaire);
+            questionnaireWebSocketController.sendQuestionnaireToUser(user.getId().toString(), questionnaireDTO, contentDTO);
             
             if (userId == 330L) {
                 logger.info("✅ Questionnaire sent to user 330 via WebSocket");

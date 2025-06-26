@@ -26,9 +26,6 @@ public class Questionnaire {
     @Column(name = "description", columnDefinition = "CLOB")
     private String description;
 
-    @Column(name = "firebase_path")
-    private String firebasePath;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -67,9 +64,6 @@ public class Questionnaire {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public String getFirebasePath() { return firebasePath; }
-    public void setFirebasePath(String firebasePath) { this.firebasePath = firebasePath; }
-
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -88,11 +82,5 @@ public class Questionnaire {
     // Helper methods
     public String getSanitizedName() {
         return name.replaceAll("[^a-zA-Z0-9_]", "_");
-    }
-
-    public String generateFirebasePath() {
-        String sanitizedName = getSanitizedName();
-        String date = LocalDateTime.now().toLocalDate().toString();
-        return "questionnaires/" + sanitizedName + "_" + date;
     }
 } 

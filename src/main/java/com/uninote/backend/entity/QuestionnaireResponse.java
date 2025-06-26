@@ -31,8 +31,8 @@ public class QuestionnaireResponse {
     @Column(name = "response_data", columnDefinition = "CLOB")
     private String responseData; // JSON string
 
-    @Column(name = "firebase_response_id", nullable = false, unique = true)
-    private String firebaseResponseId;
+    @Column(name = "unique_response_id", nullable = false, unique = true)
+    private String responseId;
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
@@ -85,12 +85,12 @@ public class QuestionnaireResponse {
         this.responseData = responseData;
     }
 
-    public String getFirebaseResponseId() {
-        return firebaseResponseId;
+    public String getResponseId() {
+        return responseId;
     }
 
-    public void setFirebaseResponseId(String firebaseResponseId) {
-        this.firebaseResponseId = firebaseResponseId;
+    public void setResponseId(String responseId) {
+        this.responseId = responseId;
     }
 
     public LocalDateTime getCompletedAt() {

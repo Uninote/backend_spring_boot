@@ -27,6 +27,8 @@ import com.uninote.backend.dto.QuestionnaireDTO;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.QuestionnaireService;
+import com.uninote.backend.entity.QuestionnaireStatus;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/questionnaires")
@@ -258,9 +260,8 @@ public class QuestionnaireController {
         dto.setId(data.get("id") != null ? Long.valueOf(data.get("id").toString()) : null);
         dto.setName((String) data.get("name"));
         dto.setDescription((String) data.get("description"));
-        dto.setFirebasePath((String) data.get("firebasePath"));
-        dto.setStatus(data.get("status") != null ? com.uninote.backend.entity.QuestionnaireStatus.valueOf(data.get("status").toString()) : null);
-        dto.setTriggerTime(data.get("triggerTime") != null ? java.time.LocalDateTime.parse(data.get("triggerTime").toString()) : null);
+        dto.setStatus(QuestionnaireStatus.ACTIVE);
+        dto.setTriggerTime(LocalDateTime.now());
         // Parameters as Map
         if (data.get("parameters") instanceof Map) {
             dto.setParameters((Map<String, Object>) data.get("parameters"));

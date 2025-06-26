@@ -1,15 +1,19 @@
 package com.uninote.backend.service;
 
-import java.util.Optional;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.uninote.backend.dto.QuestionnaireContentDTO;
+import com.uninote.backend.dto.QuestionnaireDTO;
+import com.uninote.backend.entity.Questionnaire;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.QuestionnaireRepository;
+import com.uninote.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import com.uninote.backend.entity.Questionnaire;
-import com.uninote.backend.repository.QuestionnaireRepository;
+import java.util.Map;
 
 @Service
 public class QuestionnaireWebSocketService {
@@ -22,177 +26,122 @@ public class QuestionnaireWebSocketService {
     @Autowired
     private QuestionnaireRepository questionnaireRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * Send questionnaire to a specific user via WebSocket
      */
-    public void sendQuestionnaireToUser(String uuid, Questionnaire questionnaire) {
-        String destination = "/topic/questionnaires/" + uuid;
-        
-        QuestionnairePayload payload = new QuestionnairePayload();
-        payload.setQuestionnaireId(questionnaire.getId());
-        payload.setName(questionnaire.getName());
-        payload.setDescription(questionnaire.getDescription());
-        payload.setFirebasePath(questionnaire.getFirebasePath());
-        payload.setTriggerTime(questionnaire.getTriggerTime());
-        
-        // Enhanced logging for user 330
-        boolean isTargetUser = uuid != null && uuid.contains("330") || questionnaire.getId() == 1L;
-        
-        if (isTargetUser) {
-            logger.debug("=== SENDING QUESTIONNAIRE TO TARGET USER 330 ===");
-            logger.debug("UUID: {}", uuid);
-            logger.debug("Destination: {}", destination);
-            logger.debug("Questionnaire ID: {}", questionnaire.getId());
-            logger.debug("Questionnaire Name: {}", questionnaire.getName());
-            logger.debug("Firebase Path: {}", questionnaire.getFirebasePath());
-            logger.debug("Payload: {}", payload);
-        } else {
-            logger.debug("Sending questionnaire to user {} at destination: {}", uuid, destination);
-            logger.debug("Questionnaire payload: {}", payload);
-        }
-        
+    public void sendQuestionnaireToUser(Long questionnaireId, Long userId) {
         try {
-            messagingTemplate.convertAndSend(destination, payload);
-            if (isTargetUser) {
-                logger.debug("=== SUCCESSFULLY SENT QUESTIONNAIRE TO TARGET USER 330 ===");
-                logger.debug("Message sent to destination: {}", destination);
-            } else {
-                logger.debug("Successfully sent questionnaire {} to user {} at destination {}", 
-                    questionnaire.getId(), uuid, destination);
-            }
+            Questionnaire questionnaire = questionnaireRepository.findById(questionnaireId)
+                .orElseThrow(() -> new RuntimeException("Questionnaire not found: " + questionnaireId));
+            
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+            // Create questionnaire DTO
+            QuestionnaireDTO questionnaireDTO = new QuestionnaireDTO();
+            questionnaireDTO.setId(questionnaire.getId());
+            questionnaireDTO.setName(questionnaire.getName());
+            questionnaireDTO.setDescription(questionnaire.getDescription());
+            questionnaireDTO.setStatus(questionnaire.getStatus());
+            questionnaireDTO.setCreatedAt(questionnaire.getCreatedAt());
+            questionnaireDTO.setTriggerTime(questionnaire.getTriggerTime());
+
+            // Create content DTO
+            QuestionnaireContentDTO contentDTO = new QuestionnaireContentDTO();
+            contentDTO.setQuestionnaireId(questionnaire.getId().toString());
+            contentDTO.setTitle(questionnaire.getName());
+            contentDTO.setDescription(questionnaire.getDescription());
+            contentDTO.setQuestionnaireType("SURVEY");
+            contentDTO.setVersion("1.0");
+
+            // Create payload
+            QuestionnaireWebSocketPayload payload = new QuestionnaireWebSocketPayload();
+            payload.setType("QUESTIONNAIRE");
+            payload.setAction("NEW_QUESTIONNAIRE");
+            payload.setTimestamp(System.currentTimeMillis());
+            payload.setQuestionnaire(questionnaireDTO);
+            payload.setContent(contentDTO);
+
+            // Convert to JSON
+            String jsonPayload = objectMapper.writeValueAsString(payload);
+
+            // Send to user's topic using user ID
+            String destination = "/topic/questionnaires/" + userId;
+            messagingTemplate.convertAndSend(destination, jsonPayload);
+
+            logger.info("Questionnaire {} sent to user {} at destination: {}", 
+                questionnaireId, userId, destination);
+
         } catch (Exception e) {
-            if (isTargetUser) {
-                logger.error("=== FAILED TO SEND QUESTIONNAIRE TO TARGET USER 330 ===");
-                logger.error("Error details: {}", e.getMessage(), e);
-            } else {
-                logger.error("Failed to send questionnaire {} to user {} at destination {}: {}", 
-                    questionnaire.getId(), uuid, destination, e.getMessage(), e);
-            }
+            logger.error("Error sending questionnaire to user: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to send questionnaire", e);
         }
     }
 
     /**
-     * Send questionnaire to a specific user by questionnaire ID
+     * Send questionnaire completion notification
      */
-    public void sendQuestionnaireToUser(String uuid, Long questionnaireId) {
-        logger.debug("Sending questionnaire {} to user {}", questionnaireId, uuid);
-        
-        Optional<Questionnaire> questionnaireOpt = questionnaireRepository.findById(questionnaireId);
-        if (questionnaireOpt.isPresent()) {
-            sendQuestionnaireToUser(uuid, questionnaireOpt.get());
-        } else {
-            logger.warn("Questionnaire not found with ID: {}", questionnaireId);
-        }
-    }
-
-    /**
-     * Send questionnaire to multiple users
-     */
-    public void sendQuestionnaireToUsers(java.util.List<String> uuids, Questionnaire questionnaire) {
-        logger.debug("Sending questionnaire {} to {} users", questionnaire.getId(), uuids.size());
-        logger.debug("User UUIDs: {}", uuids);
-        
-        for (String uuid : uuids) {
-            sendQuestionnaireToUser(uuid, questionnaire);
-        }
-        
-        logger.debug("Completed sending questionnaire {} to {} users", questionnaire.getId(), uuids.size());
-    }
-
-    /**
-     * Send questionnaire to multiple users by questionnaire ID
-     */
-    public void sendQuestionnaireToUsers(java.util.List<String> uuids, Long questionnaireId) {
-        logger.debug("Sending questionnaire {} to {} users", questionnaireId, uuids.size());
-        
-        Optional<Questionnaire> questionnaireOpt = questionnaireRepository.findById(questionnaireId);
-        if (questionnaireOpt.isPresent()) {
-            sendQuestionnaireToUsers(uuids, questionnaireOpt.get());
-        } else {
-            logger.warn("Questionnaire not found with ID: {}", questionnaireId);
-        }
-    }
-
-    /**
-     * Send questionnaire reminder to a user
-     */
-    public void sendQuestionnaireReminder(String uuid, Long questionnaireId) {
-        String destination = "/topic/questionnaires/" + uuid;
-        
-        QuestionnaireReminderPayload payload = new QuestionnaireReminderPayload();
-        payload.setQuestionnaireId(questionnaireId);
-        payload.setMessage("You have a pending questionnaire to complete");
-        payload.setReminderType("QUESTIONNAIRE_REMINDER");
-        
-        logger.debug("Sending questionnaire reminder to user {} for questionnaire {} at destination: {}", 
-            uuid, questionnaireId, destination);
-        logger.debug("Reminder payload: {}", payload);
-        
+    public void sendCompletionNotification(Long userId, Long questionnaireId) {
         try {
-            messagingTemplate.convertAndSend(destination, payload);
-            logger.debug("Successfully sent questionnaire reminder to user {} for questionnaire {}", 
-                uuid, questionnaireId);
+            Map<String, Object> notification = Map.of(
+                "type", "QUESTIONNAIRE_COMPLETION",
+                "questionnaireId", questionnaireId,
+                "userId", userId,
+                "timestamp", System.currentTimeMillis(),
+                "message", "Questionnaire completed successfully"
+            );
+
+            String destination = "/topic/questionnaires/" + userId;
+            messagingTemplate.convertAndSend(destination, notification);
+
+            logger.info("Completion notification sent to user {} for questionnaire {}", 
+                userId, questionnaireId);
+
         } catch (Exception e) {
-            logger.error("Failed to send questionnaire reminder to user {} for questionnaire {}: {}", 
-                uuid, questionnaireId, e.getMessage(), e);
+            logger.error("Error sending completion notification: {}", e.getMessage(), e);
         }
     }
 
-    public static class QuestionnairePayload {
-        private Long questionnaireId;
-        private String name;
-        private String description;
-        private String firebasePath;
-        private java.time.LocalDateTime triggerTime;
+    /**
+     * WebSocket payload for questionnaire messages
+     */
+    public static class QuestionnaireWebSocketPayload {
+        private String type;
+        private String action;
+        private long timestamp;
+        private QuestionnaireDTO questionnaire;
+        private QuestionnaireContentDTO content;
 
-        public Long getQuestionnaireId() { return questionnaireId; }
-        public void setQuestionnaireId(Long questionnaireId) { this.questionnaireId = questionnaireId; }
-        
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        
-        public String getFirebasePath() { return firebasePath; }
-        public void setFirebasePath(String firebasePath) { this.firebasePath = firebasePath; }
-        
-        public java.time.LocalDateTime getTriggerTime() { return triggerTime; }
-        public void setTriggerTime(java.time.LocalDateTime triggerTime) { this.triggerTime = triggerTime; }
+        // Getters and Setters
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+
+        public String getAction() { return action; }
+        public void setAction(String action) { this.action = action; }
+
+        public long getTimestamp() { return timestamp; }
+        public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+        public QuestionnaireDTO getQuestionnaire() { return questionnaire; }
+        public void setQuestionnaire(QuestionnaireDTO questionnaire) { this.questionnaire = questionnaire; }
+
+        public QuestionnaireContentDTO getContent() { return content; }
+        public void setContent(QuestionnaireContentDTO content) { this.content = content; }
 
         @Override
         public String toString() {
-            return "QuestionnairePayload{" +
-                    "questionnaireId=" + questionnaireId +
-                    ", name='" + name + '\'' +
-                    ", description='" + description + '\'' +
-                    ", firebasePath='" + firebasePath + '\'' +
-                    ", triggerTime=" + triggerTime +
-                    '}';
-        }
-    }
-
-    public static class QuestionnaireReminderPayload {
-        private Long questionnaireId;
-        private String message;
-        private String reminderType;
-
-        public Long getQuestionnaireId() { return questionnaireId; }
-        public void setQuestionnaireId(Long questionnaireId) { this.questionnaireId = questionnaireId; }
-        
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-        
-        public String getReminderType() { return reminderType; }
-        public void setReminderType(String reminderType) { this.reminderType = reminderType; }
-
-        @Override
-        public String toString() {
-            return "QuestionnaireReminderPayload{" +
-                    "questionnaireId=" + questionnaireId +
-                    ", message='" + message + '\'' +
-                    ", reminderType='" + reminderType + '\'' +
-                    '}';
+            return "QuestionnaireWebSocketPayload{" +
+                "type='" + type + '\'' +
+                ", action='" + action + '\'' +
+                ", timestamp=" + timestamp +
+                ", questionnaire=" + questionnaire +
+                ", content=" + content +
+                '}';
         }
     }
 } 

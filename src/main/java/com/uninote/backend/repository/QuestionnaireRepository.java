@@ -19,10 +19,7 @@ public interface QuestionnaireRepository extends JpaRepository<Questionnaire, Lo
     // Find questionnaires by status and trigger time
     List<Questionnaire> findByStatusAndTriggerTimeBefore(QuestionnaireStatus status, LocalDateTime triggerTime);
     
-    // Find questionnaires by Firebase path
-    Optional<Questionnaire> findByFirebasePath(String firebasePath);
-    
-    // Find active questionnaires ready to trigger
-    @Query("SELECT q FROM Questionnaire q WHERE q.status = :status AND q.triggerTime <= :now")
-    List<Questionnaire> findReadyToTrigger(@Param("status") QuestionnaireStatus status, @Param("now") LocalDateTime now);
+    // Find questionnaires ready to trigger
+    @Query("SELECT q FROM Questionnaire q WHERE q.status = :status AND q.triggerTime <= :currentTime")
+    List<Questionnaire> findReadyToTrigger(@Param("status") QuestionnaireStatus status, @Param("currentTime") LocalDateTime currentTime);
 } 
