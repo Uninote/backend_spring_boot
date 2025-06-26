@@ -48,7 +48,6 @@ public class QuestionnaireResponseController {
             Long userId = Long.valueOf(payload.get("userId").toString());
             @SuppressWarnings("unchecked")
             Map<String, Object> responses = (Map<String, Object>) payload.get("responses");
-            String sessionId = (String) payload.get("sessionId");
 
             // Validate the response
             if (!validateResponse(questionnaireId, userId, responses)) {
@@ -60,7 +59,7 @@ public class QuestionnaireResponseController {
 
             // Store the response in database and Firebase
             String firebaseResponseId = questionnaireResponseStorageService.storeQuestionnaireResponse(
-                questionnaireId, userId, responses, sessionId
+                questionnaireId, userId, responses
             );
             
             logger.info("Questionnaire response stored successfully with Firebase ID: {}", firebaseResponseId);
@@ -107,7 +106,6 @@ public class QuestionnaireResponseController {
             Long userId = Long.valueOf(payload.get("userId").toString());
             @SuppressWarnings("unchecked")
             Map<String, Object> responses = (Map<String, Object>) payload.get("responses");
-            String sessionId = (String) payload.get("sessionId");
 
             // Validate the response
             if (!validateResponse(questionnaireId, userId, responses)) {
@@ -117,7 +115,7 @@ public class QuestionnaireResponseController {
 
             // Store the response in database and Firebase
             String firebaseResponseId = questionnaireResponseStorageService.storeQuestionnaireResponse(
-                questionnaireId, userId, responses, sessionId
+                questionnaireId, userId, responses
             );
             
             logger.info("Questionnaire response stored successfully with Firebase ID: {}", firebaseResponseId);

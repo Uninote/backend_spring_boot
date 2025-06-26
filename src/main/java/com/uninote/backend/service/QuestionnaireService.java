@@ -1,6 +1,7 @@
 package com.uninote.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -220,14 +221,41 @@ public class QuestionnaireService {
     }
     
     /**
-     * Get questionnaires ready to be triggered
+     * Get questionnaires ready to trigger
      */
     public List<QuestionnaireDTO> getQuestionnairesReadyToTrigger() {
-        List<Questionnaire> questionnaires = questionnaireRepository.findByStatusAndTriggerTimeBefore(
-            QuestionnaireStatus.ACTIVE, LocalDateTime.now());
+        List<Questionnaire> questionnaires = questionnaireRepository.findReadyToTrigger(QuestionnaireStatus.ACTIVE, LocalDateTime.now());
         return questionnaires.stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get eligible users for a questionnaire based on criteria
+     */
+    public List<Long> getEligibleUsers(Long questionnaireId) {
+        Optional<Questionnaire> questionnaireOpt = questionnaireRepository.findById(questionnaireId);
+        if (questionnaireOpt.isEmpty()) {
+            logger.warn("Questionnaire not found: {}", questionnaireId);
+            return new ArrayList<>();
+        }
+        
+        Questionnaire questionnaire = questionnaireOpt.get();
+        String criteriaQuery = questionnaire.getCriteriaQuery();
+        
+        if (criteriaQuery == null || criteriaQuery.trim().isEmpty()) {
+            logger.warn("No criteria defined for questionnaire: {}", questionnaireId);
+            return new ArrayList<>();
+        }
+        
+        try {
+            // Use the criteria service to get eligible user IDs
+            // This would need to be implemented in QuestionnaireCriteriaService
+            return new ArrayList<>(); // Placeholder - implement based on your criteria logic
+        } catch (Exception e) {
+            logger.error("Error getting eligible users for questionnaire {}: {}", questionnaireId, e.getMessage());
+            return new ArrayList<>();
+        }
     }
     
     /**

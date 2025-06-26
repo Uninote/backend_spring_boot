@@ -28,22 +28,22 @@ public class QuestionnaireResponse {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "response_data", columnDefinition = "CLOB")
+    private String responseData; // JSON string
+
     @Column(name = "firebase_response_id", nullable = false, unique = true)
     private String firebaseResponseId;
 
-    @Column(name = "completed_at", nullable = false)
+    @Column(name = "completed_at")
     private LocalDateTime completedAt;
-
-    @Column(name = "session_id")
-    private String sessionId;
 
     @Column(name = "time_taken_seconds")
     private Integer timeTakenSeconds;
 
-    @Column(name = "is_complete", nullable = false)
+    @Column(name = "is_complete")
     private Boolean isComplete = false;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     // Constructors
@@ -77,6 +77,14 @@ public class QuestionnaireResponse {
         this.user = user;
     }
 
+    public String getResponseData() {
+        return responseData;
+    }
+
+    public void setResponseData(String responseData) {
+        this.responseData = responseData;
+    }
+
     public String getFirebaseResponseId() {
         return firebaseResponseId;
     }
@@ -91,14 +99,6 @@ public class QuestionnaireResponse {
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
     }
 
     public Integer getTimeTakenSeconds() {

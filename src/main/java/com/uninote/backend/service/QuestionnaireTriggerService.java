@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.uninote.backend.entity.Questionnaire;
@@ -50,6 +51,9 @@ public class QuestionnaireTriggerService {
 
     @Autowired
     private FirebasePresenceService firebasePresenceService;
+
+    @Autowired
+    private QuestionnaireService questionnaireService;
 
     /**
      * Check if a user meets the criteria for a specific questionnaire
@@ -559,4 +563,82 @@ public class QuestionnaireTriggerService {
         
         return contentDTO;
     }
-} 
+
+    /**
+     * Check for eligible questionnaires and send them to users
+     * Runs every 30 seconds for testing
+     */
+    @Scheduled(fixedRate = 30000)
+    public void checkAndSendQuestionnaires() {
+        logger.info("🔄 Checking for eligible questionnaires...");
+        
+        try {
+            List<Questionnaire> activeQuestionnaires = questionnaireRepository.findByStatus(QuestionnaireStatus.ACTIVE);
+            logger.info("Found {} active questionnaires", activeQuestionnaires.size());
+            
+            for (Questionnaire questionnaire : activeQuestionnaires) {
+                logger.info("Processing questionnaire: {}", questionnaire.getName());
+                
+                List<Long> eligibleUsers = questionnaireService.getEligibleUsers(questionnaire.getId());
+                logger.info("Found {} eligible users for questionnaire: {}", eligibleUsers.size(), questionnaire.getName());
+                
+                for (Long userId : eligibleUsers) {
+                    // Only log for user 330
+                    if (userId == 330L) {
+                        logger.info("=== SENDING QUESTIONNAIRE TO USER 330 ===");
+                        logger.info("Questionnaire: {}", questionnaire.getName());
+                        logger.info("User ID: {}", userId);
+                    }
+                    
+                    sendQuestionnaireToUser(questionnaire, userId);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error in questionnaire trigger service", e);
+        }
+    }
+
+    /**
+     * Send questionnaire to a specific user via WebSocket
+     */
+    private void sendQuestionnaireToUser(Questionnaire questionnaire, Long userId) {
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                if (userId == 330L) {
+                    logger.error("User 330 not found in database");
+                }
+                return;
+            }
+            
+            if (user.getFirebaseUid() == null || user.getFirebaseUid().isEmpty()) {
+                if (userId == 330L) {
+                    logger.error("User 330 has no Firebase UID");
+                }
+                return;
+            }
+            
+            if (userId == 330L) {
+                logger.info("User 330 found - Firebase UID: {}", user.getFirebaseUid());
+            }
+            
+            // Convert questionnaire to DTO
+            QuestionnaireDTO questionnaireDTO = convertToDTO(questionnaire);
+            
+            // Send via WebSocket (no presence check)
+            questionnaireWebSocketService.sendQuestionnaireToUser(user.getFirebaseUid(), questionnaire);
+            
+            if (userId == 330L) {
+                logger.info("✅ Questionnaire sent to user 330 via WebSocket");
+                logger.info("Topic: /topic/questionnaire/{}", user.getFirebaseUid());
+            }
+            
+        } catch (Exception e) {
+            if (userId == 330L) {
+                logger.error("Error sending questionnaire to user 330: {}", e.getMessage());
+            } else {
+                logger.error("Error sending questionnaire to user {}: {}", userId, e.getMessage());
+            }
+        }
+    }
+}
