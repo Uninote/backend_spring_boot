@@ -15,12 +15,14 @@ import dev.langchain4j.model.input.Prompt;
 import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +32,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
 
 
 @Service
@@ -52,6 +58,10 @@ public class LangChainContentService {
 
     @Autowired
     private EmbeddingService embeddingService;
+    
+    @Autowired
+    @Qualifier("contentGenerationExecutor")
+    private Executor contentGenerationExecutor;
     
     // All-in-one content generator
     @SystemMessage("You are an AI assistant that generates educational content in JSON format.")
@@ -187,7 +197,9 @@ public class LangChainContentService {
      * Fallback method to generate content individually if unified approach fails
      */
     private Resource generateAllContentFallback(Long resourceId) {
-        logger.info("Using individual content generation for resource: {}", resourceId);
+        long startTime = System.currentTimeMillis();
+        logger.info("Using parallel content generation for resource: {}", resourceId);
+        logger.debug("🕐 Fallback content generation started at: {}", startTime);
         
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
@@ -196,45 +208,115 @@ public class LangChainContentService {
         ChatLanguageModel chatModel = getChatModel();
         
         try {
-            // Generate summary 
-            logger.info("Generating summary...");
-            SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
-                    .chatLanguageModel(chatModel)
-                    .build();
-            String summary = summaryGenerator.generateSummary(prepareSummaryPrompt(content));
+            // Generate all content types in parallel
+            CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.info("Generating summary in parallel...");
+                try {
+                    SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String result = summaryGenerator.generateSummary(prepareSummaryPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Summary generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating summary: {}", e.getMessage());
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Summary generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "Error generating summary: " + e.getMessage();
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.info("Generating flashcards in parallel...");
+                try {
+                    FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(flashcardsJson, "flashcards");
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Flashcards generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating flashcards: {}", e.getMessage());
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Flashcards generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.info("Generating quiz in parallel...");
+                try {
+                    QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String quizJson = quizGenerator.generateQuiz(prepareQuizPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(quizJson, "quiz");
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Quiz generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating quiz: {}", e.getMessage());
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Quiz generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.info("Generating chapters in parallel...");
+                try {
+                    ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String chaptersJson = chapterGenerator.generateChapters(prepareChaptersPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(chaptersJson, "chapters");
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Chapters generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating chapters: {}", e.getMessage());
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Chapters generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            // Wait for all parallel tasks to complete
+            logger.info("Waiting for all parallel content generation tasks to complete...");
+            CompletableFuture<Void> allTasks = CompletableFuture.allOf(
+                summaryFuture, flashcardsFuture, quizFuture, chaptersFuture
+            );
+            
+            // Wait for completion with timeout
+            try {
+                allTasks.get(5, TimeUnit.MINUTES); // 5 minute timeout
+            } catch (TimeoutException e) {
+                logger.error("Content generation timed out after 5 minutes");
+                throw new RuntimeException("Content generation timed out");
+            } catch (Exception e) {
+                logger.error("Error waiting for parallel content generation: {}", e.getMessage());
+                throw new RuntimeException("Error in parallel content generation", e);
+            }
+            
+            // Get results from all futures
+            String summary = summaryFuture.get();
+            String flashcards = flashcardsFuture.get();
+            String quiz = quizFuture.get();
+            String chapters = chaptersFuture.get();
+            
+            logger.info("All parallel content generation tasks completed successfully");
+            
+            // Set the generated content on the resource
             resource.setSummary(summary);
-            
-            // Generate flashcards
-            logger.info("Generating flashcards...");
-            FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
-                    .chatLanguageModel(chatModel)
-                    .build();
-            String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(content));
-            
-            // Validate and clean flashcards JSON
-            String flashcards = validateAndCleanJson(flashcardsJson, "flashcards");
             resource.setFlashcards(flashcards);
-            
-            // Generate quiz
-            logger.info("Generating quiz...");
-            QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
-                    .chatLanguageModel(chatModel)
-                    .build();
-            String quizJson = quizGenerator.generateQuiz(prepareQuizPrompt(content));
-            
-            // Validate and clean quiz JSON
-            String quiz = validateAndCleanJson(quizJson, "quiz");
             resource.setQuiz(quiz);
-            
-            // Generate chapters
-            logger.info("Generating chapters...");
-            ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
-                    .chatLanguageModel(chatModel)
-                    .build();
-            String chaptersJson = chapterGenerator.generateChapters(prepareChaptersPrompt(content));
-            
-            // Validate and clean chapters JSON
-            String chapters = validateAndCleanJson(chaptersJson, "chapters");
             resource.setChapters(chapters);
             
             // Create combined generated content
@@ -264,10 +346,20 @@ public class LangChainContentService {
             
             resource.setGeneratedContent(generatedContent.toString());
             
+            long endTime = System.currentTimeMillis();
+            long totalTime = endTime - startTime;
+            
+            logger.info("Parallel content generation completed successfully for resource: {}", resourceId);
+            logger.debug("⏱️ Total fallback content generation time: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
+            
             return resourceRepository.save(resource);
+            
         } catch (Exception e) {
-            logger.error("Error during content generation: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to generate content", e);
+            long endTime = System.currentTimeMillis();
+            long totalTime = endTime - startTime;
+            logger.error("Error in parallel content generation for resource {}: {}", resourceId, e.getMessage(), e);
+            logger.debug("⏱️ Fallback content generation failed after: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
+            throw new RuntimeException("Failed to generate content in parallel", e);
         }
     }
     
@@ -719,86 +811,106 @@ public class LangChainContentService {
     
     // The individual prompt methods are kept for backward compatibility
     
-    private String prepareSummaryPrompt(String content) {
+    private String prepareSummaryPrompt(String content, String resourceTitle, String resourceType) {
         String truncatedContent = handleLargeContent(content, 3000);
         
-        PromptTemplate template = PromptTemplate.from(
-            "- Provide a **detailed and well-structured summary** of the content.\n" +
-            "- The summary should be **rich in information**, capturing key concepts, important details, and examples where applicable.\n" +
-            "- Aim for **at least 12 sentences**, ensuring completeness without excessive verbosity.\n" +
-            "- Format the summary in **Markdown**, using bullet points, headings, and emphasis where necessary.\n\n" +
-            "Text to summarize:\n{{content}}"
-        );
-        
-        return template.apply(Map.of("content", truncatedContent)).text();
+        try {
+            return promptService.createSummaryGenerationPrompt(resourceTitle, resourceType, truncatedContent);
+        } catch (IOException e) {
+            logger.error("Error loading summary generation prompt", e);
+            // Fallback to hardcoded prompt
+            PromptTemplate template = PromptTemplate.from(
+                "- Provide a **detailed and well-structured summary** of the content.\n" +
+                "- The summary should be **rich in information**, capturing key concepts, important details, and examples where applicable.\n" +
+                "- Aim for **at least 12 sentences**, ensuring completeness without excessive verbosity.\n" +
+                "- Format the summary in **Markdown**, using bullet points, headings, and emphasis where necessary.\n\n" +
+                "Text to summarize:\n{{content}}"
+            );
+            return template.apply(Map.of("content", truncatedContent)).text();
+        }
     }
     
-    private String prepareFlashcardsPrompt(String content) {
+    private String prepareFlashcardsPrompt(String content, String resourceTitle, String resourceType) {
         String truncatedContent = handleLargeContent(content, 2500);
 
-        PromptTemplate template = PromptTemplate.from(
-            "You are an AI assistant. Your job is to generate educational flashcards based on the provided content.\n\n" +
-            "### FLASHCARDS\n" +
-            "- Each flashcard should focus on a key term, concept, or question from the material.\n" +
-            "- Provide a **concise but clear answer**, and include a **helpful short hint**.\n" +
-            "- Ensure flashcards span a broad range of the material and reflect important learning points.\n\n" +
-            "---\n\n" +
-            "The content of the resource is:\n\n{{content}}\n\n" +
-            "### Output Format\n" +
-            "- Return your response in **strict JSON format** like this:\n" +
-            "[\n" +
-            "  { \"question\": \"\", \"answer\": \"\", \"hint\": \"\" },\n" +
-            "  { \"question\": \"\", \"answer\": \"\", \"hint\": \"\" }\n" +
-            "]\n" +
-            "- **Do not include any extra text, markdown, or explanations. Make sure to respond in Greek.**"
-        );
-
-        return template.apply(Map.of("content", truncatedContent)).text();
+        try {
+            return promptService.createFlashcardsGenerationPrompt(resourceTitle, resourceType, truncatedContent);
+        } catch (IOException e) {
+            logger.error("Error loading flashcards generation prompt", e);
+            // Fallback to hardcoded prompt
+            PromptTemplate template = PromptTemplate.from(
+                "You are an AI assistant. Your job is to generate educational flashcards based on the provided content.\n\n" +
+                "### FLASHCARDS\n" +
+                "- Each flashcard should focus on a key term, concept, or question from the material.\n" +
+                "- Provide a **concise but clear answer**, and include a **helpful short hint**.\n" +
+                "- Ensure flashcards span a broad range of the material and reflect important learning points.\n\n" +
+                "---\n\n" +
+                "The content of the resource is:\n\n{{content}}\n\n" +
+                "### Output Format\n" +
+                "- Return your response in **strict JSON format** like this:\n" +
+                "[\n" +
+                "  { \"question\": \"\", \"answer\": \"\", \"hint\": \"\" },\n" +
+                "  { \"question\": \"\", \"answer\": \"\", \"hint\": \"\" }\n" +
+                "]\n" +
+                "- **Do not include any extra text, markdown, or explanations. Make sure to respond in Greek.**"
+            );
+            return template.apply(Map.of("content", truncatedContent)).text();
+        }
     }
 
     
-    private String prepareQuizPrompt(String content) {
+    private String prepareQuizPrompt(String content, String resourceTitle, String resourceType) {
         String truncatedContent = handleLargeContent(content, 2500);
 
-        PromptTemplate template = PromptTemplate.from(
-            "You are an AI assistant. Your job is to generate a high-quality multiple-choice quiz from the provided content.\n\n" +
-            "### QUIZ INSTRUCTIONS\n" +
-            "- Each question should test key concepts from the material.\n" +
-            "- Vary the difficulty level across questions (easy, medium, hard).\n" +
-            "- Provide **exactly four** answer choices per question.\n" +
-            "- Ensure **only one** of the four answers is correct.\n" +
-            "- The incorrect answers (distractors) should be **plausible but incorrect**.\n" +
-            "- Use **clear, direct language** in both questions and answers.\n\n" +
-            "---\n\n" +
-            "The content of the resource is:\n\n{{content}}\n\n" +
-            "### Output Format\n" +
-            "- Return your response in **strict JSON format** like this:\n" +
-            "[\n" +
-            "  {\n" +
-            "    \"question\": \"\",\n" +
-            "    \"options\": [\"\", \"\", \"\", \"\"],\n" +
-            "    \"answer\": \"\"\n" +
-            "  }\n" +
-            "]\n" +
-            "- **Do not include any extra text, markdown, or explanations. Make sure to respond in Greek.**"
-        );
-
-        return template.apply(Map.of("content", truncatedContent)).text();
+        try {
+            return promptService.createQuizGenerationPrompt(resourceTitle, resourceType, truncatedContent);
+        } catch (IOException e) {
+            logger.error("Error loading quiz generation prompt", e);
+            // Fallback to hardcoded prompt
+            PromptTemplate template = PromptTemplate.from(
+                "You are an AI assistant. Your job is to generate a high-quality multiple-choice quiz from the provided content.\n\n" +
+                "### QUIZ INSTRUCTIONS\n" +
+                "- Each question should test key concepts from the material.\n" +
+                "- Vary the difficulty level across questions (easy, medium, hard).\n" +
+                "- Provide **exactly four** answer choices per question.\n" +
+                "- Ensure **only one** of the four answers is correct.\n" +
+                "- The incorrect answers (distractors) should be **plausible but incorrect**.\n" +
+                "- Use **clear, direct language** in both questions and answers.\n\n" +
+                "---\n\n" +
+                "The content of the resource is:\n\n{{content}}\n\n" +
+                "### Output Format\n" +
+                "- Return your response in **strict JSON format** like this:\n" +
+                "[\n" +
+                "  {\n" +
+                "    \"question\": \"\",\n" +
+                "    \"options\": [\"\", \"\", \"\", \"\"],\n" +
+                "    \"answer\": \"\"\n" +
+                "  }\n" +
+                "]\n" +
+                "- **Do not include any extra text, markdown, or explanations. Make sure to respond in Greek.**"
+            );
+            return template.apply(Map.of("content", truncatedContent)).text();
+        }
     }
 
     
-    private String prepareChaptersPrompt(String content) {
+    private String prepareChaptersPrompt(String content, String resourceTitle, String resourceType) {
         String truncatedContent = handleLargeContent(content, 100000);
         
-        PromptTemplate template = PromptTemplate.from(
-            "Divide the following text into logical chapters or sections. Each chapter should have " +
-            "a title and content. Return the chapters as a JSON array of objects with 'title' and 'content' fields. " +
-            "Format the output as a JSON array without any markdown or code blocks - just pure JSON.\n\n" +
-            "Text to divide into chapters:\n{{content}}\n\n" +
-            "Example format:\n[{\"title\":\"Chapter 1 Title\",\"content\":\"Chapter 1 content\"},{\"title\":\"Chapter 2 Title\",\"content\":\"Chapter 2 content\"}]"
-        );
-        
-        return template.apply(Map.of("content", truncatedContent)).text();
+        try {
+            return promptService.createChaptersGenerationPrompt(resourceTitle, resourceType, truncatedContent);
+        } catch (IOException e) {
+            logger.error("Error loading chapters generation prompt", e);
+            // Fallback to hardcoded prompt
+            PromptTemplate template = PromptTemplate.from(
+                "Divide the following text into logical chapters or sections. Each chapter should have " +
+                "a title and content. Return the chapters as a JSON array of objects with 'title' and 'content' fields. " +
+                "Format the output as a JSON array without any markdown or code blocks - just pure JSON.\n\n" +
+                "Text to divide into chapters:\n{{content}}\n\n" +
+                "Example format:\n[{\"title\":\"Chapter 1 Title\",\"content\":\"Chapter 1 content\"},{\"title\":\"Chapter 2 Title\",\"content\":\"Chapter 2 content\"}]"
+            );
+            return template.apply(Map.of("content", truncatedContent)).text();
+        }
     }
     
     // Individual generation methods are kept for backward compatibility
@@ -817,56 +929,49 @@ public class LangChainContentService {
                 .chatLanguageModel(chatModel)
                 .build();
         
-        String summary = generator.generateSummary(prepareSummaryPrompt(resource.getContent()));
+        String summary = generator.generateSummary(prepareSummaryPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
         
         resource.setSummary(summary);
         return resourceRepository.save(resource);
     }
     
     public Resource generateFlashcards(Resource resource) {
-        logger.info("Appending additional flashcards for resource ID: {}", resource.getId());
-
+        logger.info("Generating flashcards for resource: {}", resource.getId());
+        
         if (resource.getContent() == null || resource.getContent().isEmpty()) {
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-
+        
         ChatLanguageModel chatModel = getChatModel();
-
-        FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
+        FlashcardGenerator generator = AiServices.builder(FlashcardGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-
-        String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent()));
-        String cleanJson = validateAndCleanJson(flashcardsJson, "flashcards");
-        JSONArray newFlashcards = new JSONArray(cleanJson);
-
         
-
-        resource.setFlashcards(newFlashcards.toString());
-
+        String flashcardsJson = generator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
+        String cleanJson = validateAndCleanJson(flashcardsJson, "flashcards");
+        
+        resource.setFlashcards(cleanJson);
         return resourceRepository.save(resource);
     }
 
     
     public String generateQuiz(Long resourceId) {
-        logger.info("Generating quiz (JSON only) for resource: {}", resourceId);
-
+        logger.info("Generating quiz for resource: {}", resourceId);
+        
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
-
-        if (resource.getContent() == null || resource.getContent().isBlank()) {
+        
+        if (resource.getContent() == null || resource.getContent().isEmpty()) {
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-
+        
         ChatLanguageModel chatModel = getChatModel();
         QuizGenerator generator = AiServices.builder(QuizGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-
-        String rawResponse = generator.generateQuiz(prepareQuizPrompt(resource.getContent()));
-        String cleanJson = validateAndCleanJson(rawResponse, "quiz");
-
-        return cleanJson;
+        
+        String quizJson = generator.generateQuiz(prepareQuizPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
+        return validateAndCleanJson(quizJson, "quiz");
     }
 
     
@@ -885,7 +990,7 @@ public class LangChainContentService {
                 .chatLanguageModel(chatModel)
                 .build();
         
-        String chapters = generator.generateChapters(prepareChaptersPrompt(resource.getContent()));
+        String chapters = generator.generateChapters(prepareChaptersPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
         
         resource.setChapters(chapters);
         return resourceRepository.save(resource);
@@ -893,7 +998,7 @@ public class LangChainContentService {
 
     @Async
     public void generateAllContentAsync(Long resourceId) {
-        generateAllContent(resourceId);
+        generateAllContentParallel(resourceId);
     }
 
 
@@ -967,7 +1072,7 @@ public class LangChainContentService {
                 .chatLanguageModel(chatModel)
                 .build();
 
-        String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent()));
+        String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
         String cleanJson = validateAndCleanJson(flashcardsJson, "flashcards");
         JSONArray newFlashcards = new JSONArray(cleanJson);
 
@@ -988,5 +1093,224 @@ public class LangChainContentService {
         return resourceRepository.save(resource);
     }
 
+    /**
+     * Generate all content types in parallel with progress tracking
+     */
+    public Resource generateAllContentParallel(Long resourceId) {
+        long startTime = System.currentTimeMillis();
+        logger.info("Starting parallel content generation for resource: {}", resourceId);
+        logger.debug("🕐 Content generation started at: {}", startTime);
+        
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
+        
+        String content = resource.getContent();
+        ChatLanguageModel chatModel = getChatModel();
+        
+        try {
+            // Track progress
+            final int totalTasks = 4;
+            final int[] completedTasks = {0};
+            
+            // Generate all content types in parallel with immediate saving
+            CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("🔄 [1/4] Generating summary...");
+                try {
+                    SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String result = summaryGenerator.generateSummary(prepareSummaryPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    
+                    // Save summary immediately
+                    synchronized (resource) {
+                        resource.setSummary(result);
+                        resourceRepository.save(resource);
+                        logger.debug("💾 Summary saved immediately");
+                    }
+                    
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("✅ [1/4] Summary generation completed and saved");
+                    logger.debug("📊 Summary generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("❌ [1/4] Error generating summary: {}", e.getMessage());
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Summary generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "Error generating summary: " + e.getMessage();
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("🔄 [2/4] Generating flashcards...");
+                try {
+                    FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(flashcardsJson, "flashcards");
+                    
+                    // Save flashcards immediately
+                    synchronized (resource) {
+                        resource.setFlashcards(result);
+                        resourceRepository.save(resource);
+                        logger.debug("💾 Flashcards saved immediately");
+                    }
+                    
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("✅ [2/4] Flashcards generation completed and saved");
+                    logger.debug("📊 Flashcards generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("❌ [2/4] Error generating flashcards: {}", e.getMessage());
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Flashcards generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("🔄 [3/4] Generating quiz...");
+                try {
+                    QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String quizJson = quizGenerator.generateQuiz(prepareQuizPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(quizJson, "quiz");
+                    
+                    // Save quiz immediately
+                    synchronized (resource) {
+                        resource.setQuiz(result);
+                        resourceRepository.save(resource);
+                        logger.debug("💾 Quiz saved immediately");
+                    }
+                    
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("✅ [3/4] Quiz generation completed and saved");
+                    logger.debug("📊 Quiz generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("❌ [3/4] Error generating quiz: {}", e.getMessage());
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Quiz generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("🔄 [4/4] Generating chapters...");
+                try {
+                    ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String chaptersJson = chapterGenerator.generateChapters(prepareChaptersPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(chaptersJson, "chapters");
+                    
+                    // Save chapters immediately
+                    synchronized (resource) {
+                        resource.setChapters(result);
+                        resourceRepository.save(resource);
+                        logger.debug("💾 Chapters saved immediately");
+                    }
+                    
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("✅ [4/4] Chapters generation completed and saved");
+                    logger.debug("📊 Chapters generation took: {} ms", (taskEndTime - taskStartTime));
+                    return result;
+                } catch (Exception e) {
+                    logger.error("❌ [4/4] Error generating chapters: {}", e.getMessage());
+                    completedTasks[0]++;
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("📊 Chapters generation failed after: {} ms", (taskEndTime - taskStartTime));
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            // Wait for all parallel tasks to complete with timeout
+            logger.info("⏳ Waiting for all parallel content generation tasks to complete...");
+            CompletableFuture<Void> allTasks = CompletableFuture.allOf(
+                summaryFuture, flashcardsFuture, quizFuture, chaptersFuture
+            );
+            
+            try {
+                allTasks.get(5, TimeUnit.MINUTES); // 5 minute timeout
+                logger.debug("🎉 All parallel content generation tasks completed successfully!");
+            } catch (TimeoutException e) {
+                logger.error("⏰ Content generation timed out after 5 minutes");
+                throw new RuntimeException("Content generation timed out");
+            } catch (Exception e) {
+                logger.error("❌ Error waiting for parallel content generation: {}", e.getMessage());
+                throw new RuntimeException("Error in parallel content generation", e);
+            }
+            
+            // Get results from all futures to create combined generated content
+            String summary = summaryFuture.get();
+            String flashcards = flashcardsFuture.get();
+            String quiz = quizFuture.get();
+            String chapters = chaptersFuture.get();
+            
+            // Create combined generated content
+            JSONObject generatedContent = new JSONObject();
+            generatedContent.put("summary", summary);
+            
+            try {
+                generatedContent.put("flashcards", new JSONArray(flashcards));
+            } catch (Exception e) {
+                logger.warn("⚠️ Error parsing flashcards as JSON array: {}", e.getMessage());
+                generatedContent.put("flashcards", flashcards);
+            }
+            
+            try {
+                generatedContent.put("quiz", new JSONArray(quiz));
+            } catch (Exception e) {
+                logger.warn("⚠️ Error parsing quiz as JSON array: {}", e.getMessage());
+                generatedContent.put("quiz", quiz);
+            }
+            
+            try {
+                generatedContent.put("chapters", new JSONArray(chapters));
+            } catch (Exception e) {
+                logger.warn("⚠️ Error parsing chapters as JSON array: {}", e.getMessage());
+                generatedContent.put("chapters", chapters);
+            }
+            
+            // Save the combined generated content
+            resource.setGeneratedContent(generatedContent.toString());
+            
+            // Process embeddings
+            try {
+                processEmbeddings(resource);
+            } catch (Exception e) {
+                logger.error("Embedding processing failed: {}", e.getMessage(), e);
+            }
+            
+            long endTime = System.currentTimeMillis();
+            long totalTime = endTime - startTime;
+            
+            logger.info("🎯 Parallel content generation completed successfully for resource: {}", resourceId);
+            logger.debug("⏱️ Total content generation time: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
+            logger.debug("📈 Performance: Parallel generation completed in {} ms vs estimated {} ms sequential", 
+                totalTime, totalTime * 4); // Rough estimate of sequential time
+            
+            return resourceRepository.save(resource);
+            
+        } catch (Exception e) {
+            long endTime = System.currentTimeMillis();
+            long totalTime = endTime - startTime;
+            logger.error("💥 Error in parallel content generation for resource {}: {}", resourceId, e.getMessage(), e);
+            logger.debug("⏱️ Content generation failed after: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
+            throw new RuntimeException("Failed to generate content in parallel", e);
+        }
+    }
 
 }

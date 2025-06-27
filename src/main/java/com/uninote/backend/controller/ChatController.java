@@ -217,6 +217,12 @@ public class ChatController {
                             .body(langChainContentService.generateQuiz(resourceId));
 
                 case "all":
+                    return ResponseEntity.ok(langChainContentService.generateAllContentParallel(resourceId));
+
+                case "all-parallel":
+                    return ResponseEntity.ok(langChainContentService.generateAllContentParallel(resourceId));
+
+                case "all-sequential":
                     return ResponseEntity.ok(langChainContentService.generateAllContent(resourceId));
 
                 default:

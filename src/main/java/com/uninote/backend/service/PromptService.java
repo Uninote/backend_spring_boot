@@ -87,4 +87,41 @@ public class PromptService {
         );
         return getFilledPrompt("tutie_resource_large.txt", params);
     }
+
+    // New methods for specialized content generation prompts
+    public String createSummaryGenerationPrompt(String resourceTitle, String resourceType, String content) throws IOException {
+        Map<String, String> params = Map.of(
+            "resourceTitle", resourceTitle,
+            "resourceType", resourceType,
+            "content", content
+        );
+        return getFilledPrompt("content_generation/summary_generator.txt", params);
+    }
+
+    public String createFlashcardsGenerationPrompt(String resourceTitle, String resourceType, String content) throws IOException {
+        Map<String, String> params = Map.of(
+            "resourceTitle", resourceTitle,
+            "resourceType", resourceType,
+            "content", content
+        );
+        return getFilledPrompt("content_generation/flashcards_generator.txt", params);
+    }
+
+    public String createQuizGenerationPrompt(String resourceTitle, String resourceType, String content) throws IOException {
+        Map<String, String> params = Map.of(
+            "resourceTitle", resourceTitle,
+            "resourceType", resourceType,
+            "content", content
+        );
+        return getFilledPrompt("content_generation/quiz_generator.txt", params);
+    }
+
+    public String createChaptersGenerationPrompt(String resourceTitle, String resourceType, String content) throws IOException {
+        Map<String, String> params = Map.of(
+            "resourceTitle", resourceTitle,
+            "resourceType", resourceType,
+            "content", content
+        );
+        return getFilledPrompt("content_generation/chapters_generator.txt", params);
+    }
 }
