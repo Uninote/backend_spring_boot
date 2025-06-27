@@ -54,6 +54,9 @@ public class QuestionnaireTriggerService {
     private QuestionnaireService questionnaireService;
 
     @Autowired
+    private QuestionnaireAcknowledgmentService acknowledgmentService;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     /**
@@ -147,16 +150,25 @@ public class QuestionnaireTriggerService {
         logger.debug("Found {} users who meet criteria for questionnaire {} out of {} eligible users", 
             qualifiedUsers.size(), questionnaireId, eligibleUsers.size());
         
+        // Filter out users who have acknowledged the questionnaire (RECEIVED, DISMISSED, etc.)
+        logger.debug("Checking acknowledgments for {} qualified users", qualifiedUsers.size());
+        List<User> usersWithoutAcknowledgments = qualifiedUsers.stream()
+                .filter(user -> !hasUserAcknowledgedQuestionnaire(user.getId(), questionnaireId))
+                .collect(Collectors.toList());
+        
+        logger.debug("Found {} users without acknowledgments for questionnaire {} out of {} qualified users", 
+            usersWithoutAcknowledgments.size(), questionnaireId, qualifiedUsers.size());
+        
         // Filter active users if presence checking is enabled
-        List<User> activeUsers = qualifiedUsers;
+        List<User> activeUsers = usersWithoutAcknowledgments;
         if (checkPresence) {
-            logger.debug("Checking user presence for {} qualified users", qualifiedUsers.size());
+            logger.debug("Checking user presence for {} users without acknowledgments", usersWithoutAcknowledgments.size());
             
             // Check presence for each user and log results
             List<User> onlineUsers = new ArrayList<>();
             List<User> offlineUsers = new ArrayList<>();
             
-            for (User user : qualifiedUsers) {
+            for (User user : usersWithoutAcknowledgments) {
                 boolean isActive = true; // Assuming all users are active for now
                 boolean isTargetUser = user.getId() == 330L;
                 
@@ -178,11 +190,11 @@ public class QuestionnaireTriggerService {
             activeUsers = onlineUsers;
             
             // Only show summary if target user is involved
-            boolean hasTargetUser = qualifiedUsers.stream().anyMatch(user -> user.getId() == 330L);
+            boolean hasTargetUser = usersWithoutAcknowledgments.stream().anyMatch(user -> user.getId() == 330L);
             if (hasTargetUser) {
                 logger.info("=== PRESENCE CHECK RESULTS FOR TARGET USER 330 ===");
-                logger.info("Presence check results: {} online, {} offline out of {} qualified users", 
-                    onlineUsers.size(), offlineUsers.size(), qualifiedUsers.size());
+                logger.info("Presence check results: {} online, {} offline out of {} users without acknowledgments", 
+                    onlineUsers.size(), offlineUsers.size(), usersWithoutAcknowledgments.size());
             }
             
             if (!offlineUsers.isEmpty()) {
@@ -196,7 +208,7 @@ public class QuestionnaireTriggerService {
             }
             
         } else {
-            logger.debug("Skipping presence check - using all {} qualified users", qualifiedUsers.size());
+            logger.debug("Skipping presence check - using all {} users without acknowledgments", usersWithoutAcknowledgments.size());
         }
 
         // Send questionnaire to active users in batches
@@ -304,16 +316,25 @@ public class QuestionnaireTriggerService {
                 .collect(Collectors.toList());
         logger.debug("Found {} users who meet criteria for questionnaire {}", qualifiedUsers.size(), questionnaireId);
         
+        // Filter out users who have acknowledged the questionnaire (RECEIVED, DISMISSED, etc.)
+        logger.debug("Checking acknowledgments for {} qualified users", qualifiedUsers.size());
+        List<User> usersWithoutAcknowledgments = qualifiedUsers.stream()
+                .filter(user -> !hasUserAcknowledgedQuestionnaire(user.getId(), questionnaireId))
+                .collect(Collectors.toList());
+        
+        logger.debug("Found {} users without acknowledgments for questionnaire {} out of {} qualified users", 
+            usersWithoutAcknowledgments.size(), questionnaireId, qualifiedUsers.size());
+        
         // Filter active users if presence checking is enabled
-        List<User> activeUsers = qualifiedUsers;
+        List<User> activeUsers = usersWithoutAcknowledgments;
         if (checkPresence) {
-            logger.debug("Checking user presence for {} qualified users", qualifiedUsers.size());
+            logger.debug("Checking user presence for {} users without acknowledgments", usersWithoutAcknowledgments.size());
             
             // Check presence for each user and log results
             List<User> onlineUsers = new ArrayList<>();
             List<User> offlineUsers = new ArrayList<>();
             
-            for (User user : qualifiedUsers) {
+            for (User user : usersWithoutAcknowledgments) {
                 boolean isActive = true; // Assuming all users are active for now
                 boolean isTargetUser = user.getId() == 330L;
                 
@@ -335,11 +356,11 @@ public class QuestionnaireTriggerService {
             activeUsers = onlineUsers;
             
             // Only show summary if target user is involved
-            boolean hasTargetUser = qualifiedUsers.stream().anyMatch(user -> user.getId() == 330L);
+            boolean hasTargetUser = usersWithoutAcknowledgments.stream().anyMatch(user -> user.getId() == 330L);
             if (hasTargetUser) {
                 logger.info("=== PRESENCE CHECK RESULTS FOR TARGET USER 330 (IMMEDIATE) ===");
-                logger.info("Presence check results: {} online, {} offline out of {} qualified users", 
-                    onlineUsers.size(), offlineUsers.size(), qualifiedUsers.size());
+                logger.info("Presence check results: {} online, {} offline out of {} users without acknowledgments", 
+                    onlineUsers.size(), offlineUsers.size(), usersWithoutAcknowledgments.size());
             }
             
             if (!offlineUsers.isEmpty()) {
@@ -353,7 +374,7 @@ public class QuestionnaireTriggerService {
             }
             
         } else {
-            logger.debug("Skipping presence check - using all {} qualified users", qualifiedUsers.size());
+            logger.debug("Skipping presence check - using all {} users without acknowledgments", usersWithoutAcknowledgments.size());
         }
 
         // Send questionnaire to all active users immediately
@@ -470,14 +491,56 @@ public class QuestionnaireTriggerService {
         }
         
         try {
-            // For the current query "SELECT 1 FROM admin.users WHERE user_id = 330"
-            // Extract the user_id value
-            if (criteriaQuery.contains("user_id = 330")) {
-                return Set.of(330L);
+            logger.debug("Parsing criteria query: {}", criteriaQuery);
+            
+            // Handle "SELECT 1 FROM admin.users WHERE id = X" pattern
+            if (criteriaQuery.contains("id = ")) {
+                String[] parts = criteriaQuery.split("id = ");
+                if (parts.length > 1) {
+                    String userIdStr = parts[1].trim();
+                    // Remove any trailing parts (like "AND ..." or closing parenthesis)
+                    if (userIdStr.contains(" ")) {
+                        userIdStr = userIdStr.split(" ")[0];
+                    }
+                    if (userIdStr.contains(")")) {
+                        userIdStr = userIdStr.split("\\)")[0];
+                    }
+                    
+                    try {
+                        Long userId = Long.parseLong(userIdStr);
+                        logger.debug("Extracted user ID from criteria: {}", userId);
+                        return Set.of(userId);
+                    } catch (NumberFormatException e) {
+                        logger.warn("Could not parse user ID from criteria: {}", userIdStr);
+                    }
+                }
+            }
+            
+            // Handle "SELECT 1 FROM admin.users WHERE user_id = X" pattern (legacy)
+            if (criteriaQuery.contains("user_id = ")) {
+                String[] parts = criteriaQuery.split("user_id = ");
+                if (parts.length > 1) {
+                    String userIdStr = parts[1].trim();
+                    // Remove any trailing parts
+                    if (userIdStr.contains(" ")) {
+                        userIdStr = userIdStr.split(" ")[0];
+                    }
+                    if (userIdStr.contains(")")) {
+                        userIdStr = userIdStr.split("\\)")[0];
+                    }
+                    
+                    try {
+                        Long userId = Long.parseLong(userIdStr);
+                        logger.debug("Extracted user ID from legacy criteria: {}", userId);
+                        return Set.of(userId);
+                    } catch (NumberFormatException e) {
+                        logger.warn("Could not parse user ID from legacy criteria: {}", userIdStr);
+                    }
+                }
             }
             
             // For more complex queries, you might need to parse them differently
-            // For now, return empty set for other cases
+            logger.warn("Could not parse criteria query: {}", criteriaQuery);
             return Set.of();
             
         } catch (Exception e) {
@@ -704,6 +767,41 @@ public class QuestionnaireTriggerService {
             } else {
                 logger.error("Error sending questionnaire to user {}: {}", userId, e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Check if user has acknowledged a questionnaire (RECEIVED, DISMISSED, etc.)
+     */
+    private boolean hasUserAcknowledgedQuestionnaire(Long userId, Long questionnaireId) {
+        try {
+            // Check for RECEIVED acknowledgment
+            boolean hasReceived = acknowledgmentService.hasUserAcknowledged(userId, questionnaireId, "RECEIVED");
+            if (hasReceived) {
+                logger.debug("User {} has RECEIVED acknowledgment for questionnaire {}", userId, questionnaireId);
+                return true;
+            }
+            
+            // Check for DISMISSED acknowledgment
+            boolean hasDismissed = acknowledgmentService.hasUserAcknowledged(userId, questionnaireId, "DISMISSED");
+            if (hasDismissed) {
+                logger.debug("User {} has DISMISSED acknowledgment for questionnaire {}", userId, questionnaireId);
+                return true;
+            }
+            
+            // Check for COMPLETED acknowledgment
+            boolean hasCompleted = acknowledgmentService.hasUserAcknowledged(userId, questionnaireId, "COMPLETED");
+            if (hasCompleted) {
+                logger.debug("User {} has COMPLETED acknowledgment for questionnaire {}", userId, questionnaireId);
+                return true;
+            }
+            
+            logger.debug("User {} has no blocking acknowledgments for questionnaire {}", userId, questionnaireId);
+            return false;
+            
+        } catch (Exception e) {
+            logger.warn("Error checking acknowledgments for user {} and questionnaire {}: {}", userId, questionnaireId, e.getMessage());
+            return false; // If there's an error, allow the questionnaire to be sent
         }
     }
 }

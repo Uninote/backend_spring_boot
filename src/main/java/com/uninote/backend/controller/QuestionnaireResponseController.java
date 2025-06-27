@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.dto.QuestionnaireDTO;
 import com.uninote.backend.service.QuestionnaireService;
 import com.uninote.backend.service.QuestionnaireResponseStorageService;
+import com.uninote.backend.service.QuestionnaireAcknowledgmentService;
 
 @Controller
 @RequestMapping("/questionnaire")
@@ -33,6 +34,9 @@ public class QuestionnaireResponseController {
 
     @Autowired
     private QuestionnaireResponseStorageService questionnaireResponseStorageService;
+
+    @Autowired
+    private QuestionnaireAcknowledgmentService acknowledgmentService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -64,6 +68,14 @@ public class QuestionnaireResponseController {
             );
             
             logger.info("Questionnaire response stored successfully with Response ID: {}", responseId);
+
+            // Store completion acknowledgment
+            try {
+                acknowledgmentService.storeAcknowledgment(questionnaireId, userId, "COMPLETED", payload);
+                logger.info("Completion acknowledgment stored for user: {}", userId);
+            } catch (Exception e) {
+                logger.warn("Could not store completion acknowledgment for user {}: {}", userId, e.getMessage());
+            }
 
             // Send completion notification via WebSocket (if user is online)
             try {
@@ -123,6 +135,14 @@ public class QuestionnaireResponseController {
             
             logger.info("Questionnaire response stored successfully with Response ID: {}", responseId);
 
+            // Store completion acknowledgment
+            try {
+                acknowledgmentService.storeAcknowledgment(questionnaireId, userId, "COMPLETED", payload);
+                logger.info("Completion acknowledgment stored for user: {}", userId);
+            } catch (Exception e) {
+                logger.warn("Could not store completion acknowledgment for user {}: {}", userId, e.getMessage());
+            }
+
             // Send completion notification
             webSocketController.sendQuestionnaireCompletionNotification(
                 userId.toString(), 
@@ -154,19 +174,35 @@ public class QuestionnaireResponseController {
 
             Long questionnaireId = Long.valueOf(payload.get("questionnaireId").toString());
             Long userId = Long.valueOf(payload.get("userId").toString());
-            String acknowledgmentType = (String) payload.get("type"); // "RECEIVED", "STARTED", "COMPLETED"
+            String acknowledgmentType = (String) payload.get("type"); // "RECEIVED", "STARTED", "COMPLETED", "DISMISSED"
 
-            // Log the acknowledgment (you might want to store this in a database)
-            logger.info("User {} acknowledged questionnaire {} with type: {}", 
-                userId, questionnaireId, acknowledgmentType);
+            // Validate acknowledgment type
+            if (!isValidAcknowledgmentType(acknowledgmentType)) {
+                logger.warn("Invalid acknowledgment type: {}", acknowledgmentType);
+                sendErrorResponse(userId, "Invalid acknowledgment type");
+                return;
+            }
+
+            // Store the acknowledgment in database
+            try {
+                acknowledgmentService.storeAcknowledgment(questionnaireId, userId, acknowledgmentType, payload);
+                logger.info("✅ Acknowledgment stored successfully: Type={}, User={}, Questionnaire={}", 
+                    acknowledgmentType, userId, questionnaireId);
+            } catch (Exception e) {
+                logger.error("Error storing acknowledgment", e);
+                sendErrorResponse(userId, "Error storing acknowledgment");
+                return;
+            }
 
             // Send acknowledgment confirmation
             webSocketController.sendQuestionnaireStatusUpdate(
                 userId.toString(), 
                 questionnaireId, 
                 "ACKNOWLEDGED", 
-                "Questionnaire acknowledgment received"
+                "Questionnaire acknowledgment received: " + acknowledgmentType
             );
+
+            logger.info("Questionnaire acknowledgment processed successfully for user: {}", userId);
 
         } catch (Exception e) {
             logger.error("Error processing questionnaire acknowledgment", e);
@@ -187,7 +223,15 @@ public class QuestionnaireResponseController {
             Integer totalQuestions = (Integer) payload.get("totalQuestions");
             Double progressPercentage = (Double) payload.get("progressPercentage");
 
-            // Log progress (you might want to store this in a database)
+            // Store progress acknowledgment
+            try {
+                acknowledgmentService.storeAcknowledgment(questionnaireId, userId, "PROGRESS_UPDATE", payload);
+                logger.info("Progress acknowledgment stored for user: {}", userId);
+            } catch (Exception e) {
+                logger.warn("Could not store progress acknowledgment for user {}: {}", userId, e.getMessage());
+            }
+
+            // Log progress
             logger.info("User {} progress on questionnaire {}: {}/{} ({}%)", 
                 userId, questionnaireId, currentQuestion, totalQuestions, progressPercentage);
 
@@ -217,6 +261,14 @@ public class QuestionnaireResponseController {
             String feedbackType = (String) payload.get("feedbackType"); // "BUG_REPORT", "SUGGESTION", "COMPLAINT"
             String feedbackText = (String) payload.get("feedbackText");
             Integer rating = (Integer) payload.get("rating");
+
+            // Store feedback acknowledgment
+            try {
+                acknowledgmentService.storeAcknowledgment(questionnaireId, userId, "FEEDBACK", payload);
+                logger.info("Feedback acknowledgment stored for user: {}", userId);
+            } catch (Exception e) {
+                logger.warn("Could not store feedback acknowledgment for user {}: {}", userId, e.getMessage());
+            }
 
             // Store feedback (you would implement this in a separate service)
             // storeQuestionnaireFeedback(questionnaireId, userId, feedbackType, feedbackText, rating);
@@ -263,6 +315,21 @@ public class QuestionnaireResponseController {
             logger.error("Error validating questionnaire response", e);
             return false;
         }
+    }
+
+    /**
+     * Validate acknowledgment type
+     */
+    private boolean isValidAcknowledgmentType(String acknowledgmentType) {
+        if (acknowledgmentType == null) {
+            return false;
+        }
+        
+        return acknowledgmentType.equals("RECEIVED") || 
+               acknowledgmentType.equals("STARTED") || 
+               acknowledgmentType.equals("COMPLETED") || 
+               acknowledgmentType.equals("DISMISSED") ||
+               acknowledgmentType.equals("PROGRESS_UPDATE");
     }
 
     /**
