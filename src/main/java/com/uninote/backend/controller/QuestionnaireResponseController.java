@@ -165,12 +165,13 @@ public class QuestionnaireResponseController {
     }
 
     /**
-     * Handle questionnaire acknowledgment
+     * REST HTTP endpoint for questionnaire acknowledgment
      */
-    @MessageMapping("/questionnaire/acknowledge")
-    public void handleQuestionnaireAcknowledgment(@Payload Map<String, Object> payload) {
+    @PostMapping("/acknowledge")
+    @ResponseBody
+    public Map<String, Object> submitQuestionnaireAcknowledgment(@RequestBody Map<String, Object> payload) {
         try {
-            logger.info("Received questionnaire acknowledgment: {}", payload);
+            logger.info("Received questionnaire acknowledgment via HTTP: {}", payload);
 
             Long questionnaireId = Long.valueOf(payload.get("questionnaireId").toString());
             Long userId = Long.valueOf(payload.get("userId").toString());
@@ -179,8 +180,10 @@ public class QuestionnaireResponseController {
             // Validate acknowledgment type
             if (!isValidAcknowledgmentType(acknowledgmentType)) {
                 logger.warn("Invalid acknowledgment type: {}", acknowledgmentType);
-                sendErrorResponse(userId, "Invalid acknowledgment type");
-                return;
+                return Map.of(
+                    "success", false,
+                    "error", "Invalid acknowledgment type: " + acknowledgmentType
+                );
             }
 
             // Store the acknowledgment in database
@@ -190,32 +193,55 @@ public class QuestionnaireResponseController {
                     acknowledgmentType, userId, questionnaireId);
             } catch (Exception e) {
                 logger.error("Error storing acknowledgment", e);
-                sendErrorResponse(userId, "Error storing acknowledgment");
-                return;
+                return Map.of(
+                    "success", false,
+                    "error", "Error storing acknowledgment: " + e.getMessage()
+                );
             }
 
-            // Send acknowledgment confirmation
-            webSocketController.sendQuestionnaireStatusUpdate(
-                userId.toString(), 
-                questionnaireId, 
-                "ACKNOWLEDGED", 
-                "Questionnaire acknowledgment received: " + acknowledgmentType
-            );
+            // Send acknowledgment confirmation via WebSocket (if user is online)
+            try {
+                webSocketController.sendQuestionnaireStatusUpdate(
+                    userId.toString(), 
+                    questionnaireId, 
+                    "ACKNOWLEDGED", 
+                    "Questionnaire acknowledgment received: " + acknowledgmentType
+                );
+            } catch (Exception e) {
+                logger.warn("Could not send WebSocket notification to user {}: {}", userId, e.getMessage());
+            }
 
             logger.info("Questionnaire acknowledgment processed successfully for user: {}", userId);
 
+            // Return success response
+            Map<String, Object> response = Map.of(
+                "success", true,
+                "message", "Questionnaire acknowledgment received: " + acknowledgmentType,
+                "questionnaireId", questionnaireId,
+                "userId", userId,
+                "acknowledgmentType", acknowledgmentType,
+                "timestamp", LocalDateTime.now().toString()
+            );
+
+            return response;
+
         } catch (Exception e) {
             logger.error("Error processing questionnaire acknowledgment", e);
+            return Map.of(
+                "success", false,
+                "error", "Error processing acknowledgment: " + e.getMessage()
+            );
         }
     }
 
     /**
-     * Handle questionnaire progress update
+     * REST HTTP endpoint for questionnaire progress update
      */
-    @MessageMapping("/questionnaire/progress")
-    public void handleQuestionnaireProgress(@Payload Map<String, Object> payload) {
+    @PostMapping("/progress")
+    @ResponseBody
+    public Map<String, Object> submitQuestionnaireProgress(@RequestBody Map<String, Object> payload) {
         try {
-            logger.info("Received questionnaire progress update: {}", payload);
+            logger.info("Received questionnaire progress update via HTTP: {}", payload);
 
             Long questionnaireId = Long.valueOf(payload.get("questionnaireId").toString());
             Long userId = Long.valueOf(payload.get("userId").toString());
@@ -235,26 +261,49 @@ public class QuestionnaireResponseController {
             logger.info("User {} progress on questionnaire {}: {}/{} ({}%)", 
                 userId, questionnaireId, currentQuestion, totalQuestions, progressPercentage);
 
-            // Send progress confirmation
-            webSocketController.sendQuestionnaireStatusUpdate(
-                userId.toString(), 
-                questionnaireId, 
-                "PROGRESS_UPDATE", 
-                String.format("Progress: %.1f%%", progressPercentage)
+            // Send progress confirmation via WebSocket (if user is online)
+            try {
+                webSocketController.sendQuestionnaireStatusUpdate(
+                    userId.toString(), 
+                    questionnaireId, 
+                    "PROGRESS_UPDATE", 
+                    String.format("Progress: %.1f%%", progressPercentage)
+                );
+            } catch (Exception e) {
+                logger.warn("Could not send WebSocket notification to user {}: {}", userId, e.getMessage());
+            }
+
+            // Return success response
+            Map<String, Object> response = Map.of(
+                "success", true,
+                "message", "Progress update received",
+                "questionnaireId", questionnaireId,
+                "userId", userId,
+                "currentQuestion", currentQuestion,
+                "totalQuestions", totalQuestions,
+                "progressPercentage", progressPercentage,
+                "timestamp", LocalDateTime.now().toString()
             );
+
+            return response;
 
         } catch (Exception e) {
             logger.error("Error processing questionnaire progress", e);
+            return Map.of(
+                "success", false,
+                "error", "Error processing progress: " + e.getMessage()
+            );
         }
     }
 
     /**
-     * Handle questionnaire feedback
+     * REST HTTP endpoint for questionnaire feedback
      */
-    @MessageMapping("/questionnaire/feedback")
-    public void handleQuestionnaireFeedback(@Payload Map<String, Object> payload) {
+    @PostMapping("/feedback")
+    @ResponseBody
+    public Map<String, Object> submitQuestionnaireFeedback(@RequestBody Map<String, Object> payload) {
         try {
-            logger.info("Received questionnaire feedback: {}", payload);
+            logger.info("Received questionnaire feedback via HTTP: {}", payload);
 
             Long questionnaireId = Long.valueOf(payload.get("questionnaireId").toString());
             Long userId = Long.valueOf(payload.get("userId").toString());
@@ -273,18 +322,38 @@ public class QuestionnaireResponseController {
             // Store feedback (you would implement this in a separate service)
             // storeQuestionnaireFeedback(questionnaireId, userId, feedbackType, feedbackText, rating);
 
-            // Send feedback acknowledgment
-            webSocketController.sendQuestionnaireStatusUpdate(
-                userId.toString(), 
-                questionnaireId, 
-                "FEEDBACK_RECEIVED", 
-                "Thank you for your feedback!"
-            );
+            // Send feedback acknowledgment via WebSocket (if user is online)
+            try {
+                webSocketController.sendQuestionnaireStatusUpdate(
+                    userId.toString(), 
+                    questionnaireId, 
+                    "FEEDBACK_RECEIVED", 
+                    "Thank you for your feedback!"
+                );
+            } catch (Exception e) {
+                logger.warn("Could not send WebSocket notification to user {}: {}", userId, e.getMessage());
+            }
 
             logger.info("Questionnaire feedback processed for user: {}", userId);
 
+            // Return success response
+            Map<String, Object> response = Map.of(
+                "success", true,
+                "message", "Feedback received successfully",
+                "questionnaireId", questionnaireId,
+                "userId", userId,
+                "feedbackType", feedbackType,
+                "timestamp", LocalDateTime.now().toString()
+            );
+
+            return response;
+
         } catch (Exception e) {
             logger.error("Error processing questionnaire feedback", e);
+            return Map.of(
+                "success", false,
+                "error", "Error processing feedback: " + e.getMessage()
+            );
         }
     }
 
