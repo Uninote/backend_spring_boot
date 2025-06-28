@@ -219,14 +219,8 @@ public class ChatController {
                 case "all":
                     return ResponseEntity.ok(langChainContentService.generateAllContentParallel(resourceId));
 
-                case "all-parallel":
-                    return ResponseEntity.ok(langChainContentService.generateAllContentParallel(resourceId));
-
-                case "all-sequential":
-                    return ResponseEntity.ok(langChainContentService.generateAllContent(resourceId));
-
                 default:
-                    return ResponseEntity.badRequest().body("Unknown content type: " + type);
+                    return ResponseEntity.badRequest().body("Invalid type. Must be 'summary', 'flashcards', 'chapters', 'quiz', or 'all'.");
             }
 
         } catch (Exception e) {

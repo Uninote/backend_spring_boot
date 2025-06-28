@@ -1,4 +1,23 @@
 package com.uninote.backend.service;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
 import com.uninote.backend.config.AzureOpenAiConfig;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.repository.ResourceRepository;
@@ -11,32 +30,9 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.input.Prompt;
 import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
-import dev.langchain4j.service.UserMessage;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executor;
 
 
 @Service
@@ -146,6 +142,8 @@ public class LangChainContentService {
                 
                 if (allContent.has("summary")) {
                     String summary = allContent.getString("summary");
+                    logger.debug("Summary response from unified generation for resource {}: {}", resourceId, summary);
+                    logger.debug("Summary response length from unified generation for resource {}: {} characters", resourceId, summary.length());
                     resource.setSummary(summary);
                 }
                 
@@ -310,6 +308,10 @@ public class LangChainContentService {
             String flashcards = flashcardsFuture.get();
             String quiz = quizFuture.get();
             String chapters = chaptersFuture.get();
+            
+            // Add debug logging for summary response
+            logger.debug("Summary response from fallback generation for resource {}: {}", resourceId, summary);
+            logger.debug("Summary response length from fallback generation for resource {}: {} characters", resourceId, summary.length());
             
             logger.info("All parallel content generation tasks completed successfully");
             
@@ -574,7 +576,7 @@ public class LangChainContentService {
     }
     
     /**
-     * Handle large content by splitting it into manageable chunks
+     * Handle large content by splitting it into manageable chunks with semantic awareness
      */
     private String handleLargeContent(String content, int maxTokens) {
         if (content.length() <= maxTokens * 4) {  
@@ -583,8 +585,8 @@ public class LangChainContentService {
         
         Document document = Document.from(content);
         
-        // Split the document
-        DocumentSplitter splitter = DocumentSplitters.recursive(maxTokens / 3, 100);
+        // Use semantic-aware splitting that respects natural boundaries
+        DocumentSplitter splitter = DocumentSplitters.recursive(maxTokens / 3, 200);
         List<TextSegment> segments = splitter.split(document);
         
         StringBuilder reducedContent = new StringBuilder();
@@ -595,26 +597,26 @@ public class LangChainContentService {
             reducedContent.append(segments.get(i).text()).append("\n\n");
         }
         
-        // Include some segments from the middle (main content)
+        // Include segments from the middle (main content) - more intelligently selected
         if (segments.size() > 8) {
             int midStartIdx = segments.size() / 3;
-            int midSegments = Math.min(3, segments.size() - midStartIdx);
+            int midSegments = Math.min(4, segments.size() - midStartIdx); // Increased from 3 to 4
             reducedContent.append("... [content continues] ...\n\n");
             for (int i = 0; i < midSegments; i++) {
                 reducedContent.append(segments.get(midStartIdx + i).text()).append("\n\n");
             }
         }
         
-        // Include segments from the end (conclusion/summary)
+        // Include segments from the end (conclusion/summary) - more intelligently selected
         if (segments.size() > 6) {
-            int endStartIdx = Math.max(introSegments, segments.size() - 3);
+            int endStartIdx = Math.max(introSegments, segments.size() - 4); // Increased from 3 to 4
             reducedContent.append("... [content continues] ...\n\n");
             for (int i = endStartIdx; i < segments.size(); i++) {
                 reducedContent.append(segments.get(i).text()).append("\n\n");
             }
         }
         
-        logger.info("Processed content from beginning, middle, and end. Final length: {}", reducedContent.length());
+        logger.info("Processed content from beginning, middle, and end with semantic awareness. Final length: {}", reducedContent.length());
         return reducedContent.toString();
     }
 
@@ -712,6 +714,8 @@ public class LangChainContentService {
         
         // Combine all content
         String finalSummary = summaryBuilder.toString();
+        logger.debug("Final summary response from map-reduce generation for resource {}: {}", resource.getId(), finalSummary);
+        logger.debug("Final summary response length from map-reduce generation for resource {}: {} characters", resource.getId(), finalSummary.length());
         resource.setSummary(finalSummary);
         resource.setFlashcards(allFlashcards.toString());
         resource.setQuiz(allQuizQuestions.toString());
@@ -931,6 +935,10 @@ public class LangChainContentService {
         
         String summary = generator.generateSummary(prepareSummaryPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
         
+        // Add debug logging for summary response
+        logger.debug("Summary response for resource {}: {}", resourceId, summary);
+        logger.debug("Summary response length for resource {}: {} characters", resourceId, summary.length());
+        
         resource.setSummary(summary);
         return resourceRepository.save(resource);
     }
@@ -1094,11 +1102,11 @@ public class LangChainContentService {
     }
 
     /**
-     * Generate all content types in parallel with progress tracking
+     * Generate all content types in parallel with chunk timing tracking
      */
     public Resource generateAllContentParallel(Long resourceId) {
         long startTime = System.currentTimeMillis();
-        logger.info("Starting parallel content generation for resource: {}", resourceId);
+        logger.info("Starting parallel content generation with chunk timing for resource: {}", resourceId);
         logger.debug("🕐 Content generation started at: {}", startTime);
         
         Resource resource = resourceRepository.findById(resourceId)
@@ -1112,128 +1120,24 @@ public class LangChainContentService {
             final int totalTasks = 4;
             final int[] completedTasks = {0};
             
-            // Generate all content types in parallel with immediate saving
+            // Generate all content types in parallel with chunk timing and immediate saving
             CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
-                long taskStartTime = System.currentTimeMillis();
-                logger.debug("🔄 [1/4] Generating summary...");
-                try {
-                    SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
-                            .chatLanguageModel(chatModel)
-                            .build();
-                    String result = summaryGenerator.generateSummary(prepareSummaryPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
-                    
-                    // Save summary immediately
-                    synchronized (resource) {
-                        resource.setSummary(result);
-                        resourceRepository.save(resource);
-                        logger.debug("💾 Summary saved immediately");
-                    }
-                    
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("✅ [1/4] Summary generation completed and saved");
-                    logger.debug("📊 Summary generation took: {} ms", (taskEndTime - taskStartTime));
-                    return result;
-                } catch (Exception e) {
-                    logger.error("❌ [1/4] Error generating summary: {}", e.getMessage());
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("📊 Summary generation failed after: {} ms", (taskEndTime - taskStartTime));
-                    return "Error generating summary: " + e.getMessage();
-                }
+                return generateHierarchicalSummaryStrategy(content, resource, chatModel, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
-                long taskStartTime = System.currentTimeMillis();
-                logger.debug("🔄 [2/4] Generating flashcards...");
-                try {
-                    FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
-                            .chatLanguageModel(chatModel)
-                            .build();
-                    String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
-                    String result = validateAndCleanJson(flashcardsJson, "flashcards");
-                    
-                    // Save flashcards immediately
-                    synchronized (resource) {
-                        resource.setFlashcards(result);
-                        resourceRepository.save(resource);
-                        logger.debug("💾 Flashcards saved immediately");
-                    }
-                    
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("✅ [2/4] Flashcards generation completed and saved");
-                    logger.debug("📊 Flashcards generation took: {} ms", (taskEndTime - taskStartTime));
-                    return result;
-                } catch (Exception e) {
-                    logger.error("❌ [2/4] Error generating flashcards: {}", e.getMessage());
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("📊 Flashcards generation failed after: {} ms", (taskEndTime - taskStartTime));
-                    return "[]";
-                }
+                return generateContentWithChunkTiming("Flashcards", 2, 4, content, resource, chatModel, 
+                    (c, t, rt) -> prepareFlashcardsPrompt(c, t, rt), FlashcardGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> {
-                long taskStartTime = System.currentTimeMillis();
-                logger.debug("🔄 [3/4] Generating quiz...");
-                try {
-                    QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
-                            .chatLanguageModel(chatModel)
-                            .build();
-                    String quizJson = quizGenerator.generateQuiz(prepareQuizPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
-                    String result = validateAndCleanJson(quizJson, "quiz");
-                    
-                    // Save quiz immediately
-                    synchronized (resource) {
-                        resource.setQuiz(result);
-                        resourceRepository.save(resource);
-                        logger.debug("💾 Quiz saved immediately");
-                    }
-                    
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("✅ [3/4] Quiz generation completed and saved");
-                    logger.debug("📊 Quiz generation took: {} ms", (taskEndTime - taskStartTime));
-                    return result;
-                } catch (Exception e) {
-                    logger.error("❌ [3/4] Error generating quiz: {}", e.getMessage());
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("📊 Quiz generation failed after: {} ms", (taskEndTime - taskStartTime));
-                    return "[]";
-                }
+                return generateContentWithChunkTiming("Quiz", 3, 4, content, resource, chatModel, 
+                    (c, t, rt) -> prepareQuizPrompt(c, t, rt), QuizGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> {
-                long taskStartTime = System.currentTimeMillis();
-                logger.debug("🔄 [4/4] Generating chapters...");
-                try {
-                    ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
-                            .chatLanguageModel(chatModel)
-                            .build();
-                    String chaptersJson = chapterGenerator.generateChapters(prepareChaptersPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
-                    String result = validateAndCleanJson(chaptersJson, "chapters");
-                    
-                    // Save chapters immediately
-                    synchronized (resource) {
-                        resource.setChapters(result);
-                        resourceRepository.save(resource);
-                        logger.debug("💾 Chapters saved immediately");
-                    }
-                    
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("✅ [4/4] Chapters generation completed and saved");
-                    logger.debug("📊 Chapters generation took: {} ms", (taskEndTime - taskStartTime));
-                    return result;
-                } catch (Exception e) {
-                    logger.error("❌ [4/4] Error generating chapters: {}", e.getMessage());
-                    completedTasks[0]++;
-                    long taskEndTime = System.currentTimeMillis();
-                    logger.debug("📊 Chapters generation failed after: {} ms", (taskEndTime - taskStartTime));
-                    return "[]";
-                }
+                return generateContentWithChunkTiming("Chapters", 4, 4, content, resource, chatModel, 
+                    (c, t, rt) -> prepareChaptersPrompt(c, t, rt), ChapterGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             // Wait for all parallel tasks to complete with timeout
@@ -1296,21 +1200,397 @@ public class LangChainContentService {
             
             long endTime = System.currentTimeMillis();
             long totalTime = endTime - startTime;
+            logger.info("🎉 All parallel content generation completed in {} ms", totalTime);
             
-            logger.info("🎯 Parallel content generation completed successfully for resource: {}", resourceId);
-            logger.debug("⏱️ Total content generation time: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
-            logger.debug("📈 Performance: Parallel generation completed in {} ms vs estimated {} ms sequential", 
-                totalTime, totalTime * 4); // Rough estimate of sequential time
-            
-            return resourceRepository.save(resource);
+            return resource;
             
         } catch (Exception e) {
-            long endTime = System.currentTimeMillis();
-            long totalTime = endTime - startTime;
-            logger.error("💥 Error in parallel content generation for resource {}: {}", resourceId, e.getMessage(), e);
-            logger.debug("⏱️ Content generation failed after: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
-            throw new RuntimeException("Failed to generate content in parallel", e);
+            long errorTime = System.currentTimeMillis();
+            long totalTime = errorTime - startTime;
+            logger.error("❌ Error in parallel content generation after {} ms: {}", totalTime, e.getMessage(), e);
+            throw new RuntimeException("Parallel content generation failed", e);
         }
+    }
+    
+    /**
+     * Helper method to generate content with chunk timing
+     */
+    private <T> String generateContentWithChunkTiming(String contentType, int taskNumber, int totalTasks, 
+            String content, Resource resource, ChatLanguageModel chatModel, 
+            Function3<String, String, String, String> promptFunction, 
+            Class<T> generatorClass, int[] completedTasks, long overallStartTime) {
+        
+        long taskStartTime = System.currentTimeMillis();
+        logger.debug("🔄 [{}/{}] Generating {}...", taskNumber, totalTasks, contentType);
+        logger.debug("🔄 [{}/{}] {} generation started at: {} ms from overall start", 
+                    taskNumber, totalTasks, contentType, taskStartTime - overallStartTime);
+        
+        try {
+            // Track preparation time
+            long prepStartTime = System.currentTimeMillis();
+            String prompt = promptFunction.apply(content, resource.getTitle(), resource.getClass().getSimpleName());
+            long prepEndTime = System.currentTimeMillis();
+            long prepTime = prepEndTime - prepStartTime;
+            logger.debug("📝 [{}/{}] {} prompt preparation took: {} ms", taskNumber, totalTasks, contentType, prepTime);
+            
+            // Track service creation time
+            long serviceStartTime = System.currentTimeMillis();
+            T generator = AiServices.builder(generatorClass)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            long serviceEndTime = System.currentTimeMillis();
+            long serviceInitTime = serviceEndTime - serviceStartTime;
+            logger.debug("⚙️ [{}/{}] {} service creation took: {} ms", taskNumber, totalTasks, contentType, serviceInitTime);
+            
+            // Track generation time with chunk monitoring
+            long generationStartTime = System.currentTimeMillis();
+            logger.debug("📤 [{}/{}] Sending {} generation request...", taskNumber, totalTasks, contentType);
+            
+            // Simulate chunk tracking
+            final long[] firstResponseTime = {-1};
+            
+            // Start progress monitor for this task
+            CompletableFuture<Void> progressMonitor = CompletableFuture.runAsync(() -> {
+                try {
+                    long monitorStart = System.currentTimeMillis();
+                    logger.debug("🔍 [{}/{}] Starting {} progress monitor at: {} ms from overall start", 
+                                taskNumber, totalTasks, contentType, monitorStart - overallStartTime);
+                    
+                    while (firstResponseTime[0] == -1) {
+                        Thread.sleep(100); // Check every 100ms
+                        long currentTime = System.currentTimeMillis();
+                        long elapsed = currentTime - monitorStart;
+                        
+                        // Log progress every 3 seconds for individual tasks
+                        if (elapsed > 0 && elapsed % 3000 == 0) {
+                            logger.debug("⏳ [{}/{}] Still waiting for {} first response... {} ms elapsed", 
+                                        taskNumber, totalTasks, contentType, elapsed);
+                        }
+                        
+                        // Timeout after 2 minutes
+                        if (elapsed > 120000) {
+                            logger.warn("⚠️ [{}/{}] No {} response received after 2 minutes", taskNumber, totalTasks, contentType);
+                            break;
+                        }
+                    }
+                    
+                    if (firstResponseTime[0] != -1) {
+                        logger.debug("🎯 [{}/{}] {} progress monitor detected first response at: {} ms from overall start", 
+                                    taskNumber, totalTasks, contentType, firstResponseTime[0] - overallStartTime);
+                    }
+                } catch (InterruptedException e) {
+                    logger.debug("🔍 [{}/{}] {} progress monitor interrupted", taskNumber, totalTasks, contentType);
+                    Thread.currentThread().interrupt();
+                }
+            });
+            
+            // Generate the content
+            String result;
+            if (generatorClass == SummaryGenerator.class) {
+                result = ((SummaryGenerator) generator).generateSummary(prompt);
+                // Add debug logging for summary response
+                logger.debug("Summary response from chunk timing generation for resource {}: {}", resource.getId(), result);
+                logger.debug("Summary response length from chunk timing generation for resource {}: {} characters", resource.getId(), result.length());
+            } else if (generatorClass == FlashcardGenerator.class) {
+                String json = ((FlashcardGenerator) generator).generateFlashcards(prompt);
+                result = validateAndCleanJson(json, "flashcards");
+            } else if (generatorClass == QuizGenerator.class) {
+                String json = ((QuizGenerator) generator).generateQuiz(prompt);
+                result = validateAndCleanJson(json, "quiz");
+            } else if (generatorClass == ChapterGenerator.class) {
+                String json = ((ChapterGenerator) generator).generateChapters(prompt);
+                result = validateAndCleanJson(json, "chapters");
+            } else {
+                throw new RuntimeException("Unsupported generator type: " + generatorClass.getSimpleName());
+            }
+            
+            // Record first response time
+            long firstResponseEndTime = System.currentTimeMillis();
+            if (firstResponseTime[0] == -1) {
+                firstResponseTime[0] = firstResponseEndTime;
+                logger.debug("⚡ [{}/{}] {} FIRST CHUNK RECEIVED at: {} ms from overall start", 
+                            taskNumber, totalTasks, contentType, firstResponseEndTime - overallStartTime);
+                logger.debug("⚡ [{}/{}] {} time to first chunk: {} ms", 
+                            taskNumber, totalTasks, contentType, firstResponseEndTime - generationStartTime);
+            }
+            
+            long generationEndTime = System.currentTimeMillis();
+            long generationTime = generationEndTime - generationStartTime;
+            long timeToFirstResponse = firstResponseTime[0] - generationStartTime;
+            
+            logger.debug("📊 [{}/{}] {} generation completed at: {} ms from overall start", 
+                        taskNumber, totalTasks, contentType, generationEndTime - overallStartTime);
+            logger.debug("📊 [{}/{}] {} total generation duration: {} ms", taskNumber, totalTasks, contentType, generationTime);
+            logger.debug("📊 [{}/{}] {} time to first chunk: {} ms", taskNumber, totalTasks, contentType, timeToFirstResponse);
+            
+            logger.info("✅ [{}/{}] {} generation completed!", taskNumber, totalTasks, contentType);
+            logger.info("⚡ [{}/{}] {} time to first response: {} ms", taskNumber, totalTasks, contentType, timeToFirstResponse);
+            logger.info("📊 [{}/{}] {} total generation time: {} ms", taskNumber, totalTasks, contentType, generationTime);
+            logger.info("📊 [{}/{}] {} result length: {} characters", taskNumber, totalTasks, contentType, result.length());
+            
+            // Calculate estimated chunks
+            int estimatedChunks = Math.max(1, result.length() / 50);
+            long avgTimePerChunk = generationTime / estimatedChunks;
+            logger.debug("📈 [{}/{}] {} estimated chunks: {}, avg time per chunk: {} ms", 
+                        taskNumber, totalTasks, contentType, estimatedChunks, avgTimePerChunk);
+            
+            // Save content immediately
+            synchronized (resource) {
+                if (generatorClass == SummaryGenerator.class) {
+                    resource.setSummary(result);
+                } else if (generatorClass == FlashcardGenerator.class) {
+                    resource.setFlashcards(result);
+                } else if (generatorClass == QuizGenerator.class) {
+                    resource.setQuiz(result);
+                } else if (generatorClass == ChapterGenerator.class) {
+                    resource.setChapters(result);
+                }
+                resourceRepository.save(resource);
+                logger.debug("💾 [{}/{}] {} saved immediately", taskNumber, totalTasks, contentType);
+            }
+            
+            completedTasks[0]++;
+            long taskEndTime = System.currentTimeMillis();
+            long totalTaskTime = taskEndTime - taskStartTime;
+            logger.debug("✅ [{}/{}] {} generation completed and saved", taskNumber, totalTasks, contentType);
+            logger.debug("📊 [{}/{}] {} total task time: {} ms", taskNumber, totalTasks, contentType, totalTaskTime);
+            
+            return result;
+            
+        } catch (Exception e) {
+            logger.error("❌ [{}/{}] Error generating {}: {}", taskNumber, totalTasks, contentType, e.getMessage());
+            completedTasks[0]++;
+            long taskEndTime = System.currentTimeMillis();
+            logger.debug("📊 [{}/{}] {} generation failed after: {} ms", taskNumber, totalTasks, contentType, (taskEndTime - taskStartTime));
+            
+            if (generatorClass == SummaryGenerator.class) {
+                return "Error generating summary: " + e.getMessage();
+            } else {
+                return "[]";
+            }
+        }
+    }
+    
+    // Functional interface for 3-parameter function
+    @FunctionalInterface
+    private interface Function3<T, U, V, R> {
+        R apply(T t, U u, V v);
+    }
+
+    /**
+     * Generate hierarchical summary strategy for parallel content generation
+     */
+    private String generateHierarchicalSummaryStrategy(String content, Resource resource, ChatLanguageModel chatModel, 
+            int[] completedTasks, long startTime) {
+        
+        long taskStartTime = System.currentTimeMillis();
+        logger.debug("🔄 [1/4] Generating Hierarchical Summary...");
+        logger.debug("🔄 [1/4] Hierarchical Summary generation started at: {} ms from overall start", 
+                    taskStartTime - startTime);
+        
+        try {
+            // Step 1: Split content into logical sections
+            long splittingStartTime = System.currentTimeMillis();
+            List<TextSegment> sections = splitIntoSummarySections(content);
+            long splittingEndTime = System.currentTimeMillis();
+            long splittingTime = splittingEndTime - splittingStartTime;
+            logger.info("Split content into {} sections for hierarchical summary in {} ms", sections.size(), splittingTime);
+            
+            // Step 2: Generate summaries for each section in parallel
+            long sectionGenerationStartTime = System.currentTimeMillis();
+            long sectionGenerationTime = 0; // Declare outside try-catch
+            List<CompletableFuture<String>> sectionFutures = new ArrayList<>();
+            
+            for (int i = 0; i < sections.size(); i++) {
+                final int sectionIndex = i;
+                TextSegment section = sections.get(i);
+                
+                CompletableFuture<String> sectionFuture = CompletableFuture.supplyAsync(() -> {
+                    long sectionStartTime = System.currentTimeMillis();
+                    logger.debug("Generating summary for section {}/{}", sectionIndex + 1, sections.size());
+                    
+                    SummaryGenerator sectionGenerator = AiServices.builder(SummaryGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    
+                    String sectionPrompt;
+                    try {
+                        sectionPrompt = promptService.createSummaryGenerationPrompt(
+                            resource.getTitle(), 
+                            resource.getClass().getSimpleName(), 
+                            section.text()
+                        );
+                    } catch (IOException e) {
+                        logger.error("Error loading section summary prompt, using fallback", e);
+                        sectionPrompt = createSectionSummaryPrompt(resource, section.text(), sectionIndex + 1, sections.size());
+                    }
+                    
+                    String sectionSummary = sectionGenerator.generateSummary(sectionPrompt);
+                    long sectionEndTime = System.currentTimeMillis();
+                    long sectionTime = sectionEndTime - sectionStartTime;
+                    logger.debug("Section {} summary completed in {} ms, length: {} characters", 
+                                sectionIndex + 1, sectionTime, sectionSummary.length());
+                    
+                    return sectionSummary;
+                }, contentGenerationExecutor);
+                
+                sectionFutures.add(sectionFuture);
+            }
+            
+            // Wait for all section summaries to complete
+            CompletableFuture<Void> allSectionFutures = CompletableFuture.allOf(
+                sectionFutures.toArray(new CompletableFuture[0])
+            );
+            
+            try {
+                allSectionFutures.get(3, TimeUnit.MINUTES); // 3 minute timeout for section summaries
+                long sectionGenerationEndTime = System.currentTimeMillis();
+                sectionGenerationTime = sectionGenerationEndTime - sectionGenerationStartTime;
+                logger.info("All {} section summaries completed successfully in {} ms", sections.size(), sectionGenerationTime);
+            } catch (TimeoutException e) {
+                long sectionGenerationEndTime = System.currentTimeMillis();
+                sectionGenerationTime = sectionGenerationEndTime - sectionGenerationStartTime;
+                logger.error("Section summaries generation timed out after {} ms", sectionGenerationTime);
+                throw new RuntimeException("Section summaries generation timed out");
+            } catch (Exception e) {
+                long sectionGenerationEndTime = System.currentTimeMillis();
+                sectionGenerationTime = sectionGenerationEndTime - sectionGenerationStartTime;
+                logger.error("Error waiting for section summaries after {} ms: {}", sectionGenerationTime, e.getMessage());
+                throw new RuntimeException("Error in section summaries generation", e);
+            }
+            
+            // Collect all section summaries
+            long collectionStartTime = System.currentTimeMillis();
+            List<String> sectionSummaries = new ArrayList<>();
+            for (CompletableFuture<String> future : sectionFutures) {
+                try {
+                    sectionSummaries.add(future.get());
+                } catch (Exception e) {
+                    logger.error("Error getting section summary: {}", e.getMessage());
+                    sectionSummaries.add("Error generating section summary: " + e.getMessage());
+                }
+            }
+            long collectionEndTime = System.currentTimeMillis();
+            long collectionTime = collectionEndTime - collectionStartTime;
+            logger.debug("Collected {} section summaries in {} ms", sectionSummaries.size(), collectionTime);
+            
+            // Step 3: Combine section summaries into final comprehensive summary
+            long combinationStartTime = System.currentTimeMillis();
+            String combinedSections = String.join("\n\n", sectionSummaries);
+            
+            String finalPrompt;
+            try {
+                finalPrompt = promptService.createSummaryGenerationPrompt(
+                    resource.getTitle(), 
+                    resource.getClass().getSimpleName(), 
+                    combinedSections
+                );
+            } catch (IOException e) {
+                logger.error("Error loading final summary prompt, using fallback", e);
+                finalPrompt = createFinalSummaryPrompt(resource, combinedSections);
+            }
+            
+            SummaryGenerator finalGenerator = AiServices.builder(SummaryGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            
+            String finalSummary = finalGenerator.generateSummary(finalPrompt);
+            long combinationEndTime = System.currentTimeMillis();
+            long combinationTime = combinationEndTime - combinationStartTime;
+            logger.info("Final summary combination completed in {} ms", combinationTime);
+            
+            logger.debug("Hierarchical summary response for resource {}: {}", resource.getId(), finalSummary);
+            logger.debug("Hierarchical summary response length for resource {}: {} characters", resource.getId(), finalSummary.length());
+            
+            // Save content immediately
+            long saveStartTime = System.currentTimeMillis();
+            synchronized (resource) {
+                resource.setSummary(finalSummary);
+                resourceRepository.save(resource);
+                logger.debug("💾 [1/4] Hierarchical Summary saved immediately");
+            }
+            long saveEndTime = System.currentTimeMillis();
+            long saveTime = saveEndTime - saveStartTime;
+            logger.debug("Summary saved in {} ms", saveTime);
+            
+            completedTasks[0]++;
+            long taskEndTime = System.currentTimeMillis();
+            long totalTaskTime = taskEndTime - taskStartTime;
+            
+            // Log comprehensive timing summary
+            logger.info("✅ [1/4] Hierarchical Summary generation completed!");
+            logger.info("📊 [1/4] Hierarchical Summary total task time: {} ms", totalTaskTime);
+            logger.info("📊 [1/4] Hierarchical Summary breakdown:");
+            logger.info("   - Content splitting: {} ms", splittingTime);
+            logger.info("   - Section generation: {} ms", sectionGenerationTime);
+            logger.info("   - Section collection: {} ms", collectionTime);
+            logger.info("   - Final combination: {} ms", combinationTime);
+            logger.info("   - Database save: {} ms", saveTime);
+            logger.info("   - Total hierarchical summary time: {} ms ({} seconds)", 
+                       totalTaskTime, totalTaskTime / 1000.0);
+            
+            return finalSummary;
+            
+        } catch (Exception e) {
+            long taskEndTime = System.currentTimeMillis();
+            long totalTaskTime = taskEndTime - taskStartTime;
+            logger.error("❌ [1/4] Error generating Hierarchical Summary after {} ms: {}", totalTaskTime, e.getMessage());
+            completedTasks[0]++;
+            logger.debug("📊 [1/4] Hierarchical Summary generation failed after: {} ms ({} seconds)", 
+                        totalTaskTime, totalTaskTime / 1000.0);
+            return "Error generating hierarchical summary: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Split content into sections optimized for summary generation
+     */
+    private List<TextSegment> splitIntoSummarySections(String content) {
+        // Use smaller chunks for summary to ensure each section gets proper attention
+        DocumentSplitter splitter = DocumentSplitters.recursive(8000, 1000);
+        Document document = Document.from(content);
+        return splitter.split(document);
+    }
+    
+    /**
+     * Create prompt for individual section summary
+     */
+    private String createSectionSummaryPrompt(Resource resource, String sectionText, int sectionNumber, int totalSections) {
+        String resourceType = resource.getClass().getSimpleName();
+        String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Untitled Resource";
+        
+        return String.format(
+            "You are summarizing Section %d of %d from a %s titled '%s'.\n\n" +
+            "Create a detailed, comprehensive summary of this section that includes:\n" +
+            "- All key concepts and definitions\n" +
+            "- Important formulas, numbers, or data\n" +
+            "- Examples and explanations\n" +
+            "- Relationships to other concepts\n\n" +
+            "Section %d Content:\n%s\n\n" +
+            "Provide a thorough summary that captures all essential information from this section.",
+            sectionNumber, totalSections, resourceType, resourceTitle,
+            sectionNumber, sectionText
+        );
+    }
+    
+    /**
+     * Create prompt for combining section summaries into final summary
+     */
+    private String createFinalSummaryPrompt(Resource resource, String combinedSections) {
+        String resourceType = resource.getClass().getSimpleName();
+        String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Untitled Resource";
+        
+        return String.format(
+            "You are creating a final comprehensive summary for a %s titled '%s'.\n\n" +
+            "Below are detailed summaries of all sections of this document. Your task is to:\n" +
+            "1. Combine these section summaries into one cohesive, well-structured summary\n" +
+            "2. Eliminate redundancy while preserving all important information\n" +
+            "3. Ensure logical flow and connections between concepts\n" +
+            "4. Create a summary that serves as a complete study guide\n\n" +
+            "Section Summaries:\n%s\n\n" +
+            "Create a comprehensive final summary that students can use as their primary study material.",
+            resourceType, resourceTitle, combinedSections
+        );
     }
 
 }

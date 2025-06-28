@@ -526,7 +526,7 @@ public class TutieService {
 
     @Scheduled(fixedRate = 3000) // Run every 30 seconds
     public void checkPendingTaskStatuses() {
-        logger.info("Checking status for pending tasks...");
+        //logger.info("Checking status for pending tasks...");
 
         for (String taskId : taskNoteMap.keySet()) {
             checkTaskStatus(taskId);
