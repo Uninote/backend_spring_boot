@@ -358,15 +358,6 @@ public void softDeleteUserById(Long userId) {
         if (userDto.getFirebaseUid() == null || userDto.getFirebaseUid().isEmpty()) {
             throw new IllegalArgumentException("Firebase UID must not be null or empty");
         }
-        if (userDto.getName() == null || userDto.getName().isEmpty()) {
-            throw new IllegalArgumentException("Name must not be null or empty");
-        }
-        if (userDto.getDepartmentId() == null) {
-            throw new IllegalArgumentException("Department ID must not be null");
-        }
-        if (userDto.getUniversityId() == null) {
-            throw new IllegalArgumentException("University ID must not be null");
-        }
         if (userDto.getEmail() == null || userDto.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email must not be null or empty");
         }
@@ -374,14 +365,29 @@ public void softDeleteUserById(Long userId) {
             throw new IllegalArgumentException("Username must not be null or empty");
         }
 
-        Department department = departmentRepository.findById(userDto.getDepartmentId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + userDto.getDepartmentId()));
+        Department department = null;
+        University university = null;
 
-        
-        University university = universityRepository.findById(userDto.getUniversityId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid university ID: " + userDto.getUniversityId()));
+        // Handle department - optional
+        if (userDto.getDepartmentId() != null) {
+            department = departmentRepository.findById(userDto.getDepartmentId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + userDto.getDepartmentId()));
+        }
 
-        
+        // Handle university - optional, but if department is provided, university should match
+        if (userDto.getUniversityId() != null) {
+            university = universityRepository.findById(userDto.getUniversityId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid university ID: " + userDto.getUniversityId()));
+        } else if (department != null) {
+            // If no university specified but department is provided, use department's university
+            university = department.getUniversity();
+        }
+
+        // Validate that if both department and university are provided, they are compatible
+        if (department != null && university != null && !department.getUniversity().getId().equals(university.getId())) {
+            throw new IllegalArgumentException("Department and University must be compatible");
+        }
+
         Rank defaultRank = rankRepository.findById(1L)
                 .orElseThrow(() -> new IllegalStateException("Default rank not found"));
 
