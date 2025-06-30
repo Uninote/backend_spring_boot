@@ -621,117 +621,343 @@ public class LangChainContentService {
     }
 
     private Resource processVeryLargeDocument(Resource resource) {
-        logger.info("Using map-reduce approach for very large document: {}", resource.getId());
+        logger.debug("Using map-reduce approach for very large document: {}", resource.getId());
         
-        // Create a chat model
-        ChatLanguageModel chatModel = getChatModel();
+        long startTime = System.currentTimeMillis();
         
         // Split the document into major sections
         String content = resource.getContent();
+        long splittingStartTime = System.currentTimeMillis();
         List<TextSegment> sections = splitIntoMajorSections(content);
-        logger.info("Split document into {} major sections", sections.size());
+        long splittingEndTime = System.currentTimeMillis();
+        long splittingTime = splittingEndTime - splittingStartTime;
+        logger.debug("Split document into {} major sections in {} ms", sections.size(), splittingTime);
         
-        // Process each section to get section-specific content
-        JSONArray allFlashcards = new JSONArray();
-        JSONArray allQuizQuestions = new JSONArray();
-        JSONArray allChapters = new JSONArray();
-        JSONArray allRelations = new JSONArray();
-        StringBuilder summaryBuilder = new StringBuilder();
+        // Create all futures for all sections and all tasks in parallel
+        List<CompletableFuture<String>> allSummaryFutures = new ArrayList<>();
+        List<CompletableFuture<String>> allFlashcardsFutures = new ArrayList<>();
+        List<CompletableFuture<String>> allQuizFutures = new ArrayList<>();
+        List<CompletableFuture<String>> allChaptersFutures = new ArrayList<>();
         
-        // Add document title to summary
-        summaryBuilder.append("# ").append(resource.getTitle() != null ? resource.getTitle() : "Document Summary").append("\n\n");
+        long parallelStartTime = System.currentTimeMillis();
         
-        // Process each section
+        // Start all tasks for all sections simultaneously
         for (int i = 0; i < sections.size(); i++) {
+            final int sectionIndex = i;
             TextSegment section = sections.get(i);
-            logger.info("Processing section {}/{}", i+1, sections.size());
+            String sectionContent = section.text();
+            ChatLanguageModel chatModel = getChatModel();
             
+            // Start all 4 tasks for this section in parallel
+            CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("Starting summary generation for section {}/{}", sectionIndex + 1, sections.size());
+                
+                try {
+                    SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String result = summaryGenerator.generateSummary(prepareSummaryPrompt(sectionContent, resource.getTitle(), resource.getClass().getSimpleName()));
+                    
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("Summary for section {}/{} completed in {} ms", sectionIndex + 1, sections.size(), taskEndTime - taskStartTime);
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating summary for section {}/{}: {}", sectionIndex + 1, sections.size(), e.getMessage());
+                    return "Error generating summary: " + e.getMessage();
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("Starting flashcards generation for section {}/{}", sectionIndex + 1, sections.size());
+                
+                try {
+                    FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(sectionContent, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(flashcardsJson, "flashcards");
+                    
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("Flashcards for section {}/{} completed in {} ms", sectionIndex + 1, sections.size(), taskEndTime - taskStartTime);
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating flashcards for section {}/{}: {}", sectionIndex + 1, sections.size(), e.getMessage());
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("Starting quiz generation for section {}/{}", sectionIndex + 1, sections.size());
+                
+                try {
+                    QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String quizJson = quizGenerator.generateQuiz(prepareQuizPrompt(sectionContent, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(quizJson, "quiz");
+                    
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("Quiz for section {}/{} completed in {} ms", sectionIndex + 1, sections.size(), taskEndTime - taskStartTime);
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating quiz for section {}/{}: {}", sectionIndex + 1, sections.size(), e.getMessage());
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> {
+                long taskStartTime = System.currentTimeMillis();
+                logger.debug("Starting chapters generation for section {}/{}", sectionIndex + 1, sections.size());
+                
+                try {
+                    ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
+                            .chatLanguageModel(chatModel)
+                            .build();
+                    String chaptersJson = chapterGenerator.generateChapters(prepareChaptersPrompt(sectionContent, resource.getTitle(), resource.getClass().getSimpleName()));
+                    String result = validateAndCleanJson(chaptersJson, "chapters");
+                    
+                    long taskEndTime = System.currentTimeMillis();
+                    logger.debug("Chapters for section {}/{} completed in {} ms", sectionIndex + 1, sections.size(), taskEndTime - taskStartTime);
+                    return result;
+                } catch (Exception e) {
+                    logger.error("Error generating chapters for section {}/{}: {}", sectionIndex + 1, sections.size(), e.getMessage());
+                    return "[]";
+                }
+            }, contentGenerationExecutor);
+            
+            // Add all futures to their respective lists
+            allSummaryFutures.add(summaryFuture);
+            allFlashcardsFutures.add(flashcardsFuture);
+            allQuizFutures.add(quizFuture);
+            allChaptersFutures.add(chaptersFuture);
+        }
+        
+        // Wait for all tasks to complete
+        long waitStartTime = System.currentTimeMillis();
+        long parallelProcessingTime = 0; // Declare outside try block
+        CompletableFuture<Void> allSummaryTasks = CompletableFuture.allOf(allSummaryFutures.toArray(new CompletableFuture[0]));
+        CompletableFuture<Void> allFlashcardsTasks = CompletableFuture.allOf(allFlashcardsFutures.toArray(new CompletableFuture[0]));
+        CompletableFuture<Void> allQuizTasks = CompletableFuture.allOf(allQuizFutures.toArray(new CompletableFuture[0]));
+        CompletableFuture<Void> allChaptersTasks = CompletableFuture.allOf(allChaptersFutures.toArray(new CompletableFuture[0]));
+        
+        // Save content types immediately as they complete, without waiting for others
+        CompletableFuture<Void> saveFlashcardsTask = allFlashcardsTasks.thenRunAsync(() -> {
+            long saveStartTime = System.currentTimeMillis();
             try {
-                // Create section-specific prompt
-                String sectionPrompt = createSectionPrompt(resource, section.text(), i+1, sections.size());
-                
-                // Generate content for this section
-                UnifiedContentGenerator generator = AiServices.builder(UnifiedContentGenerator.class)
-                        .chatLanguageModel(chatModel)
-                        .build();
-                
-                String sectionResponse = generator.generateContent(sectionPrompt);
-                String extractedJson = extractJsonObject(sectionResponse);
-                JSONObject sectionContent = new JSONObject(extractedJson);
-                
-                // Extract section summary
-                if (sectionContent.has("summary")) {
-                    summaryBuilder.append("\n\n");
-                    summaryBuilder.append(sectionContent.getString("summary")).append("\n\n");
-                }
-                
-                // Collect flashcards
-                if (sectionContent.has("flashcards")) {
-                    JSONArray sectionFlashcards = sectionContent.getJSONArray("flashcards");
-                    for (int j = 0; j < sectionFlashcards.length(); j++) {
-                        allFlashcards.put(sectionFlashcards.getJSONObject(j));
-                    }
-                }
-                
-                // Collect quiz questions
-                if (sectionContent.has("quiz")) {
-                    JSONArray sectionQuiz = sectionContent.getJSONArray("quiz");
-                    for (int j = 0; j < sectionQuiz.length(); j++) {
-                        allQuizQuestions.put(sectionQuiz.getJSONObject(j));
-                    }
-                }
-                
-                // Collect relations
-                if (sectionContent.has("relations")) {
-                    JSONArray sectionRelations = sectionContent.getJSONArray("relations");
-                    for (int j = 0; j < sectionRelations.length(); j++) {
-                        allRelations.put(sectionRelations.getJSONObject(j));
-                    }
-                }
-                
-                // Add section information to chapters
-                if (sectionContent.has("chapters")) {
-                    JSONArray sectionChapters = sectionContent.getJSONArray("chapters");
-                    for (int j = 0; j < sectionChapters.length(); j++) {
-                        // Adjust indices to account for position in the overall document
-                        JSONObject chapter = sectionChapters.getJSONObject(j);
-                        if (chapter.has("start_index") && chapter.has("end_index")) {
-                            int baseIndex = getBaseIndex(sections, i);
-                            int startIndex = chapter.getInt("start_index") + baseIndex;
-                            int endIndex = chapter.getInt("end_index") + baseIndex;
-                            
-                            chapter.put("start_index", startIndex);
-                            chapter.put("end_index", endIndex);
+                JSONArray allFlashcards = new JSONArray();
+                for (CompletableFuture<String> future : allFlashcardsFutures) {
+                    try {
+                        String flashcards = future.get();
+                        try {
+                            JSONArray sectionFlashcards = new JSONArray(flashcards);
+                            for (int j = 0; j < sectionFlashcards.length(); j++) {
+                                allFlashcards.put(sectionFlashcards.getJSONObject(j));
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Error parsing flashcards: {}", e.getMessage());
                         }
-                        allChapters.put(chapter);
+                    } catch (Exception e) {
+                        logger.warn("Error getting flashcards future: {}", e.getMessage());
                     }
                 }
-                
+                resource.setFlashcards(allFlashcards.toString());
+                resourceRepository.save(resource);
+                long saveEndTime = System.currentTimeMillis();
+                logger.debug("Flashcards saved immediately in {} ms", saveEndTime - saveStartTime);
             } catch (Exception e) {
-                logger.error("Error processing section {}: {}", i+1, e.getMessage());
+                logger.error("Error saving flashcards immediately: {}", e.getMessage());
+            }
+        }, contentGenerationExecutor);
+        
+        CompletableFuture<Void> saveQuizTask = allQuizTasks.thenRunAsync(() -> {
+            long saveStartTime = System.currentTimeMillis();
+            try {
+                JSONArray allQuizQuestions = new JSONArray();
+                for (CompletableFuture<String> future : allQuizFutures) {
+                    try {
+                        String quiz = future.get();
+                        try {
+                            JSONArray sectionQuiz = new JSONArray(quiz);
+                            for (int j = 0; j < sectionQuiz.length(); j++) {
+                                allQuizQuestions.put(sectionQuiz.getJSONObject(j));
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Error parsing quiz: {}", e.getMessage());
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Error getting quiz future: {}", e.getMessage());
+                    }
+                }
+                resource.setQuiz(allQuizQuestions.toString());
+                resourceRepository.save(resource);
+                long saveEndTime = System.currentTimeMillis();
+                logger.debug("Quiz saved immediately in {} ms", saveEndTime - saveStartTime);
+            } catch (Exception e) {
+                logger.error("Error saving quiz immediately: {}", e.getMessage());
+            }
+        }, contentGenerationExecutor);
+        
+        CompletableFuture<Void> saveChaptersTask = allChaptersTasks.thenRunAsync(() -> {
+            long saveStartTime = System.currentTimeMillis();
+            try {
+                JSONArray allChapters = new JSONArray();
+                for (int i = 0; i < allChaptersFutures.size(); i++) {
+                    try {
+                        String chapters = allChaptersFutures.get(i).get();
+                        try {
+                            JSONArray sectionChapters = new JSONArray(chapters);
+                            for (int j = 0; j < sectionChapters.length(); j++) {
+                                // Adjust indices to account for position in the overall document
+                                JSONObject chapter = sectionChapters.getJSONObject(j);
+                                if (chapter.has("start_index") && chapter.has("end_index")) {
+                                    int baseIndex = getBaseIndex(sections, i);
+                                    int startIndex = chapter.getInt("start_index") + baseIndex;
+                                    int endIndex = chapter.getInt("end_index") + baseIndex;
+                                    
+                                    chapter.put("start_index", startIndex);
+                                    chapter.put("end_index", endIndex);
+                                }
+                                allChapters.put(chapter);
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Error parsing chapters for section {}: {}", i + 1, e.getMessage());
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Error getting chapters future for section {}: {}", i + 1, e.getMessage());
+                    }
+                }
+                resource.setChapters(allChapters.toString());
+                resourceRepository.save(resource);
+                long saveEndTime = System.currentTimeMillis();
+                logger.debug("Chapters saved immediately in {} ms", saveEndTime - saveStartTime);
+            } catch (Exception e) {
+                logger.error("Error saving chapters immediately: {}", e.getMessage());
+            }
+        }, contentGenerationExecutor);
+        
+        // Wait for all tasks to complete (including immediate saves)
+        CompletableFuture<Void> allTasks = CompletableFuture.allOf(allSummaryTasks, saveFlashcardsTask, saveQuizTask, saveChaptersTask);
+        
+        try {
+            allTasks.get(10, TimeUnit.MINUTES); // 10 minute timeout for all processing
+            long waitEndTime = System.currentTimeMillis();
+            parallelProcessingTime = waitEndTime - parallelStartTime;
+            long waitTime = waitEndTime - waitStartTime;
+            logger.debug("All {} sections with {} tasks each completed in {} ms (wait time: {} ms)", 
+                        sections.size(), 4, parallelProcessingTime, waitTime);
+        } catch (TimeoutException e) {
+            long waitEndTime = System.currentTimeMillis();
+            parallelProcessingTime = waitEndTime - parallelStartTime;
+            logger.error("All tasks processing timed out after {} ms", parallelProcessingTime);
+            throw new RuntimeException("Large document processing timed out");
+        } catch (Exception e) {
+            long waitEndTime = System.currentTimeMillis();
+            parallelProcessingTime = waitEndTime - parallelStartTime;
+            logger.error("Error waiting for all tasks after {} ms: {}", parallelProcessingTime, e.getMessage());
+            throw new RuntimeException("Error in large document processing", e);
+        }
+        
+        // Collect summary results for final summary generation
+        long collectionStartTime = System.currentTimeMillis();
+        List<String> sectionSummaries = new ArrayList<>();
+        
+        // Collect results from summary futures
+        for (int i = 0; i < sections.size(); i++) {
+            try {
+                String summary = allSummaryFutures.get(i).get();
+                sectionSummaries.add(summary);
+            } catch (Exception e) {
+                logger.error("Error collecting summary from section {}: {}", i + 1, e.getMessage());
             }
         }
         
-        // Combine all content
-        String finalSummary = summaryBuilder.toString();
-        logger.debug("Final summary response from map-reduce generation for resource {}: {}", resource.getId(), finalSummary);
-        logger.debug("Final summary response length from map-reduce generation for resource {}: {} characters", resource.getId(), finalSummary.length());
-        resource.setSummary(finalSummary);
-        resource.setFlashcards(allFlashcards.toString());
-        resource.setQuiz(allQuizQuestions.toString());
-        resource.setChapters(allChapters.toString());
+        long collectionEndTime = System.currentTimeMillis();
+        long collectionTime = collectionEndTime - collectionStartTime;
+        logger.debug("Collected summaries from {} sections in {} ms", sections.size(), collectionTime);
         
-        // Create combined generated content
+        // EXTRA SUMMARY STEP: Combine all section summaries into a final comprehensive summary
+        long finalSummaryStartTime = System.currentTimeMillis();
+        long totalTimeToSummary = finalSummaryStartTime - startTime;
+        logger.debug("Starting final summary combination step for {} sections (total time elapsed: {} ms)", 
+                    sectionSummaries.size(), totalTimeToSummary);
+        
+        String finalSummary;
+        if (sectionSummaries.size() > 1) {
+            // Combine section summaries and create a final comprehensive summary
+            String combinedSections = String.join("\n\n", sectionSummaries);
+            
+            ChatLanguageModel chatModel = getChatModel();
+            SummaryGenerator finalGenerator = AiServices.builder(SummaryGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            
+            String finalPrompt = createFinalSummaryWrapUpPrompt(resource, combinedSections);
+            finalSummary = finalGenerator.generateSummary(finalPrompt);
+            
+            logger.debug("Final summary response from map-reduce generation for resource {}: {}", resource.getId(), finalSummary);
+            logger.debug("Final summary response length from map-reduce generation for resource {}: {} characters", resource.getId(), finalSummary.length());
+        } else if (sectionSummaries.size() == 1) {
+            // Only one section, use its summary directly
+            finalSummary = sectionSummaries.get(0);
+            logger.debug("Single section document, using section summary directly");
+        } else {
+            // No sections processed, create empty summary
+            finalSummary = "Error: No content was processed for this document.";
+            logger.warn("No sections were processed successfully");
+        }
+        
+        long finalSummaryEndTime = System.currentTimeMillis();
+        long finalSummaryTime = finalSummaryEndTime - finalSummaryStartTime;
+        long totalTimeToSummaryComplete = finalSummaryEndTime - startTime;
+        logger.debug("Final summary combination completed in {} ms (total time elapsed: {} ms)", 
+                    finalSummaryTime, totalTimeToSummaryComplete);
+        
+        // Update with final summary
+        long finalSaveStartTime = System.currentTimeMillis();
+        resource.setSummary(finalSummary);
+        
+        // Create complete generated content
         JSONObject generatedContent = new JSONObject();
         generatedContent.put("summary", finalSummary);
-        generatedContent.put("flashcards", allFlashcards);
-        generatedContent.put("quiz", allQuizQuestions);
-        generatedContent.put("chapters", allChapters);
-        generatedContent.put("relations", allRelations);
+        generatedContent.put("flashcards", resource.getFlashcards());
+        generatedContent.put("quiz", resource.getQuiz());
+        generatedContent.put("chapters", resource.getChapters());
         
         resource.setGeneratedContent(generatedContent.toString());
         resourceRepository.save(resource);
-        processEmbeddings(resource);
+        
+        long finalSaveEndTime = System.currentTimeMillis();
+        long finalSaveTime = finalSaveEndTime - finalSaveStartTime;
+        logger.debug("Final save with summary completed in {} ms", finalSaveTime);
+        
+        // Process embeddings
+        long embeddingStartTime = System.currentTimeMillis();
+        try {
+            processEmbeddings(resource);
+            long embeddingEndTime = System.currentTimeMillis();
+            long embeddingTime = embeddingEndTime - embeddingStartTime;
+            logger.debug("Embedding processing completed in {} ms", embeddingTime);
+        } catch (Exception e) {
+            long embeddingEndTime = System.currentTimeMillis();
+            long embeddingTime = embeddingEndTime - embeddingStartTime;
+            logger.error("Embedding processing failed after {} ms: {}", embeddingTime, e.getMessage(), e);
+        }
+        
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        logger.debug("Map-reduce content generation completed in {} ms ({} seconds)", totalTime, totalTime / 1000.0);
+        logger.debug("Timing breakdown:");
+        logger.debug("  - Document splitting: {} ms", splittingTime);
+        logger.debug("  - Parallel processing (all sections + all tasks): {} ms", parallelProcessingTime);
+        logger.debug("  - Result collection: {} ms", collectionTime);
+        logger.debug("  - Immediate save (flashcards/chapters/quiz): {} ms", parallelProcessingTime);
+        logger.debug("  - Final summary generation: {} ms", finalSummaryTime);
+        logger.debug("  - Final save: {} ms", finalSaveTime);
+        logger.debug("GRAND TOTAL TIME ELAPSED: {} ms ({} seconds)", totalTime, totalTime / 1000.0);
+        
         return resource;
     }
     
@@ -751,7 +977,7 @@ public class LangChainContentService {
      */
     private List<TextSegment> splitIntoMajorSections(String content) {
         // Use a larger chunk size for major sections
-        DocumentSplitter splitter = DocumentSplitters.recursive(200000, 2000);
+        DocumentSplitter splitter = DocumentSplitters.recursive(20000, 2000);
         Document document = Document.from(content);
         return splitter.split(document);
     }
@@ -1113,6 +1339,34 @@ public class LangChainContentService {
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
         
         String content = resource.getContent();
+        int contentLength = content.length();
+        logger.info("Document size: {} characters", contentLength);
+        
+        // Handle large files with appropriate strategy
+        final String processedContent;
+        if (contentLength > 40000) {
+            logger.info("Large document detected ({} chars), using map-reduce approach", contentLength);
+            try {
+                Resource result = processVeryLargeDocument(resource);
+                long endTime = System.currentTimeMillis();
+                logger.info("Map-reduce content generation completed in {} ms", (endTime - startTime));
+                return result;
+            } catch (Exception e) {
+                logger.error("Map-reduce approach failed, falling back to content reduction: {}", e.getMessage());
+                // Fall back to content reduction approach
+                processedContent = content;
+                logger.info("Content reduced to {} characters for parallel processing", processedContent.length());
+            }
+        } else if (contentLength > 15000) {
+            // Medium files: use content reduction
+            logger.info("Medium document detected ({} chars), using content reduction", contentLength);
+            processedContent = content;
+            logger.info("Content reduced to {} characters for parallel processing", processedContent.length());
+        } else {
+            // Small files: use original content
+            processedContent = content;
+        }
+        
         ChatLanguageModel chatModel = getChatModel();
         
         try {
@@ -1122,22 +1376,22 @@ public class LangChainContentService {
             
             // Generate all content types in parallel with chunk timing and immediate saving
             CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Summary", 1, 4, content, resource, chatModel, 
+                return generateContentWithChunkTiming("Summary", 1, 4, processedContent, resource, chatModel, 
                     (c, t, rt) -> prepareSummaryPrompt(c, t, rt), SummaryGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Flashcards", 2, 4, content, resource, chatModel, 
+                return generateContentWithChunkTiming("Flashcards", 2, 4, processedContent, resource, chatModel, 
                     (c, t, rt) -> prepareFlashcardsPrompt(c, t, rt), FlashcardGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Quiz", 3, 4, content, resource, chatModel, 
+                return generateContentWithChunkTiming("Quiz", 3, 4, processedContent, resource, chatModel, 
                     (c, t, rt) -> prepareQuizPrompt(c, t, rt), QuizGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Chapters", 4, 4, content, resource, chatModel, 
+                return generateContentWithChunkTiming("Chapters", 4, 4, processedContent, resource, chatModel, 
                     (c, t, rt) -> prepareChaptersPrompt(c, t, rt), ChapterGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
@@ -1208,7 +1462,7 @@ public class LangChainContentService {
         } catch (Exception e) {
             long errorTime = System.currentTimeMillis();
             long totalTime = errorTime - startTime;
-            logger.error("❌ Error in parallel content generation after {} ms: {}", totalTime, e.getMessage(), e);
+            logger.error("❌ Error in parallel content generation after {} ms: {}", totalTime, e.getMessage());
             throw new RuntimeException("Parallel content generation failed", e);
         }
     }
@@ -1592,6 +1846,33 @@ public class LangChainContentService {
             "Create a comprehensive final summary that students can use as their primary study material.",
             resourceType, resourceTitle, combinedSections
         );
+    }
+
+    /**
+     * Create prompt for combining section summaries into final summary
+     */
+    private String createFinalSummaryWrapUpPrompt(Resource resource, String combinedSections) {
+        String resourceType = resource.getClass().getSimpleName();
+        String resourceTitle = resource.getTitle() != null ? resource.getTitle() : "Untitled Resource";
+        
+        try {
+            return promptService.createFinalSummaryWrapUpPrompt(resourceTitle, resourceType, combinedSections);
+        } catch (IOException e) {
+            logger.error("Error loading final summary wrap-up prompt, using fallback", e);
+            // Fallback to hardcoded prompt
+            return String.format(
+                "You are creating a final comprehensive summary for a %s titled '%s'.\n\n" +
+                "Below are detailed summaries of all sections of this document. Your task is to:\n" +
+                "1. Combine these section summaries into one cohesive, well-structured summary\n" +
+                "2. Eliminate redundancy while preserving all important information\n" +
+                "3. Ensure logical flow and connections between concepts\n" +
+                "4. Create a summary that serves as a complete study guide\n\n" +
+                "Section Summaries:\n%s\n\n" +
+                "Create a comprehensive final summary that students can use as their primary study material.\n\n" +
+                "Wrap up and create a cohesive final summary.",
+                resourceType, resourceTitle, combinedSections
+            );
+        }
     }
 
 }

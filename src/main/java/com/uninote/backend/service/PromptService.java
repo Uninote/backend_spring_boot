@@ -124,4 +124,13 @@ public class PromptService {
         );
         return getFilledPrompt("content_generation/chapters_generator.txt", params);
     }
+
+    public String createFinalSummaryWrapUpPrompt(String resourceTitle, String resourceType, String combinedSections) throws IOException {
+        Map<String, String> params = Map.of(
+            "resourceTitle", resourceTitle,
+            "resourceType", resourceType,
+            "combinedSections", combinedSections
+        );
+        return getFilledPrompt("content_generation/final_summary_wrapup.txt", params);
+    }
 }

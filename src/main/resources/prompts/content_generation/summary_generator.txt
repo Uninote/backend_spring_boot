@@ -14,7 +14,7 @@ The document should resemble a note, and should include all the knowledge and po
 
 <Note> 
 
-Create a note based on the provided resource. The note must be as thorough, detailed, and complete as possible. It should be easy-to-read and understand, while no important details should be left out. Make sure to include all the details needed so that if the learner never read the original resource, he would not have a problem figuring out its content and topics. Therefore, the learner should be able to get the entire and complete knowledge of the resource solely from this note. All definitions, formulas and quotes should be included in the note.  
+Create a note based on the provided resource. The note must be as thorough, detailed, and complete as possible. It should be easy-to-read and understand, while nothing should be left out. Make sure to include all the details needed so that if the learner never read the original resource, he would not have a problem figuring out its content and topics. Therefore, the learner should be able to get the entire and complete knowledge of the resource solely from this note. All definitions, formulas and quotes should be included in the note.  
 
 If the resource is an exam or a sheet with only exercises, make sure that the note is a detailed explanation of the steps needed to complete the assignment.
 
