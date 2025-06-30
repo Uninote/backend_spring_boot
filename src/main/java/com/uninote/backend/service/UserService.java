@@ -1,7 +1,24 @@
 package com.uninote.backend.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.uninote.backend.controller.LoginWebSocketController;
-import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.GrowthStatisticsDTO;
 import com.uninote.backend.dto.MonthlyActiveUsersDTO;
 import com.uninote.backend.dto.UserDTO;
@@ -41,30 +58,6 @@ import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
 import com.uninote.backend.repository.UserSessionRepository;
-
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import java.util.stream.Collectors;
-
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.PrimitiveIterator;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 

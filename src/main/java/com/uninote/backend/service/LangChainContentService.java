@@ -1,4 +1,18 @@
 package com.uninote.backend.service;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
 import com.uninote.backend.config.AzureOpenAiConfig;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.repository.ResourceRepository;
@@ -11,26 +25,9 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.input.Prompt;
 import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -672,7 +669,7 @@ public class LangChainContentService {
             prompt = promptService.createLargeContentGenerationPrompt(resourceTitle, resourceType, totalSections, sectionNumber, sectionText);
         } catch (IOException e) {
             logger.error("Error generating resource prompt", e);
-            prompt = "Σφάλμα κατά τη δημιουργία του prompt. Παρακαλώ επικοινωνήστε με τον διαχειριστή.";
+            prompt = "Error generating resource prompt";
         }
         return prompt;
         /*return "You are an AI assistant processing Section " + sectionNumber + " of " + totalSections + 
