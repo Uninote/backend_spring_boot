@@ -117,7 +117,7 @@ public class LangChainContentService {
         logger.info("Document size: {} characters", contentLength);
         
         try {
-            if (contentLength > 40000) {
+            if (contentLength > 100000) {
                 logger.info("Using map-reduce approach for very large document");
                 Resource result = processVeryLargeDocument(resource);
                 
@@ -998,7 +998,7 @@ public class LangChainContentService {
      */
     private List<TextSegment> splitIntoMajorSections(String content) {
         // Use a larger chunk size for major sections
-        DocumentSplitter splitter = DocumentSplitters.recursive(20000, 2000);
+        DocumentSplitter splitter = DocumentSplitters.recursive(50000, 2000);
         Document document = Document.from(content);
         return splitter.split(document);
     }
