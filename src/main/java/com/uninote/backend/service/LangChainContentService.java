@@ -648,12 +648,24 @@ public class LangChainContentService {
             String sectionContent = section.text();
             ChatLanguageModel chatModel = getChatModel();
             
+            // Add delay between sections to prevent Azure rate limiting
+            if (i > 0) {
+                try {
+                    Thread.sleep(1000); // 1 second delay between sections
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            
             // Start all 4 tasks for this section in parallel
             CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
                 long taskStartTime = System.currentTimeMillis();
                 logger.debug("Starting summary generation for section {}/{}", sectionIndex + 1, sections.size());
                 
                 try {
+                    // Add small delay to prevent overwhelming Azure API
+                    Thread.sleep(500);
+                    
                     SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
                             .chatLanguageModel(chatModel)
                             .build();
@@ -673,6 +685,9 @@ public class LangChainContentService {
                 logger.debug("Starting flashcards generation for section {}/{}", sectionIndex + 1, sections.size());
                 
                 try {
+                    // Add small delay to prevent overwhelming Azure API
+                    Thread.sleep(1000);
+                    
                     FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
                             .chatLanguageModel(chatModel)
                             .build();
@@ -693,6 +708,9 @@ public class LangChainContentService {
                 logger.debug("Starting quiz generation for section {}/{}", sectionIndex + 1, sections.size());
                 
                 try {
+                    // Add small delay to prevent overwhelming Azure API
+                    Thread.sleep(1500);
+                    
                     QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
                             .chatLanguageModel(chatModel)
                             .build();
@@ -713,6 +731,9 @@ public class LangChainContentService {
                 logger.debug("Starting chapters generation for section {}/{}", sectionIndex + 1, sections.size());
                 
                 try {
+                    // Add small delay to prevent overwhelming Azure API
+                    Thread.sleep(2000);
+                    
                     ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
                             .chatLanguageModel(chatModel)
                             .build();
