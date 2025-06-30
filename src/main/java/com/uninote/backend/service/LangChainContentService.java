@@ -1122,7 +1122,8 @@ public class LangChainContentService {
             
             // Generate all content types in parallel with chunk timing and immediate saving
             CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
-                return generateHierarchicalSummaryStrategy(content, resource, chatModel, completedTasks, startTime);
+                return generateContentWithChunkTiming("Summary", 1, 4, content, resource, chatModel, 
+                    (c, t, rt) -> prepareSummaryPrompt(c, t, rt), SummaryGenerator.class, completedTasks, startTime);
             }, contentGenerationExecutor);
             
             CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
