@@ -58,11 +58,11 @@ public class User {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id", nullable = false)
+    @JoinColumn(name = "department_id", nullable = true)
     private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id", nullable = false)
+    @JoinColumn(name = "university_id", nullable = true)
     private University university;
 
     @Column(name = "email", nullable = true, unique = true)
@@ -133,7 +133,8 @@ public class User {
         //lastLogin = LocalDateTime.now();
         createdAt = LocalDateTime.now();
 
-        if (department != null && Hibernate.isInitialized(department)) {
+        // Only set university from department if department is not null and university is not already set
+        if (department != null && university == null && Hibernate.isInitialized(department)) {
             university = this.department.getUniversity();
         }
     }
@@ -141,7 +142,8 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-        if (department != null && Hibernate.isInitialized(department)) {
+        // Only set university from department if department is not null and university is not already set
+        if (department != null && university == null && Hibernate.isInitialized(department)) {
             university = this.department.getUniversity();
         }
     }

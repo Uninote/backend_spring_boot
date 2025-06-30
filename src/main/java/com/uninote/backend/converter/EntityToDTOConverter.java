@@ -126,15 +126,15 @@ public class EntityToDTOConverter {
         userDTO.setId(user.getId());
         userDTO.setFirebaseUid(user.getFirebaseUid());
         userDTO.setName(user.getName());
-        userDTO.setDepartmentId(user.getDepartment().getId());
-        userDTO.setUniversityId(user.getUniversity().getId());
+        userDTO.setDepartmentId(user.getDepartment() != null ? user.getDepartment().getId() : null);
+        userDTO.setUniversityId(user.getUniversity() != null ? user.getUniversity().getId() : null);
         userDTO.setUniscore(user.getUniscore());
         userDTO.setEmail(user.getEmail());
         userDTO.setUsername(user.getUsername());
         userDTO.setProfileImageUrl(user.getProfileImageUrl());
-        userDTO.setRoleId(user.getRole().getId());
+        userDTO.setRoleId(user.getRole() != null ? user.getRole().getId() : null);
         userDTO.setBio(user.getBio());
-        userDTO.setRank(user.getRank().getRankName());
+        userDTO.setRank(user.getRank() != null ? user.getRank().getRankName() : null);
         userDTO.setStreak(user.getStreak());
         return userDTO;
     }

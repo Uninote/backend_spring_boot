@@ -1,7 +1,24 @@
 package com.uninote.backend.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.uninote.backend.controller.LoginWebSocketController;
-import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.GrowthStatisticsDTO;
 import com.uninote.backend.dto.MonthlyActiveUsersDTO;
 import com.uninote.backend.dto.UserDTO;
@@ -41,30 +58,6 @@ import com.uninote.backend.repository.UserLoginRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
 import com.uninote.backend.repository.UserSessionRepository;
-
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import java.util.stream.Collectors;
-
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.PrimitiveIterator;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 
@@ -358,15 +351,6 @@ public void softDeleteUserById(Long userId) {
         if (userDto.getFirebaseUid() == null || userDto.getFirebaseUid().isEmpty()) {
             throw new IllegalArgumentException("Firebase UID must not be null or empty");
         }
-        if (userDto.getName() == null || userDto.getName().isEmpty()) {
-            throw new IllegalArgumentException("Name must not be null or empty");
-        }
-        if (userDto.getDepartmentId() == null) {
-            throw new IllegalArgumentException("Department ID must not be null");
-        }
-        if (userDto.getUniversityId() == null) {
-            throw new IllegalArgumentException("University ID must not be null");
-        }
         if (userDto.getEmail() == null || userDto.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email must not be null or empty");
         }
@@ -374,14 +358,29 @@ public void softDeleteUserById(Long userId) {
             throw new IllegalArgumentException("Username must not be null or empty");
         }
 
-        Department department = departmentRepository.findById(userDto.getDepartmentId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + userDto.getDepartmentId()));
+        Department department = null;
+        University university = null;
 
-        
-        University university = universityRepository.findById(userDto.getUniversityId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid university ID: " + userDto.getUniversityId()));
+        // Handle department - optional
+        if (userDto.getDepartmentId() != null) {
+            department = departmentRepository.findById(userDto.getDepartmentId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + userDto.getDepartmentId()));
+        }
 
-        
+        // Handle university - optional, but if department is provided, university should match
+        if (userDto.getUniversityId() != null) {
+            university = universityRepository.findById(userDto.getUniversityId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid university ID: " + userDto.getUniversityId()));
+        } else if (department != null) {
+            // If no university specified but department is provided, use department's university
+            university = department.getUniversity();
+        }
+
+        // Validate that if both department and university are provided, they are compatible
+        if (department != null && university != null && !department.getUniversity().getId().equals(university.getId())) {
+            throw new IllegalArgumentException("Department and University must be compatible");
+        }
+
         Rank defaultRank = rankRepository.findById(1L)
                 .orElseThrow(() -> new IllegalStateException("Default rank not found"));
 

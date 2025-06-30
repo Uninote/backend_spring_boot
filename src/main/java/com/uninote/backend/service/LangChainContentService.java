@@ -994,7 +994,7 @@ public class LangChainContentService {
             prompt = promptService.createLargeContentGenerationPrompt(resourceTitle, resourceType, totalSections, sectionNumber, sectionText);
         } catch (IOException e) {
             logger.error("Error generating resource prompt", e);
-            prompt = "Σφάλμα κατά τη δημιουργία του prompt. Παρακαλώ επικοινωνήστε με τον διαχειριστή.";
+            prompt = "Error generating resource prompt";
         }
         return prompt;
         /*return "You are an AI assistant processing Section " + sectionNumber + " of " + totalSections + 

@@ -173,8 +173,8 @@ public class UserController {
             UserDTO userDTO = new UserDTO();
             userDTO.setId(user.getId());
             userDTO.setProfileImageUrl(user.getProfileImageUrl());
-            userDTO.setDepartmentId(user.getDepartment().getId());
-            userDTO.setUniversityId(user.getUniversity().getId());
+            userDTO.setDepartmentId(user.getDepartment() != null ? user.getDepartment().getId() : null);
+            userDTO.setUniversityId(user.getUniversity() != null ? user.getUniversity().getId() : null);
             userDTO.setUsername(user.getUsername());
             return userDTO;
         }).collect(Collectors.toSet());
