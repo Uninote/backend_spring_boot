@@ -1,28 +1,27 @@
 package com.uninote.backend.service;
 
-import com.uninote.backend.entity.Resource;
-import com.uninote.backend.entity.FileResource;
-import com.uninote.backend.entity.Note;
-import com.uninote.backend.entity.NoteResource;
-import com.uninote.backend.entity.YouTubeResource;
-import com.uninote.backend.repository.NoteRepository;
-import com.uninote.backend.repository.ResourceRepository;
-import com.uninote.backend.service.extractor.ContentExtractor;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Optional;
+import com.uninote.backend.entity.FileResource;
+import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.Resource;
+import com.uninote.backend.entity.YouTubeResource;
+import com.uninote.backend.repository.NoteRepository;
+import com.uninote.backend.repository.ResourceRepository;
+import com.uninote.backend.service.extractor.ContentExtractor;
 
 @Service
 public class ContentExtractionService {
@@ -286,5 +285,12 @@ public class ContentExtractionService {
         } while (!page.isLast());
     }
 
+    /**
+     * Extract content from a file and return as String (no saving, for test/util use)
+     */
+    public String extractContentFromFile(MultipartFile file) {
+        ContentExtractor extractor = findExtractor(file);
+        return extractor.extractContent(file);
+    }
 
 }

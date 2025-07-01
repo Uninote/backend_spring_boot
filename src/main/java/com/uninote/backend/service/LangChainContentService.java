@@ -1923,4 +1923,101 @@ public class LangChainContentService {
         }
     }
 
+    /**
+     * Estimate token count (rough approximation: 4 characters per token)
+     */
+    private int estimateTokens(String text) {
+        return text.length() / 4;
+    }
+
+    /**
+     * Generate a summary from raw content and title, without saving anything.
+     * Used for test/evaluation endpoints.
+     */
+    public String generateSummaryFromContent(String content, String title) {
+        if (content == null || content.isEmpty()) {
+            throw new IllegalArgumentException("Content is empty. Provide valid content.");
+        }
+        if (content.length() > 40000) {
+            // Use map-reduce for very large files
+            return generateSummaryMapReduceForContent(content, title);
+        }
+        // Handle large content for test endpoint as well
+        String processedContent = handleLargeContent(content, 4000);
+        int inputTokens = estimateTokens(processedContent);
+        logger.info("[Test] Input content: {} chars (~{} tokens)", processedContent.length(), inputTokens);
+        
+        ChatLanguageModel chatModel = getChatModel();
+        String prompt = prepareSummaryPrompt(processedContent, title, "File");
+        dev.langchain4j.data.message.AiMessage response = chatModel.generate(new dev.langchain4j.data.message.UserMessage(prompt)).content();
+        String summary = response.text();
+        
+        int outputTokens = estimateTokens(summary);
+        logger.info("[Test] Generated summary: {} chars (~{} tokens)", summary.length(), outputTokens);
+        logger.debug("[Test] Generated summary for test content: {}", abbreviate(summary, 400));
+        return summary;
+    }
+
+    /**
+     * Map-reduce style summary generation for very large content (no saving, no Resource).
+     */
+    private String generateSummaryMapReduceForContent(String content, String title) {
+        long startTime = System.currentTimeMillis();
+        int totalInputTokens = estimateTokens(content);
+        logger.info("[Test] Using map-reduce approach for very large document ({} chars, ~{} tokens)", content.length(), totalInputTokens);
+        List<TextSegment> sections = splitIntoSummarySections(content);
+        logger.info("[Test] Split document into {} sections for map-reduce summary", sections.size());
+        ChatLanguageModel chatModel = getChatModel();
+        List<CompletableFuture<String>> sectionFutures = new ArrayList<>();
+        for (int i = 0; i < sections.size(); i++) {
+            final int sectionIndex = i;
+            final String sectionText = sections.get(i).text();
+            sectionFutures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    String sectionPrompt = prepareSummaryPrompt(sectionText, title, "File");
+                    int sectionInputTokens = estimateTokens(sectionText);
+                    dev.langchain4j.data.message.AiMessage sectionResponse = chatModel.generate(new dev.langchain4j.data.message.UserMessage(sectionPrompt)).content();
+                    String sectionSummary = sectionResponse.text();
+                    int sectionOutputTokens = estimateTokens(sectionSummary);
+                    
+                    logger.debug("[Test] Section {} summary: {} chars (~{} tokens) -> {} chars (~{} tokens)", 
+                                sectionIndex + 1, sectionText.length(), sectionInputTokens, 
+                                sectionSummary.length(), sectionOutputTokens);
+                    return sectionSummary;
+                } catch (Exception e) {
+                    logger.error("[Test] Error generating section summary {}: {}", sectionIndex + 1, e.getMessage());
+                    return "Error generating section summary: " + e.getMessage();
+                }
+            }, contentGenerationExecutor));
+        }
+        // Wait for all section summaries
+        List<String> sectionSummaries = new ArrayList<>();
+        for (int i = 0; i < sectionFutures.size(); i++) {
+            try {
+                sectionSummaries.add(sectionFutures.get(i).get());
+            } catch (Exception e) {
+                logger.error("[Test] Error getting section summary {}: {}", i + 1, e.getMessage());
+                sectionSummaries.add("Error generating section summary: " + e.getMessage());
+            }
+        }
+        // Combine section summaries into a final summary
+        String combinedSections = String.join("\n\n", sectionSummaries);
+        int combinedInputTokens = estimateTokens(combinedSections);
+        String finalPrompt = prepareSummaryPrompt(combinedSections, title, "File");
+        dev.langchain4j.data.message.AiMessage finalResponse = chatModel.generate(new dev.langchain4j.data.message.UserMessage(finalPrompt)).content();
+        String finalSummary = finalResponse.text();
+        int finalOutputTokens = estimateTokens(finalSummary);
+        
+        logger.info("[Test] Final summary: {} chars (~{} tokens) from {} chars (~{} tokens)", 
+                   finalSummary.length(), finalOutputTokens, combinedSections.length(), combinedInputTokens);
+        logger.debug("[Test] Final summary: {}", abbreviate(finalSummary, 400));
+        long endTime = System.currentTimeMillis();
+        logger.info("[Test] Map-reduce summary generation completed in {} ms (Total: {} -> {} tokens)", 
+                   (endTime - startTime), totalInputTokens, finalOutputTokens);
+        return finalSummary;
+    }
+
+
+    
+
 }
