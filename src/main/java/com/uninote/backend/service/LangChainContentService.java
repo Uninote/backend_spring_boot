@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +96,7 @@ public class LangChainContentService {
                 .apiKey(azureConfig.getAzureApiKey())
                 .deploymentName(azureConfig.getChatDeployment())
                 .temperature(0.4)
+                .timeout(Duration.ofMinutes(2))
                 .build();
     }
     
@@ -650,11 +652,11 @@ public class LangChainContentService {
             
             // Add delay between sections to prevent Azure rate limiting
             if (i > 0) {
-                try {
+                /*try {
                     Thread.sleep(1000); // 1 second delay between sections
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                }
+                }*/
             }
             
             // Start all 4 tasks for this section in parallel
@@ -664,7 +666,7 @@ public class LangChainContentService {
                 
                 try {
                     // Add small delay to prevent overwhelming Azure API
-                    Thread.sleep(500);
+                    //Thread.sleep(500);
                     
                     SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
                             .chatLanguageModel(chatModel)
@@ -686,7 +688,7 @@ public class LangChainContentService {
                 
                 try {
                     // Add small delay to prevent overwhelming Azure API
-                    Thread.sleep(1000);
+                    //Thread.sleep(1000);
                     
                     FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
                             .chatLanguageModel(chatModel)
@@ -709,7 +711,7 @@ public class LangChainContentService {
                 
                 try {
                     // Add small delay to prevent overwhelming Azure API
-                    Thread.sleep(1500);
+                    //Thread.sleep(1500);
                     
                     QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
                             .chatLanguageModel(chatModel)
@@ -732,7 +734,7 @@ public class LangChainContentService {
                 
                 try {
                     // Add small delay to prevent overwhelming Azure API
-                    Thread.sleep(2000);
+                    //Thread.sleep(2000);
                     
                     ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
                             .chatLanguageModel(chatModel)
@@ -998,7 +1000,7 @@ public class LangChainContentService {
      */
     private List<TextSegment> splitIntoMajorSections(String content) {
         // Use a larger chunk size for major sections
-        DocumentSplitter splitter = DocumentSplitters.recursive(50000, 2000);
+        DocumentSplitter splitter = DocumentSplitters.recursive(20000, 2000);
         Document document = Document.from(content);
         return splitter.split(document);
     }
@@ -1671,7 +1673,11 @@ public class LangChainContentService {
             long splittingEndTime = System.currentTimeMillis();
             long splittingTime = splittingEndTime - splittingStartTime;
             logger.info("Split content into {} sections for hierarchical summary in {} ms", sections.size(), splittingTime);
-            
+            // Log each section's content (abbreviated)
+            for (int i = 0; i < sections.size(); i++) {
+                String abbreviatedSection = abbreviate(sections.get(i).text(), 300);
+                logger.debug("Section {} content (abbreviated): {}", i + 1, abbreviatedSection);
+            }
             // Step 2: Generate summaries for each section in parallel
             long sectionGenerationStartTime = System.currentTimeMillis();
             long sectionGenerationTime = 0; // Declare outside try-catch
@@ -1738,9 +1744,11 @@ public class LangChainContentService {
             // Collect all section summaries
             long collectionStartTime = System.currentTimeMillis();
             List<String> sectionSummaries = new ArrayList<>();
-            for (CompletableFuture<String> future : sectionFutures) {
+            for (int i = 0; i < sectionFutures.size(); i++) {
                 try {
-                    sectionSummaries.add(future.get());
+                    String summary = sectionFutures.get(i).get();
+                    sectionSummaries.add(summary);
+                    logger.info("Section {} summary: {}", i + 1, abbreviate(summary, 400));
                 } catch (Exception e) {
                     logger.error("Error getting section summary: {}", e.getMessage());
                     sectionSummaries.add("Error generating section summary: " + e.getMessage());
@@ -1819,13 +1827,32 @@ public class LangChainContentService {
     }
     
     /**
-     * Split content into sections optimized for summary generation
+     * Split content into smaller, semantically meaningful sections for finer coverage
      */
     private List<TextSegment> splitIntoSummarySections(String content) {
-        // Use smaller chunks for summary to ensure each section gets proper attention
-        DocumentSplitter splitter = DocumentSplitters.recursive(8000, 1000);
-        Document document = Document.from(content);
-        return splitter.split(document);
+        int contentLength = content.length();
+
+        if (contentLength <= 30000) {
+            // Small documents: 4-6 sections for even finer coverage
+            DocumentSplitter splitter = DocumentSplitters.recursive(6000, 600);
+            Document document = Document.from(content);
+            return splitter.split(document);
+        } else if (contentLength <= 80000) {
+            // Medium documents: 6-10 sections
+            DocumentSplitter splitter = DocumentSplitters.recursive(9000, 900);
+            Document document = Document.from(content);
+            return splitter.split(document);
+        } else if (contentLength <= 150000) {
+            // Large documents: 10-15 sections
+            DocumentSplitter splitter = DocumentSplitters.recursive(12000, 1200);
+            Document document = Document.from(content);
+            return splitter.split(document);
+        } else {
+            // Very large documents: 15-20 sections
+            DocumentSplitter splitter = DocumentSplitters.recursive(15000, 1500);
+            Document document = Document.from(content);
+            return splitter.split(document);
+        }
     }
     
     /**

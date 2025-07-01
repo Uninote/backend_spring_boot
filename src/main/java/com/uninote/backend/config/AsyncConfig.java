@@ -14,8 +14,8 @@ public class AsyncConfig {
     @Bean(name = "contentGenerationExecutor")
     public Executor contentGenerationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4); // Number of parallel content generation tasks
-        executor.setMaxPoolSize(8);  // Maximum threads for content generation
+        executor.setCorePoolSize(8); // Increased from 4 to handle 2 sections × 4 content types
+        executor.setMaxPoolSize(16); // Increased from 8 to handle larger documents
         executor.setQueueCapacity(100); // Queue capacity for pending tasks
         executor.setThreadNamePrefix("ContentGen-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
