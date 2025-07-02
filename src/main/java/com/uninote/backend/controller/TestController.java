@@ -3,6 +3,8 @@ package com.uninote.backend.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,8 @@ import com.uninote.backend.service.TestService;
 @RestController
 @RequestMapping("/tests")
 public class TestController {
+
+    private static final Logger logger = LoggerFactory.getLogger(TestController.class);
 
     @Autowired
     private TestService testService;
@@ -58,15 +62,21 @@ public class TestController {
             @RequestParam(value = "title", required = false) String title) {
         try {
             if (file == null || file.isEmpty()) {
+                logger.warn("[TestEndpoint] No file uploaded or file is empty");
                 return ResponseEntity.badRequest().body("File is required");
             }
+            logger.info("[TestEndpoint] Received file: {} ({} bytes)", file.getOriginalFilename(), file.getSize());
             String content = contentExtractionService.extractContentFromFile(file);
+            logger.info("[TestEndpoint] Extracted content from file: {} ({} chars)", file.getOriginalFilename(), content.length());
             if (title == null || title.isEmpty()) {
                 title = file.getOriginalFilename();
             }
+            logger.info("[TestEndpoint] Using title: {}", title);
             String summary = langChainContentService.generateSummaryFromContent(content, title);
+            logger.info("[TestEndpoint] Generated summary ({} chars) for file: {}", summary.length(), file.getOriginalFilename());
             return ResponseEntity.ok(summary);
         } catch (Exception e) {
+            logger.error("[TestEndpoint] Failed to generate summary: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Failed to generate summary: " + e.getMessage());
         }
     }
