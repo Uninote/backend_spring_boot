@@ -1,10 +1,19 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
 @Entity
-@Table(name = "USER_RESPONSE_ANALYSIS", schema = "ADMIN")
+@Table(name = "USER_RESPONSE_ANALYSIS" )
 public class UserResponseAnalysis {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +28,7 @@ public class UserResponseAnalysis {
     private String analysisType;
 
     @Lob
-    @Column(name = "ANALYSIS_RESULT", columnDefinition = "CLOB")
+    @Column(name = "ANALYSIS_RESULT", columnDefinition = "TEXT")
     private String analysisResult;
 
     @Column(name = "CREATED_AT", nullable = false)

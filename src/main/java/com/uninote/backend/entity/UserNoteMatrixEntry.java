@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 @Entity
 @IdClass(UserNoteMatrixEntryId.class)
-@Table(name = "USER_NOTE_INTERACTION_MATRIX" , schema = "ADMIN")
+@Table(name = "USER_NOTE_INTERACTION_MATRIX")
 public class UserNoteMatrixEntry implements Serializable{
     @Id
     @Column(name = "user_id")

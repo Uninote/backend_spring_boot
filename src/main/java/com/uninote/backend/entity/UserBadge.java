@@ -1,10 +1,16 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
+import javax.persistence.Table;
+
 @Entity
-@Table(name = "user_badges", schema = "ADMIN")
+@Table(name = "user_badges" )
 public class UserBadge {
     @EmbeddedId
     private UserBadgeId id = new UserBadgeId();

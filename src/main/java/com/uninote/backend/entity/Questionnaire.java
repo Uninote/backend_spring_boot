@@ -37,11 +37,11 @@ public class Questionnaire {
     private QuestionnaireStatus status;
 
     @Lob
-    @Column(name = "questionnaire_json", columnDefinition = "CLOB")
+    @Column(name = "questionnaire_json", columnDefinition = "TEXT")
     private String questionnaireJson; // Complete questionnaire JSON
 
     @Lob
-    @Column(name = "criteria_query", columnDefinition = "CLOB")
+    @Column(name = "criteria_query", columnDefinition = "TEXT")
     private String criteriaQuery; // SQL query for targeting users
 
     // Constructors

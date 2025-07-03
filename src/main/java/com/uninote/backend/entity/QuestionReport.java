@@ -1,12 +1,17 @@
 package com.uninote.backend.entity;
 
 
-import javax.persistence.*;
 import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
 
 
 @Entity
-@Table(name = "Question_Report", schema = "ADMIN")
+@Table(name = "Question_Report" )
 public class QuestionReport {
 
     @EmbeddedId

@@ -1,9 +1,15 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "note_collection_items", schema = "admin")
+@Table(name = "note_collection_items" )
 public class NoteCollectionItem {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_collection_items_seq")

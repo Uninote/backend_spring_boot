@@ -10,7 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name  = "Own_Profile_Views", schema = "ADMIN")
+@Table(name  = "Own_Profile_Views" )
 public class OwnProfileView {
     @Id
     @GeneratedValue(strategy =  GenerationType.IDENTITY)

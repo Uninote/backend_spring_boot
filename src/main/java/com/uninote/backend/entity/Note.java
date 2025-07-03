@@ -1,14 +1,27 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import java.util.UUID;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notes", schema = "ADMIN")
+@Table(name = "notes" )
 public class Note {
 
     @Id

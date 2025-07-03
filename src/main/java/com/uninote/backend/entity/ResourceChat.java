@@ -1,9 +1,18 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "RESOURCE_CHATS")
+@Table(name = "RESOURCE_CHATS" )
 public class ResourceChat {
 
     @Id
