@@ -27,6 +27,7 @@ import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.FreeTrialStatusDTO;
 import com.uninote.backend.dto.MetadataRequest;
 import com.uninote.backend.dto.UserDTO;
+import com.uninote.backend.dto.UserLimitsDTO;
 import com.uninote.backend.dto.UserStatsDTO;
 import com.uninote.backend.entity.Subscription;
 import com.uninote.backend.entity.SubscriptionDuration;
@@ -39,6 +40,7 @@ import com.uninote.backend.repository.MessageRepository;
 import com.uninote.backend.repository.UniversityRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.SubscriptionService;
+import com.uninote.backend.service.UsageLimitService;
 import com.uninote.backend.service.UserService;
 
 @RestController
@@ -62,6 +64,9 @@ public class UserController {
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private UsageLimitService usageLimitService;
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
@@ -349,5 +354,23 @@ public class UserController {
         );
 
         return ResponseEntity.ok(status);
+    }
+
+    @GetMapping("/limits")
+    public ResponseEntity<UserLimitsDTO> getUserLimits() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserLimitsDTO limits = usageLimitService.getUserLimits(user);
+        return ResponseEntity.ok(limits);
     }
 }

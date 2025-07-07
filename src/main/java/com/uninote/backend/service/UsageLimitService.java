@@ -1,5 +1,6 @@
 package com.uninote.backend.service;
 
+import com.uninote.backend.dto.UserLimitsDTO;
 import com.uninote.backend.entity.*;
 import com.uninote.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ public class UsageLimitService {
 
     @Autowired
     private MessageRepository messageRepository;
+
+
 
     private Date getStartOfDay() {
         return java.sql.Timestamp.valueOf(LocalDate.now().atStartOfDay());
@@ -71,6 +74,29 @@ public class UsageLimitService {
         return subscriptionRepository.findLatestActiveByUser(user, LocalDateTime.now(), SubscriptionPlan.FREE)
                 .map(Subscription::getPlan)
                 .orElse(SubscriptionPlan.FREE);
+    }
+
+    public UserLimitsDTO getUserLimits(User user) {
+        SubscriptionPlan plan = getCurrentPlan(user);
+        
+        // Get daily chat usage
+        long dailyChatUsed = chatRepository.countByUserAndCreatedAtBetween(user, getStartOfDay(), getEndOfDay());
+        int dailyChatLimit = PlanLimits.getDailyChatLimit(plan);
+        
+        // Get daily spaces usage
+        long dailySpaceUsed = spaceRepository.countByUserAndCreatedAtBetween(user, getStartOfDay(), getEndOfDay());
+        int dailySpaceLimit = PlanLimits.getMaxSpaces(plan);
+        
+        // Get daily messages usage
+        long dailyMessageUsed = messageRepository.countByChat_UserAndCreatedAtBetween(user, getStartOfDay(), getEndOfDay());
+        int dailyMessageLimit = PlanLimits.getMaxMessagesPerChat(plan);
+        
+        return new UserLimitsDTO(
+            plan,
+            dailyChatLimit, (int) dailyChatUsed,
+            dailySpaceLimit, (int) dailySpaceUsed,
+            dailyMessageLimit, (int) dailyMessageUsed
+        );
     }
 
 }

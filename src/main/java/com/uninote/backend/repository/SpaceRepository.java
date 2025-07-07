@@ -31,4 +31,6 @@ public interface SpaceRepository extends JpaRepository<Space, Long> {
    
     long countByUserAndCreatedAtBetween(User user, Date startOfDay, Date endOfDay);
 
+    long countByUser(User user);
+
 }
