@@ -17,8 +17,8 @@ import javax.persistence.Table;
 @Table(name = "note_views" )
 public class NoteView {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_view_seq")
-    @SequenceGenerator(name = "note_view_seq", sequenceName = "seq_note_view_id", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_views_note_view_id_seq")
+    @SequenceGenerator(name = "note_views_note_view_id_seq", sequenceName = "note_views_note_view_id_seq", allocationSize = 1)
     @Column(name = "note_view_id")
     private Long id;
 

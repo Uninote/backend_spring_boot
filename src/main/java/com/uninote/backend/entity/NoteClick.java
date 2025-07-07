@@ -18,7 +18,7 @@ import javax.persistence.Table;
 public class NoteClick {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "click_seq")
-    @SequenceGenerator(name = "click_seq", sequenceName = "seq_note_click_id", allocationSize = 1)
+    @SequenceGenerator(name = "click_seq", sequenceName = "note_clicks_note_click_id_seq", allocationSize = 1)
     @Column(name = "note_click_id")
     private Long id;
 

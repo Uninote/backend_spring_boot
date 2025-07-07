@@ -20,7 +20,7 @@ public class NoteSave {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "save_seq")
-    @SequenceGenerator(name = "save_seq", sequenceName = "seq_note_save_id", allocationSize = 1)
+    @SequenceGenerator(name = "save_seq", sequenceName = "save_seq", allocationSize = 1)
     @Column(name = "save_id", nullable = false, updatable = false)
     private Long saveId;
 

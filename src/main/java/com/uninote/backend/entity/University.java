@@ -19,7 +19,7 @@ public class University {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "university_seq")
-    @SequenceGenerator(name = "university_seq", sequenceName = "seq_university_id", allocationSize = 1)
+    @SequenceGenerator(name = "university_seq", sequenceName = "university_seq", allocationSize = 1)
     @Column(name = "university_id", nullable = false, updatable = false)
     private Long id;
 

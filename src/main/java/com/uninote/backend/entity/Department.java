@@ -22,7 +22,7 @@ import javax.persistence.Table;
 
         @Id
         @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "department_seq")
-        @SequenceGenerator(name = "department_seq", sequenceName = "seq_department_id", allocationSize = 1)
+        @SequenceGenerator(name = "department_seq", sequenceName = "department_seq", allocationSize = 1)
         @Column(name = "department_id", nullable = false, updatable = false)
         private Long id;
 

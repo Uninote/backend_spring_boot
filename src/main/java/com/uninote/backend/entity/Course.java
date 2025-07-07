@@ -21,7 +21,7 @@ public class Course {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "course_seq")
-    @SequenceGenerator(name = "course_seq", sequenceName = "seq_course_id", allocationSize = 1)
+    @SequenceGenerator(name = "course_seq", sequenceName = "course_seq", allocationSize = 1)
     @Column(name = "course_id", nullable = false, updatable = false)
     private Long id;
 

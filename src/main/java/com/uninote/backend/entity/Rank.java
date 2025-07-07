@@ -22,7 +22,7 @@ public class Rank {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rank_seq")
-    @SequenceGenerator(name = "rank_seq", sequenceName = "seq_rank_id", allocationSize = 1)
+    @SequenceGenerator(name = "rank_seq", sequenceName = "rank_seq", allocationSize = 1)
     @Column(name = "rank_id", nullable = false, updatable = false)
     private Long id;
 

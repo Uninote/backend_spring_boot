@@ -13,8 +13,7 @@ import javax.persistence.Table;
 @Table(name = "prompt_evaluation_log")
 public class PromptEvaluationLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "prompt_evaluation_log_seq")
-    @javax.persistence.SequenceGenerator(name = "prompt_evaluation_log_seq", sequenceName = "prompt_evaluation_log_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
