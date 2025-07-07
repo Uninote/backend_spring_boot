@@ -2,10 +2,20 @@ package com.uninote.backend.entity;
 
 import java.util.List;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "questions", schema = "ADMIN")
+@Table(name = "questions" )
 public class Question {
 
     @Id
@@ -22,8 +32,7 @@ public class Question {
     @JoinColumn(name = "question_type_id")
     private QuestionType questionType;
 
-    @Lob
-    @Column(name = "question_text", nullable = false)
+    @Column(name = "question_text", nullable = false, columnDefinition = "text")
     private String questionText;
 
     @Column(name = "is_difficult", nullable = false)

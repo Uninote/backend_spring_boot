@@ -30,20 +30,16 @@ public class RAGEvaluationLog {
     @Column(name = "chat_type", length = 50)
     private String chatType;
 
-    @Lob
-    @Column(name = "question_text")
+    @Column(name = "question_text", columnDefinition = "text")
     private String questionText;
 
-    @Lob
-    @Column(name = "ai_response")
+    @Column(name = "ai_response", columnDefinition = "text")
     private String aiResponse;
 
-    @Lob
-    @Column(name = "retrieval_chunks")
+    @Column(name = "retrieval_chunks", columnDefinition = "text")
     private String retrievalChunks; // JSON string
 
-    @Lob
-    @Column(name = "evaluation_metrics")
+    @Column(name = "evaluation_metrics", columnDefinition = "text")
     private String evaluationMetrics; // JSON string
 
     @Column(name = "user_rating", precision = 1, scale = 0)
@@ -55,8 +51,7 @@ public class RAGEvaluationLog {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
-    @Lob
-    @Column(name = "additional_data")
+    @Column(name = "additional_data", columnDefinition = "text")
     private String additionalData; // JSON string for extensibility
 
     // Enhanced evaluation fields

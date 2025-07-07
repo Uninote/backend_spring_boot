@@ -13,8 +13,7 @@ public class PushSubscription {
     @Column(name = "USER_ID", nullable = false)
     private Long userId;
 
-    @Lob
-    @Column(name = "ENDPOINT", nullable = false)
+    @Column(name = "ENDPOINT", nullable = false, columnDefinition = "text")
     private String endpoint;
 
     @Column(name = "P256DH", nullable = false, length = 2048)

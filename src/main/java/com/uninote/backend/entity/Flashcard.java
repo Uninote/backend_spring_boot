@@ -1,9 +1,18 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "flashcards", schema = "ADMIN")
+@Table(name = "flashcards" )
 public class Flashcard {
 
     @Id
@@ -16,8 +25,7 @@ public class Flashcard {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Lob
-    @Column(name = "answer", nullable = false)
+    @Column(name = "answer", nullable = false, columnDefinition = "text")
     private String answer;
 
     public Flashcard(){}

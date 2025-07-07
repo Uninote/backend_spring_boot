@@ -1,10 +1,20 @@
 package com.uninote.backend.entity;
 
 import java.util.List;
-import javax.persistence.*;
+
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "USER_PROFILES", schema = "ADMIN")
+@Table(name = "USER_PROFILES" )
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

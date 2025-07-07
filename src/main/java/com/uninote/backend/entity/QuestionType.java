@@ -1,9 +1,15 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "question_types", schema = "ADMIN")
+@Table(name = "question_types")
 public class QuestionType {
 
     @Id

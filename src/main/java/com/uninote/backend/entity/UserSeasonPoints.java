@@ -1,5 +1,7 @@
 package com.uninote.backend.entity;
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
 
 @Entity
 public class UserSeasonPoints {
@@ -21,7 +23,7 @@ public class UserSeasonPoints {
     @Column
     private Integer ranking; 
 
-    @Column(nullable = false, columnDefinition = "integer default 0")
+    @Column(nullable = false)
     private boolean rewardsClaimed;
 
     public UserSeasonPoints() {}

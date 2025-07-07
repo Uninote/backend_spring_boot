@@ -12,7 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "questionnaire_acknowledgments", schema = "ADMIN")
+@Table(name = "questionnaire_acknowledgments" )
 public class QuestionnaireAcknowledgment {
 
     @Id
@@ -31,7 +31,7 @@ public class QuestionnaireAcknowledgment {
     @Column(name = "acknowledgment_type", nullable = false, length = 50)
     private String acknowledgmentType;
 
-    @Column(name = "acknowledgment_data", columnDefinition = "CLOB")
+    @Column(name = "acknowledgment_data", columnDefinition = "text")
     private String acknowledgmentData;
 
     @Column(name = "acknowledged_at", nullable = false)

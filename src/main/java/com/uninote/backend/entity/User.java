@@ -1,15 +1,31 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
-
-import org.hibernate.Hibernate;
-
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.Lob;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
+import org.hibernate.Hibernate;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 
 
 @Entity
@@ -17,14 +33,14 @@ import java.io.IOException;
     @UniqueConstraint(columnNames = "username"),
     @UniqueConstraint(columnNames = "email"),
     @UniqueConstraint(columnNames = "firebase_uid")
-}, schema = "ADMIN")
+})
 public class User {
 
     private static final String DEFAULT_PROFILE_URL = "https://firebasestorage.googleapis.com/v0/b/uninote-app.appspot.com/o/images%2Fdefault-images%2Fdefault-woman-pfp.png?alt=media&token=d148c633-ef3f-4161-bf97-413c74415c3d";
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(name = "user_seq", sequenceName = "seq_user_id", allocationSize = 1)
+    @SequenceGenerator(name = "user_seq", sequenceName = "user_seq", allocationSize = 1)
     @Column(name = "user_id", nullable = false, updatable = false)
     private Long id;
 
@@ -34,8 +50,7 @@ public class User {
     @Column(name = "season_score")
     private Long seasonScore;
 
-    @Lob
-    @Column(name = "bio", columnDefinition = "CLOB")
+    @Column(name = "bio", columnDefinition = "text")
     private String bio;
 
 
@@ -89,7 +104,7 @@ public class User {
     @Column(name = "instagram_username", nullable = true, length = 100)
     private String instagramUsername;
 
-    @Column(name = "certified", nullable = false, columnDefinition = "NUMBER(1) DEFAULT 0")
+    @Column(name = "certified", nullable = false)
     private Boolean certified = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -109,8 +124,7 @@ public class User {
     @Column(name = "stripe_customer_id", nullable = true)
     private String stripeCustomerId;
 
-    @Lob
-    @Column(name = "metadata", nullable=true)
+    @Column(name = "metadata", nullable=true, columnDefinition = "text")
     private String metadata;
 
     @PrePersist

@@ -1,11 +1,18 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
+import javax.persistence.Table;
+
 @Entity
-@Table(name = "COMMENT_LIKES", schema = "ADMIN")
+@Table(name = "COMMENT_LIKES" )
 public class CommentLike implements Serializable {
 
     @EmbeddedId

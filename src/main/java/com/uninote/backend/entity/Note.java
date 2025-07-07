@@ -1,19 +1,32 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import java.util.UUID;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notes", schema = "ADMIN")
+@Table(name = "notes" )
 public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_seq")
-    @SequenceGenerator(name = "note_seq", sequenceName = "seq_note_id", allocationSize = 1)
+    @SequenceGenerator(name = "note_seq", sequenceName = "note_seq", allocationSize = 1)
     @Column(name = "note_id", nullable = false, updatable = false)
     private Long id;
 
@@ -30,8 +43,7 @@ public class Note {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "pdf_url", nullable = false)
@@ -73,8 +85,7 @@ public class Note {
     @Column(name = "STATUS", nullable = false)
     private String status = "PENDING";
 
-    @Lob
-    @Column(name="content", nullable = true)
+    @Column(name="content", nullable = true, columnDefinition = "text")
     private String content;
 
     public Boolean getDeleted() {
@@ -85,7 +96,7 @@ public class Note {
         this.deleted = deleted;
     }
 
-    @Column()  
+    @Column(name = "filename")
     private String filename;
     
         

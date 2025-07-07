@@ -7,7 +7,7 @@ import com.uninote.backend.entity.QrView;
 
 public interface QrViewRepository extends JpaRepository<QrView, Long>{
 
-    @Query(value = "select count(*) from admin.qr_views", nativeQuery = true)
+    @Query(value = "select count(*) from qr_views", nativeQuery = true)
     Long countAll();
     
 }

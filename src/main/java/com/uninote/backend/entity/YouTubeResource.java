@@ -11,8 +11,7 @@ public class YouTubeResource extends Resource {
     @Column(name = "URL")
     private String youtubeUrl;
 
-    @Lob
-    @Column(name = "SNIPPETS")
+    @Column(name = "SNIPPETS", columnDefinition = "text")
     private String snippets;
 
 

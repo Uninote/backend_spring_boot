@@ -2,14 +2,23 @@ package com.uninote.backend.entity;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "note_views", schema = "ADMIN")
+@Table(name = "note_views" )
 public class NoteView {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_view_seq")
-    @SequenceGenerator(name = "note_view_seq", sequenceName = "seq_note_view_id", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_views_note_view_id_seq")
+    @SequenceGenerator(name = "note_views_note_view_id_seq", sequenceName = "note_views_note_view_id_seq", allocationSize = 1)
     @Column(name = "note_view_id")
     private Long id;
 

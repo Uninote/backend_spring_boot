@@ -31,7 +31,7 @@ public class PromptEvaluationLog {
     @Column(name = "request_id")
     private String requestId;
 
-    @Column(name = "additional_data", columnDefinition = "CLOB")
+    @Column(name = "additional_data", columnDefinition = "text")
     private String additionalData; // JSON for extensibility
 
     public PromptEvaluationLog() {

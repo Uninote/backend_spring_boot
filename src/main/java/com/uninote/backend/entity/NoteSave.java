@@ -1,15 +1,26 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
+import javax.persistence.PrePersist;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
 @Entity
-@Table(name = "note_saves", schema = "ADMIN")
+@Table(name = "note_saves" )
 public class NoteSave {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "save_seq")
-    @SequenceGenerator(name = "save_seq", sequenceName = "seq_note_save_id", allocationSize = 1)
+    @SequenceGenerator(name = "save_seq", sequenceName = "save_seq", allocationSize = 1)
     @Column(name = "save_id", nullable = false, updatable = false)
     private Long saveId;
 

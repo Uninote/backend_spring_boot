@@ -21,13 +21,13 @@ public interface UniversityRepository extends JpaRepository<University, Long> {
             "WHERE l.code = :language")
     List<UniversityDetailsProjection> findUniversityDetailsByLanguage(String language);
 
-    @Query(value = "SELECT DISTINCT u.university_id AS id, un.UNIVERSITY_FULL_NAME AS fullName, un.UNIVERSITY_NAME AS name " +
-                   "FROM admin.universities u " +
-                   "JOIN admin.departments d ON u.university_id = d.university_id " +
-                   "JOIN admin.courses c ON d.department_id = c.department_id " +
-                   "JOIN admin.questions q ON c.course_id = q.course_id " +
-                   "JOIN admin.university_names un ON u.university_id = un.university_id " +
-                   "JOIN admin.languages l ON un.language_id = l.language_id " +
+    @Query(value = "SELECT DISTINCT u.university_id AS id, un.university_full_name AS fullName, un.university_name AS name " +
+                   "FROM universities u " +
+                   "JOIN departments d ON u.university_id = d.university_id " +
+                   "JOIN courses c ON d.department_id = c.department_id " +
+                   "JOIN questions q ON c.course_id = q.course_id " +
+                   "JOIN university_names un ON u.university_id = un.university_id " +
+                   "JOIN languages l ON un.language_id = l.language_id " +
                    "WHERE l.language_code = :language " +
                    "AND q.question_id IS NOT NULL",
            nativeQuery = true)

@@ -3,15 +3,25 @@ package com.uninote.backend.entity;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 @Entity
-@Table(name = "courses", schema = "ADMIN")
+@Table(name = "courses" )
 public class Course {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "course_seq")
-    @SequenceGenerator(name = "course_seq", sequenceName = "seq_course_id", allocationSize = 1)
+    @SequenceGenerator(name = "course_seq", sequenceName = "course_seq", allocationSize = 1)
     @Column(name = "course_id", nullable = false, updatable = false)
     private Long id;
 

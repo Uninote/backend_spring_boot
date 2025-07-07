@@ -1,18 +1,28 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "ranks", uniqueConstraints = {
     @UniqueConstraint(columnNames = "rank_name")
-}, schema = "ADMIN")
+})
 public class Rank {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rank_seq")
-    @SequenceGenerator(name = "rank_seq", sequenceName = "seq_rank_id", allocationSize = 1)
+    @SequenceGenerator(name = "rank_seq", sequenceName = "rank_seq", allocationSize = 1)
     @Column(name = "rank_id", nullable = false, updatable = false)
     private Long id;
 

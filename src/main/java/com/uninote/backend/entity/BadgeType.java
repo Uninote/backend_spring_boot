@@ -1,10 +1,17 @@
 package com.uninote.backend.entity;
 
-import javax.persistence.*;
 import java.util.Set;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
 @Entity
-@Table(name = "badge_types", schema = "ADMIN")
+@Table(name = "badge_types" )
 public class BadgeType {
 
     @Id
