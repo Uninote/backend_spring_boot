@@ -16,19 +16,17 @@ public class ProcessedNote {
     @JoinColumn(name = "NOTE_ID", nullable = false)
     private Note note;
 
-    @Lob
-    @Column(name = "SUMMARY")
+    @Column(name = "SUMMARY", columnDefinition = "text")
     private String summary;
 
-    @Lob
-    @Column(name = "QUIZ_JSON")
+    @Column(name = "QUIZ_JSON", columnDefinition = "text")
     private String quizJson;
 
     @Column(name = "PROCESSED_TIME", nullable = false, updatable = false)
     private LocalDateTime processedTime = LocalDateTime.now();
 
 
-    @Column(name = "EXTRACTED_TEXT", columnDefinition = "CLOB")
+    @Column(name = "EXTRACTED_TEXT", columnDefinition = "text")
     private String text;
 
     public Long getProcessedNoteId() {

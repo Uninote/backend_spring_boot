@@ -23,7 +23,7 @@ public class Questionnaire {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "CLOB")
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "created_at")
@@ -36,12 +36,10 @@ public class Questionnaire {
     @Column(name = "status")
     private QuestionnaireStatus status;
 
-    @Lob
-    @Column(name = "questionnaire_json", columnDefinition = "TEXT")
+    @Column(name = "questionnaire_json", columnDefinition = "text")
     private String questionnaireJson; // Complete questionnaire JSON
 
-    @Lob
-    @Column(name = "criteria_query", columnDefinition = "TEXT")
+    @Column(name = "criteria_query", columnDefinition = "text")
     private String criteriaQuery; // SQL query for targeting users
 
     // Constructors

@@ -33,8 +33,7 @@ public class Space {
     @Column(name = "TITLE")
     private String title;
 
-    @Lob
-    @Column(name = "DESCRIPTION")
+    @Column(name = "DESCRIPTION", columnDefinition = "text")
     private String description;
 
     @Column(name = "CREATED_AT")

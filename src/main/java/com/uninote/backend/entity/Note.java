@@ -96,7 +96,7 @@ public class Note {
         this.deleted = deleted;
     }
 
-    @Column()  
+    @Column(name = "filename")
     private String filename;
     
         

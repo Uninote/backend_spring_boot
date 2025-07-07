@@ -24,8 +24,7 @@ public class PromptVariant {
 
     private String description;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String content;
 
     private boolean active = true;

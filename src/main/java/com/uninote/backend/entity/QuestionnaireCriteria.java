@@ -18,7 +18,7 @@ public class QuestionnaireCriteria {
     private String name;
     private String description;
 
-    @Lob
+    @javax.persistence.Column(columnDefinition = "text")
     private String expression;
 
     @ManyToOne(fetch = FetchType.LAZY)

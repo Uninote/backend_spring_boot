@@ -27,8 +27,7 @@ public class UserResponseAnalysis {
     @Column(name = "ANALYSIS_TYPE", nullable = false)
     private String analysisType;
 
-    @Lob
-    @Column(name = "ANALYSIS_RESULT", columnDefinition = "TEXT")
+    @Column(name = "ANALYSIS_RESULT", columnDefinition = "text")
     private String analysisResult;
 
     @Column(name = "CREATED_AT", nullable = false)

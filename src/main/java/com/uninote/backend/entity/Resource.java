@@ -27,33 +27,26 @@ public class Resource {
     @Column(name = "RESOURCE_ID")
     private Long id;
 
-    @Column(name = "TITLE")
-    @Lob
+    @Column(name = "TITLE", columnDefinition = "text")
     private String title;
 
-    @Column(name = "CONTENT")
+    @Column(name = "CONTENT", columnDefinition = "text")
     @Basic(fetch = FetchType.LAZY)
-    @Lob
     private String content;
 
-    @Column(name = "QUIZ")
-    @Lob
+    @Column(name = "QUIZ", columnDefinition = "text")
     private String quiz;
 
-    @Column(name = "FLASHCARDS")
-    @Lob
+    @Column(name = "FLASHCARDS", columnDefinition = "text")
     private String flashcards;
 
-    @Column(name = "SUMMARY")
-    @Lob
+    @Column(name = "SUMMARY", columnDefinition = "text")
     private String summary;
 
-    @Column(name = "CHAPTERS")
-    @Lob
+    @Column(name = "CHAPTERS", columnDefinition = "text")
     private String chapters;
 
-    @Column(name = "GENERATED_CONTENT")
-    @Lob
+    @Column(name = "GENERATED_CONTENT", columnDefinition = "text")
     private String generatedContent;
 
     @Column(name = "CREATED_AT")
