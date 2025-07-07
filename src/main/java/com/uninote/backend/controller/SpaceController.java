@@ -15,6 +15,7 @@ import com.uninote.backend.service.SpaceService;
 import com.uninote.backend.service.UsageLimitService;
 
 import java.nio.file.attribute.UserPrincipal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -119,13 +120,14 @@ public class SpaceController {
             var conversation = spaceService.getChatMessagesById(spaceChat.getId());
             var resources = spaceService.getSpaceResources(uuid);
 
-            return new ResponseEntity<>(Map.of(
-                    "conversation", conversation,
-                    "resources", resources,
-                    "title", space.getTitle(),
-                    "uuid", space.getUuid().toString(),
-                    "space_chat_uuid", spaceChat.getUuid().toString()
-            ), HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("conversation", conversation);
+            response.put("resources", resources);
+            response.put("title", space.getTitle());
+            response.put("uuid", space.getUuid() != null ? space.getUuid().toString() : null);
+            response.put("space_chat_uuid", spaceChat.getUuid() != null ? spaceChat.getUuid().toString() : null);
+            
+            return new ResponseEntity<>(response, HttpStatus.OK);
 
         } catch (Exception e) {
             e.printStackTrace();

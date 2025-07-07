@@ -28,7 +28,7 @@ public class QuestionnaireResponse {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "response_data", columnDefinition = "CLOB")
+    @Column(name = "response_data", columnDefinition = "text")
     private String responseData; // JSON string
 
     @Column(name = "unique_response_id", nullable = false, unique = true)
