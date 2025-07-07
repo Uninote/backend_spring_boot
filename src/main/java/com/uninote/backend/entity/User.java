@@ -50,8 +50,7 @@ public class User {
     @Column(name = "season_score")
     private Long seasonScore;
 
-    @Lob
-    @Column(name = "bio", columnDefinition = "TEXT")
+    @Column(name = "bio", columnDefinition = "text")
     private String bio;
 
 
@@ -125,8 +124,7 @@ public class User {
     @Column(name = "stripe_customer_id", nullable = true)
     private String stripeCustomerId;
 
-    @Lob
-    @Column(name = "metadata", nullable=true)
+    @Column(name = "metadata", nullable=true, columnDefinition = "text")
     private String metadata;
 
     @PrePersist

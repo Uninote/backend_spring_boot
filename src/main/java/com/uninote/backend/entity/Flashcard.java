@@ -25,8 +25,7 @@ public class Flashcard {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Lob
-    @Column(name = "answer", nullable = false)
+    @Column(name = "answer", nullable = false, columnDefinition = "text")
     private String answer;
 
     public Flashcard(){}

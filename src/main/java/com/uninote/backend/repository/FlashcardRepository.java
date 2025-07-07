@@ -23,14 +23,14 @@ public interface FlashcardRepository extends JpaRepository<Flashcard, Long> {
     @Query(value = "SELECT f.question_id AS id, " +
                "q.course_id AS courseId, " +
                "q.question_type_id AS questionTypeId, " +
-               "DBMS_LOB.SUBSTR(q.question_text, 4000, 1) AS questionText, " +  // Extract up to 4000 characters from question_text
+               "substring(q.question_text, 1, 4000) AS questionText, " +  // Extract up to 4000 characters from question_text
                "q.is_difficult AS isDifficultRaw, " +
-               "DBMS_LOB.SUBSTR(f.answer, 4000, 1) AS answer " +  // Extract up to 4000 characters from answer
-               "FROM admin.flashcards f " +
-               "JOIN admin.questions q ON f.question_id = q.question_id " +
+               "substring(f.answer, 1, 4000) AS answer " +  // Extract up to 4000 characters from answer
+               "FROM flashcards f " +
+               "JOIN questions q ON f.question_id = q.question_id " +
                "WHERE q.course_id = :courseId " +
-               "ORDER BY DBMS_RANDOM.VALUE " +
-               "FETCH FIRST :limit ROWS ONLY",
+               "ORDER BY RANDOM() " +
+               "LIMIT :limit",
        nativeQuery = true)
 List<FlashcardProjection> findRandomFlashcardsByCourseId(@Param("courseId") Long courseId, @Param("limit") int limit);
 

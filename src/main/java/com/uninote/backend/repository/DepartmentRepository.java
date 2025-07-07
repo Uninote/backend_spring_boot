@@ -18,7 +18,7 @@ import com.uninote.backend.interfaceProjection.DepartmentProjection;
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Optional<Department> findById(Long departmentId);
 
-    @Query(value = "SELECT c.department_id FROM admin.courses c where c.course_id = :courseId", nativeQuery = true)
+    @Query(value = "SELECT c.department_id FROM courses c where c.course_id = :courseId", nativeQuery = true)
     Long getDepartmentIdByCourseId(@Param("courseId") Long courseId);
 
     @Query("SELECT new com.uninote.backend.dto.DepartmentNameDTO(dn.id.departmentId, dn.name, l.code, dn.fullName) " +
@@ -41,22 +41,22 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
 
         @Query(value = "SELECT DISTINCT d.department_id AS id, dn.DEPARTMENT_FULL_NAME AS fullName, dn.DEPARTMENT_NAME AS name , d.NUMBER_OF_SEMESTERS AS semesters " +
-               "FROM admin.departments d " +
-               "JOIN admin.universities u ON d.university_id = u.university_id " +
-               "JOIN admin.courses c ON d.department_id = c.department_id " +
-               "JOIN admin.questions q ON c.course_id = q.course_id " +
-               "JOIN admin.department_names dn ON d.department_id = dn.department_id " +
-               "JOIN admin.languages l ON dn.language_id = l.language_id " +
+               "FROM departments d " +
+               "JOIN universities u ON d.university_id = u.university_id " +
+               "JOIN courses c ON d.department_id = c.department_id " +
+               "JOIN questions q ON c.course_id = q.course_id " +
+               "JOIN department_names dn ON d.department_id = dn.department_id " +
+               "JOIN languages l ON dn.language_id = l.language_id " +
                "WHERE l.language_code = :language " +
                "AND d.university_id = :universityId " +
                "AND q.question_id IS NOT NULL",
        nativeQuery = true)
     List<DepartmentProjection> findDepartmentsWithQuestionsByUniversityAndLanguage(@Param("universityId") Long universityId, @Param("language") String language);
 
-    @Query(value = "SELECT LISTAGG(DISTINCT c.semester, ',') WITHIN GROUP (ORDER BY c.semester) AS semesters " +
-                "FROM admin.departments d " +
-                "JOIN admin.courses c ON d.department_id = c.department_id " +
-                "JOIN admin.questions q ON c.course_id = q.course_id " +
+    @Query(value = "SELECT STRING_AGG(DISTINCT c.semester::text, ',' ORDER BY c.semester) AS semesters " +
+                "FROM departments d " +
+                "JOIN courses c ON d.department_id = c.department_id " +
+                "JOIN questions q ON c.course_id = q.course_id " +
                 "WHERE d.department_id = :departmentId " +
                 "AND q.question_id IS NOT NULL",
         nativeQuery = true)

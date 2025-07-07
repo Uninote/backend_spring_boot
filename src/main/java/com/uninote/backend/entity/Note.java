@@ -43,8 +43,7 @@ public class Note {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "pdf_url", nullable = false)
@@ -86,8 +85,7 @@ public class Note {
     @Column(name = "STATUS", nullable = false)
     private String status = "PENDING";
 
-    @Lob
-    @Column(name="content", nullable = true)
+    @Column(name="content", nullable = true, columnDefinition = "text")
     private String content;
 
     public Boolean getDeleted() {

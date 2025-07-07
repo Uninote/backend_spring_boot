@@ -29,8 +29,7 @@ public class Chat {
     @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
 
-    @Lob
-    @Column(name = "TITLE")
+    @Column(name = "TITLE", columnDefinition = "text")
     private String title;
 
     @Column(name = "UUID")

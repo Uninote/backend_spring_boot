@@ -17,16 +17,16 @@ public interface UserLoginRepository extends JpaRepository<UserLogin, Long> {
     List<Long> findUsersLoggedInConsecutively(LocalDateTime start, LocalDateTime end);
 
 
-    @Query(value = "SELECT ul.USER_ID, COUNT(DISTINCT TRUNC(ul.LOGIN_TIMESTAMP)) " +
-                   "FROM admin.USER_LOGINS ul " +
-                   "WHERE ul.LOGIN_TIMESTAMP BETWEEN :startDate AND :endDate " +
-                   "GROUP BY ul.USER_ID", 
+    @Query(value = "SELECT ul.user_id, COUNT(DISTINCT DATE_TRUNC('day', ul.login_timestamp)) " +
+                   "FROM user_logins ul " +
+                   "WHERE ul.login_timestamp BETWEEN :startDate AND :endDate " +
+                   "GROUP BY ul.user_id", 
            nativeQuery = true)
     List<Object[]> findUserDistinctLoginDaysBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
 
-    @Query(value = "SELECT TRUNC(LOGIN_TIMESTAMP) AS login_day, COUNT(DISTINCT USER_ID) AS distinct_logins " +
-                    "FROM admin.user_logins WHERE LOGIN_TIMESTAMP >= SYSDATE - 30 " +
-                    "GROUP BY TRUNC(LOGIN_TIMESTAMP) " +
+    @Query(value = "SELECT DATE_TRUNC('day', login_timestamp) AS login_day, COUNT(DISTINCT user_id) AS distinct_logins " +
+                    "FROM user_logins WHERE login_timestamp >= CURRENT_DATE - INTERVAL '30 days' " +
+                    "GROUP BY DATE_TRUNC('day', login_timestamp) " +
                     "ORDER BY login_day", nativeQuery = true)
     List<Object[]> findDistinctLoginsPerDay();
 

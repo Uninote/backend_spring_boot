@@ -27,8 +27,7 @@ public class Badge {
     @Column(name = "badge_name", nullable = false)
     private String name;
 
-    @Lob
-    @Column(name = "badge_description")
+    @Column(name = "badge_description", columnDefinition = "text")
     private String description;
 
     @Column(name = "image_url")

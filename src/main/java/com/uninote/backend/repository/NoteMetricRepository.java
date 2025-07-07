@@ -41,22 +41,22 @@ List<NoteMetricDTO> findNoteMetrics();
        "GROUP BY c.id, cn.name, c.semester ORDER BY c.semester")
 List<Object[]> getNotesCountAndUniqueCreatorsByDepartment(@Param("departmentId") Long departmentId);
 
-@Query(value =  "SELECT TRUNC(CREATED_AT) AS day, COUNT(*) AS count FROM admin.NOTE_VIEWS WHERE CREATED_AT >= SYSDATE - 30  GROUP BY TRUNC(CREATED_AT) ORDER BY day", nativeQuery = true)
+@Query(value =  "SELECT DATE_TRUNC('day', created_at) AS day, COUNT(*) AS count FROM note_views WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' GROUP BY DATE_TRUNC('day', created_at) ORDER BY day", nativeQuery = true)
     List<Object[]> countLast30daysNoteViews();
 
 
 
 
 
-    @Query(value = "SELECT TRUNC(day, 'IW') AS week_start, " +
+    @Query(value = "SELECT DATE_TRUNC('week', day) AS week_start, " +
                "AVG(daily_views) AS average_views " +
                "FROM ( " +
-               "    SELECT TRUNC(CREATED_AT) AS day, COUNT(NOTE_VIEW_ID) AS daily_views " +
-               "    FROM admin.note_views " +
-               "    WHERE CREATED_AT BETWEEN TO_TIMESTAMP(:fromDate, 'YYYY-MM-DD') AND TO_TIMESTAMP(:toDate, 'YYYY-MM-DD') " +
-               "    GROUP BY TRUNC(CREATED_AT) " +
+               "    SELECT DATE_TRUNC('day', created_at) AS day, COUNT(note_view_id) AS daily_views " +
+               "    FROM note_views " +
+               "    WHERE created_at BETWEEN :fromDate::timestamp AND :toDate::timestamp " +
+               "    GROUP BY DATE_TRUNC('day', created_at) " +
                ") temp " +
-               "GROUP BY TRUNC(day, 'IW') " +
+               "GROUP BY DATE_TRUNC('week', day) " +
                "ORDER BY week_start", nativeQuery = true)
     List<Map<String, Object>> findWeeklyAverageNoteViews(
         @Param("fromDate") String fromDate,

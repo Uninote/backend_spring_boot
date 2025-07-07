@@ -19,12 +19,10 @@ public class Message {
     @JoinColumn(name = "CHAT_ID")
     private Chat chat;
 
-    @Lob
-    @Column(name = "USER_MESSAGE")
+    @Column(name = "USER_MESSAGE", columnDefinition = "text")
     private String userMessage;
 
-    @Lob
-    @Column(name = "SERVICE_RESPONSE")
+    @Column(name = "SERVICE_RESPONSE", columnDefinition = "text")
     private String serviceResponse;
 
     @Column(name = "INPUT_TOKENS_USED")
@@ -36,12 +34,10 @@ public class Message {
     @Column(name = "CREATED_AT")
     private Timestamp createdAt;
 
-    @Lob
-    @Column(name = "RESOURCE_SOURCES")
+    @Column(name = "RESOURCE_SOURCES", columnDefinition = "text")
     private String resourceSources;
 
-    @Lob
-    @Column(name = "ANNOTATIONS")
+    @Column(name = "ANNOTATIONS", columnDefinition = "text")
     private String annotations;
 
     @Column(name = "RATING")

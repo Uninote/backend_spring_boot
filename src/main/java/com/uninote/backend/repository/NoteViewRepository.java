@@ -48,7 +48,7 @@ List<Object[]> findNotesWithMinAvgViewDuration(@Param("minAvgViewDuration") doub
     @Query("SELECT COUNT(v) FROM NoteView v WHERE v.userId = :userId AND v.noteId = :noteId")
     int countViewsByUserAndNote(@Param("userId") Long userId, @Param("noteId") Long noteId);
 
-    @Query("SELECT COUNT(DISTINCT v.note.id) FROM NoteView v WHERE v.user.id = :id AND TRUNC(v.createdAt) = TRUNC(SYSDATE)")
+    @Query("SELECT COUNT(DISTINCT v.note.id) FROM NoteView v WHERE v.user.id = :id AND DATE_TRUNC('day', v.createdAt) = DATE_TRUNC('day', CURRENT_DATE)")
     int countDistinctNoteIdsByUserViewedToday(@Param("id") Long id);
 
     

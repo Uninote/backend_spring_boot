@@ -32,8 +32,7 @@ public class Question {
     @JoinColumn(name = "question_type_id")
     private QuestionType questionType;
 
-    @Lob
-    @Column(name = "question_text", nullable = false)
+    @Column(name = "question_text", nullable = false, columnDefinition = "text")
     private String questionText;
 
     @Column(name = "is_difficult", nullable = false)

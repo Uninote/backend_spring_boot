@@ -17,11 +17,11 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByNote(Note note);
 
-    @Query(value = "SELECT c.comment_id AS commentId, c.note_id AS noteId, c.user_id AS userId, DBMS_LOB.SUBSTR(c.content, 4000, 1) AS content, c.created_at AS createdAt, " +
-               "(SELECT COUNT(*) FROM admin.comment_likes cl WHERE cl.comment_id = c.comment_id) AS totalLikes, " +
+    @Query(value = "SELECT c.comment_id AS commentId, c.note_id AS noteId, c.user_id AS userId, substring(c.content, 1, 4000) AS content, c.created_at AS createdAt, " +
+               "(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.comment_id) AS totalLikes, " +
                "u.profile_image_url AS profileImageUrl, u.username AS username " +
-               "FROM admin.comments c " +
-               "JOIN admin.users u ON c.user_id = u.user_id " +
+               "FROM comments c " +
+               "JOIN users u ON c.user_id = u.user_id " +
                "WHERE c.note_id = :noteId",
        nativeQuery = true)
     List<CommentProjection> findCommentProjectionsByNoteId(@Param("noteId") Long noteId);
@@ -30,7 +30,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("DELETE FROM Comment c WHERE c.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 
-    @Query(value = "SELECT comment_id FROM admin.comments WHERE user_id = :userId", nativeQuery =  true)
+    @Query(value = "SELECT comment_id FROM comments WHERE user_id = :userId", nativeQuery =  true)
     List<Long> findCommentIdsByUserId(@Param("userId") Long userId);
 
 
