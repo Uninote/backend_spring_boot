@@ -1,11 +1,24 @@
 package com.uninote.backend.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.transaction.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.uninote.backend.controller.BadgeWebSocketController;
 import com.uninote.backend.converter.DTOToEntityConverter;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.UserBadgeDTO;
-import com.uninote.backend.dto.UserHasBadgeDTO;
 import com.uninote.backend.entity.Badge;
 import com.uninote.backend.entity.BadgeNotification;
 import com.uninote.backend.entity.User;
@@ -20,22 +33,6 @@ import com.uninote.backend.repository.InviteRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.UserBadgeRepository;
 import com.uninote.backend.repository.UserRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.transaction.Transactional;
 
 @Service
 public class BadgeService {
@@ -260,11 +257,11 @@ public class BadgeService {
     public void checkSpecialBadgesForUser(Long userId, Long courseId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        if(noteRepository.existsByCourseId(courseId) == 0) {
+        if(!noteRepository.existsByCourseId(courseId)) {
             assignBadgeToUser(userId, PIONEER_BADGE_ID);
         }
         Long departmentId = departmentRepository.getDepartmentIdByCourseId(courseId);
-        if(noteRepository.existsByDepartmentId(departmentId) == 0) {
+        if(!noteRepository.existsByDepartmentId(departmentId)) {
             assignBadgeToUser(userId, EXPERT_PIONEER_BADGE_ID);
         }
         

@@ -1,24 +1,40 @@
 package com.uninote.backend.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.apache.commons.math3.linear.RealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.uninote.backend.converter.EntityToDTOConverter;
+import com.uninote.backend.config.ContentAccessPolicy;
+import com.uninote.backend.converter.Converters;
 import com.uninote.backend.dto.CourseNameDTO;
 import com.uninote.backend.dto.NoteDTO;
 import com.uninote.backend.dto.NoteSearchResponse;
-import com.uninote.backend.dto.NoteSearchResult;
 import com.uninote.backend.entity.Course;
 import com.uninote.backend.entity.CourseName;
 import com.uninote.backend.entity.Department;
 import com.uninote.backend.entity.DepartmentName;
 import com.uninote.backend.entity.Note;
-import com.uninote.backend.entity.NoteClick;
-import com.uninote.backend.entity.NoteLike;
-import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteType;
 import com.uninote.backend.entity.NoteTypeName;
-import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.Season;
 import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.UniscoreIncreaseType;
@@ -42,42 +58,6 @@ import com.uninote.backend.repository.UserCourseGradeRepository;
 import com.uninote.backend.repository.UserNoteHelpedRepository;
 import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.repository.UserSeasonPointsRepository;
-
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import com.uninote.backend.config.ContentAccessPolicy;
-import com.uninote.backend.converter.Converters;
-import com.uninote.backend.converter.Converters.*;
-
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
-
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
 public class NoteService {
@@ -415,7 +395,7 @@ public class NoteService {
         }
         if (noteDto.getIsPublic() != null) {
             Optional<Season> seasonOpt = seasonService.getCurrentSeason();
-            if(seasonOpt.isPresent() && note.getIsPublic() && !noteDto.getIsPublic()) {
+            if(seasonOpt.isPresent() && Boolean.TRUE.equals(note.getIsPublic()) && Boolean.FALSE.equals(noteDto.getIsPublic())) {
                 Season season = seasonOpt.get();
 
                 if (note.getCreatedAt().isAfter(season.getStartDate()) || note.getCreatedAt().isEqual(season.getStartDate())) {
@@ -430,7 +410,7 @@ public class NoteService {
                 }
             }
 
-            if(seasonOpt.isPresent() && !note.getIsPublic() && noteDto.getIsPublic()) {
+            if(seasonOpt.isPresent() && Boolean.FALSE.equals(note.getIsPublic()) && Boolean.TRUE.equals(noteDto.getIsPublic())) {
                 Season season = seasonOpt.get();
 
                 if (note.getCreatedAt().isAfter(season.getStartDate()) || note.getCreatedAt().isEqual(season.getStartDate())) {

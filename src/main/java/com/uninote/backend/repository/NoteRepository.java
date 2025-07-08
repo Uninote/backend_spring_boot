@@ -1,16 +1,9 @@
 package com.uninote.backend.repository;
 
-import com.uninote.backend.entity.Note;
-import com.uninote.backend.entity.NoteClick;
-import com.uninote.backend.entity.User;
-import com.uninote.backend.interfaceProjection.NoteProjection;
-import com.uninote.backend.dto.NoteDTO;
-import com.uninote.backend.dto.NoteSearchResult;
-import com.uninote.backend.entity.Course;
-import com.uninote.backend.entity.Department;
-import com.uninote.backend.entity.University;
-import com.uninote.backend.dto.CourseDTO;
-import com.uninote.backend.dto.CourseNameDTO;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,11 +13,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.uninote.backend.dto.CourseNameDTO;
+import com.uninote.backend.dto.NoteDTO;
+import com.uninote.backend.entity.Course;
+import com.uninote.backend.entity.Department;
+import com.uninote.backend.entity.Note;
+import com.uninote.backend.entity.University;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.interfaceProjection.NoteProjection;
 
 @Repository
 public interface NoteRepository extends JpaRepository<Note, Long> {
@@ -568,7 +564,7 @@ Page<Object[]> searchUserNotesWithEditDistance(@Param("keyword") String keyword,
                "(SELECT dn.department_name FROM department_names dn " +
                "JOIN languages l ON dn.language_id = l.language_id " +
                "WHERE dn.department_id = d.department_id AND l.language_code = 'EN') AS departmentName, " +
-               "n.like_count AS likes, u.username AS username, u.profile_image_url AS profileImageUrl, n.created_at AS createdAt " +
+               "n.like_count AS likes, u.username AS username, u.profileImageUrl AS profileImageUrl, n.created_at AS createdAt " +
                "FROM notes n " +
                "JOIN note_collection_items ci ON n.note_id = ci.note_id " +  
                "JOIN courses c ON n.course_id = c.course_id " +
@@ -732,7 +728,7 @@ Page<NoteDTO> findPublicNotesByType(Pageable pageable, @Param("typeId") Long typ
 
 
    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM notes WHERE course_id = :courseId", nativeQuery = true)
-   int existsByCourseId(@Param("courseId") Long courseId);
+   boolean existsByCourseId(@Param("courseId") Long courseId);
 
 
 
@@ -742,7 +738,7 @@ Page<NoteDTO> findPublicNotesByType(Pageable pageable, @Param("typeId") Long typ
    "JOIN departments d ON c.department_id = d.department_id " +
    "WHERE d.department_id = :departmentId", 
 nativeQuery = true)
-int existsByDepartmentId(@Param("departmentId") Long departmentId);
+boolean existsByDepartmentId(@Param("departmentId") Long departmentId);
 
 
 @Query("SELECT DISTINCT new com.uninote.backend.dto.CourseNameDTO(c.id, cn.name, 'EN') " +
