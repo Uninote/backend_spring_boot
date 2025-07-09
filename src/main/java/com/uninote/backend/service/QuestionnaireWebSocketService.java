@@ -1,5 +1,11 @@
 package com.uninote.backend.service;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.dto.QuestionnaireContentDTO;
 import com.uninote.backend.dto.QuestionnaireDTO;
@@ -7,18 +13,9 @@ import com.uninote.backend.entity.Questionnaire;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.QuestionnaireRepository;
 import com.uninote.backend.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class QuestionnaireWebSocketService {
-
-    private static final Logger logger = LoggerFactory.getLogger(QuestionnaireWebSocketService.class);
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -74,11 +71,7 @@ public class QuestionnaireWebSocketService {
             String destination = "/topic/questionnaires/" + userId;
             messagingTemplate.convertAndSend(destination, jsonPayload);
 
-            logger.info("Questionnaire {} sent to user {} at destination: {}", 
-                questionnaireId, userId, destination);
-
         } catch (Exception e) {
-            logger.error("Error sending questionnaire to user: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to send questionnaire", e);
         }
     }
@@ -99,11 +92,8 @@ public class QuestionnaireWebSocketService {
             String destination = "/topic/questionnaires/" + userId;
             messagingTemplate.convertAndSend(destination, notification);
 
-            logger.info("Completion notification sent to user {} for questionnaire {}", 
-                userId, questionnaireId);
-
         } catch (Exception e) {
-            logger.error("Error sending completion notification: {}", e.getMessage(), e);
+            // Silent error handling
         }
     }
 

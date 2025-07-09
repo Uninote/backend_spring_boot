@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.google.api.core.ApiFuture;
@@ -27,7 +25,6 @@ import com.uninote.backend.dto.QuestionnaireQuestionDTO;
 @Service
 public class FirebaseQuestionnaireService {
     
-    private static final Logger logger = LoggerFactory.getLogger(FirebaseQuestionnaireService.class);
     private static final String COLLECTION_NAME = "questionnaires";
     
     private final Firestore firestore;
@@ -56,12 +53,10 @@ public class FirebaseQuestionnaireService {
             
             // Wait for the write to complete
             WriteResult writeResult = result.get();
-            logger.info("Questionnaire content stored successfully with ID: {}", documentId);
             
             return documentId;
             
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error storing questionnaire content in Firebase", e);
             throw new RuntimeException("Failed to store questionnaire content", e);
         }
     }
@@ -79,12 +74,10 @@ public class FirebaseQuestionnaireService {
                 Map<String, Object> data = document.getData();
                 return convertMapToContent(data, documentId);
             } else {
-                logger.warn("Questionnaire document not found: {}", documentId);
                 return null;
             }
             
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error retrieving questionnaire content from Firebase", e);
             throw new RuntimeException("Failed to retrieve questionnaire content", e);
         }
     }
@@ -100,10 +93,8 @@ public class FirebaseQuestionnaireService {
             ApiFuture<WriteResult> result = docRef.set(documentData, SetOptions.merge());
             
             WriteResult writeResult = result.get();
-            logger.info("Questionnaire content updated successfully: {}", documentId);
             
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error updating questionnaire content in Firebase", e);
             throw new RuntimeException("Failed to update questionnaire content", e);
         }
     }
@@ -117,10 +108,8 @@ public class FirebaseQuestionnaireService {
             ApiFuture<WriteResult> result = docRef.delete();
             
             WriteResult writeResult = result.get();
-            logger.info("Questionnaire content deleted successfully: {}", documentId);
             
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error deleting questionnaire content from Firebase", e);
             throw new RuntimeException("Failed to delete questionnaire content", e);
         }
     }
@@ -142,7 +131,6 @@ public class FirebaseQuestionnaireService {
             return questionnaires;
             
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error retrieving all questionnaires from Firebase", e);
             throw new RuntimeException("Failed to retrieve questionnaires", e);
         }
     }

@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +18,6 @@ import com.uninote.backend.repository.UserRepository;
 
 @Service
 public class QuestionnaireAcknowledgmentService {
-
-    private static final Logger logger = LoggerFactory.getLogger(QuestionnaireAcknowledgmentService.class);
 
     @Autowired
     private QuestionnaireAcknowledgmentRepository acknowledgmentRepository;
@@ -40,9 +36,6 @@ public class QuestionnaireAcknowledgmentService {
     public QuestionnaireAcknowledgment storeAcknowledgment(Long questionnaireId, Long userId, 
                                                          String acknowledgmentType, Map<String, Object> additionalData) {
         try {
-            logger.debug("Storing acknowledgment for questionnaire {} and user {} with type: {}", 
-                questionnaireId, userId, acknowledgmentType);
-
             // Get questionnaire and user
             Questionnaire questionnaire = questionnaireRepository.findById(questionnaireId)
                 .orElseThrow(() -> new RuntimeException("Questionnaire not found: " + questionnaireId));
@@ -71,14 +64,10 @@ public class QuestionnaireAcknowledgmentService {
 
             // Save acknowledgment
             QuestionnaireAcknowledgment savedAcknowledgment = acknowledgmentRepository.save(acknowledgment);
-            
-            logger.info("✅ Acknowledgment stored successfully: ID={}, Type={}, User={}, Questionnaire={}", 
-                savedAcknowledgment.getId(), acknowledgmentType, userId, questionnaireId);
 
             return savedAcknowledgment;
 
         } catch (Exception e) {
-            logger.error("Error storing questionnaire acknowledgment", e);
             throw new RuntimeException("Failed to store acknowledgment", e);
         }
     }
@@ -222,7 +211,6 @@ public class QuestionnaireAcknowledgmentService {
      */
     public void deleteAcknowledgment(Long acknowledgmentId) {
         acknowledgmentRepository.deleteById(acknowledgmentId);
-        logger.info("Deleted acknowledgment with ID: {}", acknowledgmentId);
     }
 
     /**
@@ -231,8 +219,6 @@ public class QuestionnaireAcknowledgmentService {
     public void deleteUserQuestionnaireAcknowledgments(Long userId, Long questionnaireId) {
         List<QuestionnaireAcknowledgment> acknowledgments = getUserQuestionnaireAcknowledgments(userId, questionnaireId);
         acknowledgmentRepository.deleteAll(acknowledgments);
-        logger.info("Deleted {} acknowledgments for user {} and questionnaire {}", 
-            acknowledgments.size(), userId, questionnaireId);
     }
 
     /**
@@ -242,7 +228,6 @@ public class QuestionnaireAcknowledgmentService {
         try {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
-            logger.warn("Failed to convert acknowledgment data to JSON", e);
             return "{}";
         }
     }
@@ -259,7 +244,6 @@ public class QuestionnaireAcknowledgmentService {
             Map<String, Object> data = objectMapper.readValue(jsonData, Map.class);
             return data;
         } catch (Exception e) {
-            logger.warn("Failed to parse acknowledgment data JSON", e);
             return new java.util.HashMap<>();
         }
     }

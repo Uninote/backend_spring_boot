@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +22,6 @@ import com.uninote.backend.repository.UserRepository;
 
 @Service
 public class QuestionnaireService {
-    
-    private static final Logger logger = LoggerFactory.getLogger(QuestionnaireService.class);
     
     @Autowired
     private QuestionnaireRepository questionnaireRepository;
@@ -59,12 +55,9 @@ public class QuestionnaireService {
             // Save to database
             Questionnaire savedQuestionnaire = questionnaireRepository.save(questionnaire);
             
-            logger.info("Questionnaire created successfully with ID: {}", savedQuestionnaire.getId());
-            
             return convertToDTO(savedQuestionnaire);
             
         } catch (JsonProcessingException e) {
-            logger.error("Error converting to JSON", e);
             throw new RuntimeException("Failed to create questionnaire", e);
         }
     }
@@ -89,12 +82,9 @@ public class QuestionnaireService {
             // Save to database
             Questionnaire savedQuestionnaire = questionnaireRepository.save(questionnaire);
             
-            logger.info("Questionnaire created successfully with ID: {} (database-only storage)", savedQuestionnaire.getId());
-            
             return convertToDTO(savedQuestionnaire);
             
         } catch (Exception e) {
-            logger.error("Error creating questionnaire", e);
             throw new RuntimeException("Failed to create questionnaire", e);
         }
     }
@@ -124,7 +114,7 @@ public class QuestionnaireService {
                 try {
                     return objectMapper.readValue(questionnaire.getQuestionnaireJson(), QuestionnaireContentDTO.class);
                 } catch (JsonProcessingException e) {
-                    logger.warn("Could not parse questionnaire JSON from database for ID {}", questionnaireId);
+                    // Silent error handling
                 }
             }
         }
@@ -176,7 +166,6 @@ public class QuestionnaireService {
             Questionnaire questionnaire = questionnaireOpt.get();
             questionnaire.setQuestionnaireJson(questionnaireJson);
             questionnaireRepository.save(questionnaire);
-            logger.info("Updated questionnaire JSON for ID: {}", questionnaireId);
         }
     }
     
@@ -191,8 +180,6 @@ public class QuestionnaireService {
             
             // Delete from database
             questionnaireRepository.delete(questionnaire);
-            
-            logger.info("Questionnaire deleted successfully with ID: {}", id);
         }
     }
     
@@ -212,7 +199,6 @@ public class QuestionnaireService {
     public List<Long> getEligibleUsers(Long questionnaireId) {
         Optional<Questionnaire> questionnaireOpt = questionnaireRepository.findById(questionnaireId);
         if (questionnaireOpt.isEmpty()) {
-            logger.warn("Questionnaire not found: {}", questionnaireId);
             return new ArrayList<>();
         }
         
@@ -220,7 +206,6 @@ public class QuestionnaireService {
         String criteriaQuery = questionnaire.getCriteriaQuery();
         
         if (criteriaQuery == null || criteriaQuery.trim().isEmpty()) {
-            logger.warn("No criteria defined for questionnaire: {}", questionnaireId);
             return new ArrayList<>();
         }
         
@@ -229,7 +214,6 @@ public class QuestionnaireService {
             // This would need to be implemented in QuestionnaireCriteriaService
             return new ArrayList<>(); // Placeholder - implement based on your criteria logic
         } catch (Exception e) {
-            logger.error("Error getting eligible users for questionnaire {}: {}", questionnaireId, e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -253,7 +237,7 @@ public class QuestionnaireService {
                 Map<String, Object> questionnaireData = objectMapper.readValue(questionnaire.getQuestionnaireJson(), Map.class);
                 dto.setParameters(questionnaireData);
             } catch (JsonProcessingException e) {
-                logger.warn("Could not parse questionnaire JSON for questionnaire {}", questionnaire.getId());
+                // Silent error handling
             }
         }
         

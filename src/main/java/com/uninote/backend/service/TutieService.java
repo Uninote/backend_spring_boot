@@ -65,25 +65,7 @@ public class TutieService {
 
     private final ConcurrentHashMap<String, Long> sessionMap = new ConcurrentHashMap<>();
 
-    @PostConstruct    
-    public void initQueueOnStartup() {
-        
-        logger.info("here");
-        List<Note> pendingNotes = noteRepository.findByStatus("PENDING");
-        List<Note> failedNotes = noteRepository.findByStatus("FAILED");
-        failedNotes.addAll(noteRepository.findByStatus("PROCESSING"));
-
-        pendingNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
-        failedNotes.forEach(note -> noteProcessingQueue.add(note.getId()));
-        logger.info("sda");
-        if (!noteProcessingQueue.isEmpty()) {
-            logger.info("Found {} notes to process (PENDING: {}, FAILED: {}). Starting processing...",
-                    noteProcessingQueue.size(), pendingNotes.size(), failedNotes.size());
-            //processQueue();
-        } else {
-            logger.info("No notes found");
-        }
-    }
+    
 
 
 

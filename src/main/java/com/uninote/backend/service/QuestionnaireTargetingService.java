@@ -3,8 +3,6 @@ package com.uninote.backend.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -14,8 +12,6 @@ import com.uninote.backend.repository.QuestionnaireRepository;
 
 @Service
 public class QuestionnaireTargetingService {
-    
-    private static final Logger logger = LoggerFactory.getLogger(QuestionnaireTargetingService.class);
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -40,11 +36,9 @@ public class QuestionnaireTargetingService {
             
             // Execute the criteria query to get target user IDs
             List<Long> targetUserIds = jdbcTemplate.queryForList(criteriaQuery, Long.class);
-            logger.info("Found {} target users for questionnaire {}", targetUserIds.size(), questionnaireId);
             return targetUserIds;
             
         } catch (Exception e) {
-            logger.error("Error executing criteria query for questionnaire {}: {}", questionnaireId, e.getMessage());
             return List.of();
         }
     }
@@ -70,11 +64,9 @@ public class QuestionnaireTargetingService {
             Integer result = jdbcTemplate.queryForObject(processedQuery, Integer.class);
             boolean matches = result != null && result > 0;
             
-            logger.debug("User {} matches criteria for questionnaire {}: {}", userId, questionnaireId, matches);
             return matches;
             
         } catch (Exception e) {
-            logger.error("Error checking criteria for user {} and questionnaire {}: {}", userId, questionnaireId, e.getMessage());
             return false;
         }
     }
@@ -91,7 +83,6 @@ public class QuestionnaireTargetingService {
                     .collect(Collectors.toList());
                     
         } catch (Exception e) {
-            logger.error("Error getting eligible questionnaires for user {}: {}", userId, e.getMessage());
             return List.of();
         }
     }
@@ -112,7 +103,6 @@ public class QuestionnaireTargetingService {
             return result != null && result > 0;
             
         } catch (Exception e) {
-            logger.error("Error executing custom criteria query: {}", e.getMessage());
             return false;
         }
     }
