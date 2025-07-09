@@ -63,8 +63,9 @@ public class SubscriptionService {
         LocalDateTime end = calculateEndDate(start, plan, duration);
         logger.debug("Subscription period: start={}, end={}", start, end);
 
+        // Use date-based overlap checking to allow subscriptions to start on the same day another ends
         boolean overlapExists = subscriptionRepository
-                .existsByUserAndStartDateBeforeAndEndDateAfter(user, end, start);
+                .existsOverlappingByUserAndDateRange(user, start, end);
 
         if (overlapExists) {
             logger.warn("Overlapping subscription exists for user: {}", user.getEmail());
@@ -180,8 +181,10 @@ public class SubscriptionService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
         LocalDateTime start = LocalDateTime.now();
         LocalDateTime end = calculateEndDate(start, plan, SubscriptionDuration.THREE_DAYS);
+        
+        // Use date-based overlap checking to allow subscriptions to start on the same day another ends
         boolean overlapExists = subscriptionRepository
-                .existsByUserAndStartDateBeforeAndEndDateAfter(user, end, start);        
+                .existsOverlappingByUserAndDateRange(user, start, end);        
         if (overlapExists) {
             throw new IllegalStateException("User already has an active subscription.");
         }
