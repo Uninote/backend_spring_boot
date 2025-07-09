@@ -1274,35 +1274,97 @@ public class LangChainContentService {
 
     public void processEmbeddings(Resource resource) {
         logger.info("Starting embedding process for resource ID: {}", resource.getId());
+        
+        String content = resource.getContent();
+        int contentLength = content.length();
+        
+        // Use batch processing for very large documents to prevent OutOfMemoryError
+        if (contentLength > 100000) {
+            processEmbeddingsInBatches(resource);
+        } else {
+            processEmbeddingsNormal(resource);
+        }
+    }
     
+    /**
+     * Process embeddings in batches for very large documents
+     */
+    private void processEmbeddingsInBatches(Resource resource) {
+        logger.info("Using batch processing for large document ({} chars)", resource.getContent().length());
+        
+        final int[] chunkIndex = {0};
+        final int batchSize = 50;
+        
+        chunkingService.processLargeDocumentInBatches(resource.getContent(), batchSize, chunks -> {
+            List<PineconeVector> batchRecords = new ArrayList<>();
+            
+            for (String chunk : chunks) {
+                try {
+                    logger.info("Processing chunk index {}: {}...", chunkIndex[0], abbreviate(chunk, 100));
+                    
+                    float[] embedding = embeddingService.embed(chunk);
+                    logger.info("Generated embedding for chunk index {}", chunkIndex[0]);
+                    
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("resource_id", resource.getId());
+                    metadata.put("chunk_index", chunkIndex[0]);
+                    metadata.put("chunk_text", chunk);
+                    
+                    List<Float> embeddingList = toFloatList(embedding);
+                    PineconeVector vector = new PineconeVector(generateChunkId(resource.getId(), chunkIndex[0]), embeddingList, metadata);
+                    batchRecords.add(vector);
+                    
+                    chunkIndex[0]++;
+                } catch (Exception e) {
+                    logger.error("Failed to process embedding for chunk index {}: {}", chunkIndex[0], e.getMessage(), e);
+                    chunkIndex[0]++;
+                }
+            }
+            
+            // Process this batch
+            try {
+                embeddingService.upsertVectors(batchRecords);
+                logger.info("Successfully upserted batch of {} vectors for resource ID: {}", batchRecords.size(), resource.getId());
+            } catch (Exception e) {
+                logger.error("Failed to upsert batch vectors: {}", e.getMessage(), e);
+            }
+        });
+    }
+    
+    /**
+     * Normal embedding processing for smaller documents
+     */
+    private void processEmbeddingsNormal(Resource resource) {
+        logger.info("Using normal processing for document ({} chars)", resource.getContent().length());
+        
         List<String> chunks = chunkingService.splitIntoChunks(resource.getContent());
         logger.debug("Split content into {} chunks", chunks.size());
-    
+        
         List<PineconeVector> records = new ArrayList<>();
         int chunkIndex = 0;
-    
+        
         for (String chunk : chunks) {
             logger.info("Processing chunk index {}: {}...", chunkIndex, abbreviate(chunk, 100));
-    
+            
             try {
                 float[] embedding = embeddingService.embed(chunk);
                 logger.info("Generated embedding for chunk index {}", chunkIndex);
-    
+                
                 Map<String, Object> metadata = new HashMap<>();
                 metadata.put("resource_id", resource.getId());
                 metadata.put("chunk_index", chunkIndex);
                 metadata.put("chunk_text", chunk);
-    
+                
                 List<Float> embeddingList = toFloatList(embedding);
                 PineconeVector vector = new PineconeVector(generateChunkId(resource.getId(), chunkIndex), embeddingList, metadata);
                 records.add(vector);
             } catch (Exception e) {
                 logger.error("Failed to process embedding for chunk index {}: {}", chunkIndex, e.getMessage(), e);
             }
-    
+            
             chunkIndex++;
         }
-    
+        
         try {
             embeddingService.upsertVectors(records);
             logger.info("Successfully upserted {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -86,6 +87,12 @@ public class ChunkingService {
         List<String> chunks = new ArrayList<>();
         if (text == null || text.isEmpty()) return chunks;
         
+        // For large documents, use character array approach to prevent OutOfMemoryError
+        if (text.length() > 20000) {
+            return fixedSizeChunkingLarge(text, chunkSize, overlap);
+        }
+        
+        // For smaller documents, use the original approach
         int start = 0;
         while (start < text.length()) {
             int end = Math.min(start + chunkSize, text.length());
@@ -95,6 +102,72 @@ public class ChunkingService {
         }
         
         return chunks;
+    }
+    
+    /**
+     * Memory-efficient chunking for large documents using character arrays
+     */
+    private List<String> fixedSizeChunkingLarge(String text, int chunkSize, int overlap) {
+        List<String> chunks = new ArrayList<>();
+        char[] textArray = text.toCharArray();
+        int textLength = textArray.length;
+        
+        int start = 0;
+        while (start < textLength) {
+            int end = Math.min(start + chunkSize, textLength);
+            
+            // Create new character array for this chunk to avoid memory references
+            char[] chunkArray = new char[end - start];
+            System.arraycopy(textArray, start, chunkArray, 0, end - start);
+            
+            chunks.add(new String(chunkArray));
+            
+            // Clear the chunk array to help GC
+            chunkArray = null;
+            
+            start = end - overlap;
+            if (start < 0) start = 0;
+        }
+        
+        return chunks;
+    }
+    
+    /**
+     * Process large documents in batches to prevent memory issues
+     */
+    public void processLargeDocumentInBatches(String text, int batchSize, Consumer<List<String>> batchProcessor) {
+        if (text == null || text.isEmpty()) return;
+        
+        List<String> chunks = new ArrayList<>();
+        char[] textArray = text.toCharArray();
+        int textLength = textArray.length;
+        
+        int start = 0;
+        while (start < textLength) {
+            int end = Math.min(start + DEFAULT_CHUNK_SIZE, textLength);
+            
+            // Create new character array for this chunk
+            char[] chunkArray = new char[end - start];
+            System.arraycopy(textArray, start, chunkArray, 0, end - start);
+            
+            chunks.add(new String(chunkArray));
+            chunkArray = null;
+            
+            start = end - DEFAULT_CHUNK_OVERLAP;
+            if (start < 0) start = 0;
+            
+            // Process batch when it reaches the batch size
+            if (chunks.size() >= batchSize) {
+                batchProcessor.accept(new ArrayList<>(chunks));
+                chunks.clear();
+                System.gc(); // Force garbage collection
+            }
+        }
+        
+        // Process remaining chunks
+        if (!chunks.isEmpty()) {
+            batchProcessor.accept(chunks);
+        }
     }
     
     /**
