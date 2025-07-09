@@ -1,9 +1,0 @@
-# Exclude Oracle Wallet
-Wallet_UniNoteMain
-
-target/
-Wallet_UniNoteMain/
-
-
-uninote-app-firebase-adminsdk-ailcd-9bdfce261c.json
-.env
