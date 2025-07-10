@@ -77,6 +77,18 @@
         <appender-ref ref="FILE"/>
     </logger>
     
+    <!-- Embedding service logging - DISABLED -->
+    <logger name="com.uninote.backend.service.embedding" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- LangChain embedding logging - DISABLED -->
+    <logger name="dev.langchain4j.model.embedding" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
     <!-- WebSocket logging -->
     <logger name="org.springframework.web.socket" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
