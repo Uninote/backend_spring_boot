@@ -159,6 +159,11 @@
         <artifactId>bcpkix-jdk15on</artifactId>
         <version>1.70</version> <!-- Latest stable version -->
     </dependency>
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+    </dependency>
+
 
     
     <dependency>
