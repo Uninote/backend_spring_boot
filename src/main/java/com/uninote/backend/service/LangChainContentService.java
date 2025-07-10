@@ -1273,7 +1273,7 @@ public class LangChainContentService {
 
 
     public void processEmbeddings(Resource resource) {
-        logger.info("Starting embedding process for resource ID: {}", resource.getId());
+        logger.debug("Starting embedding process for resource ID: {}", resource.getId());
         
         String content = resource.getContent();
         int contentLength = content.length();
@@ -1324,7 +1324,7 @@ public class LangChainContentService {
             // Process this batch
             try {
                 embeddingService.upsertVectors(batchRecords);
-                logger.info("Successfully upserted batch of {} vectors for resource ID: {}", batchRecords.size(), resource.getId());
+                logger.debug("Successfully upserted batch of {} vectors for resource ID: {}", batchRecords.size(), resource.getId());
             } catch (Exception e) {
                 logger.error("Failed to upsert batch vectors: {}", e.getMessage(), e);
             }
@@ -1335,7 +1335,7 @@ public class LangChainContentService {
      * Normal embedding processing for smaller documents
      */
     private void processEmbeddingsNormal(Resource resource) {
-        logger.info("Using normal processing for document ({} chars)", resource.getContent().length());
+        logger.debug("Using normal processing for document ({} chars)", resource.getContent().length());
         
         List<String> chunks = chunkingService.splitIntoChunks(resource.getContent());
         logger.debug("Split content into {} chunks", chunks.size());
@@ -1344,11 +1344,11 @@ public class LangChainContentService {
         int chunkIndex = 0;
         
         for (String chunk : chunks) {
-            logger.info("Processing chunk index {}: {}...", chunkIndex, abbreviate(chunk, 100));
+            logger.debug("Processing chunk index {}: {}...", chunkIndex, abbreviate(chunk, 100));
             
             try {
                 float[] embedding = embeddingService.embed(chunk);
-                logger.info("Generated embedding for chunk index {}", chunkIndex);
+                logger.debug("Generated embedding for chunk index {}", chunkIndex);
                 
                 Map<String, Object> metadata = new HashMap<>();
                 metadata.put("resource_id", resource.getId());
@@ -1367,7 +1367,7 @@ public class LangChainContentService {
         
         try {
             embeddingService.upsertVectors(records);
-            logger.info("Successfully upserted {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());
+            logger.debug("Successfully upserted {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());
         } catch (Exception e) {
             logger.error("Failed to upsert vectors into Pinecone: {}", e.getMessage(), e);
         }

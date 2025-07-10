@@ -89,6 +89,12 @@
         <appender-ref ref="FILE"/>
     </logger>
     
+    <!-- Query performance logging -->
+    <logger name="QUERY_PERFORMANCE" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
     <!-- WebSocket logging -->
     <logger name="org.springframework.web.socket" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>

@@ -11,6 +11,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private LoggingInterceptor loggingInterceptor;
+    
+    @Autowired
+    private QueryExecutionTimeInterceptor queryExecutionTimeInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -27,5 +30,9 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(loggingInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns("/health", "/info", "/actuator/**");
+        
+        registry.addInterceptor(queryExecutionTimeInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/health", "/info", "/actuator/**", "/api/health/**");
     }
 }

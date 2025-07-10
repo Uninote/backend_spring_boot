@@ -1,16 +1,23 @@
 package com.uninote.backend.service.embedding;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.*;
 
 @Service
 public class EmbeddingService {
@@ -74,7 +81,7 @@ public class EmbeddingService {
             String url = pineconeIndexUrl + "/vectors/upsert";
 
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            System.out.println("Upsert response: " + response.getBody());
+            // Removed logging of Pinecone response to reduce noise
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to upsert vectors into Pinecone: " + e.getMessage(), e);
