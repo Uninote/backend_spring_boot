@@ -65,14 +65,14 @@
         <appender-ref ref="FILE"/>
     </logger>
     
-    <!-- Hibernate SQL logging -->
-    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+    <!-- Hibernate SQL logging - DISABLED -->
+    <logger name="org.hibernate.SQL" level="OFF" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </logger>
     
-    <!-- Hibernate parameter logging -->
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+    <!-- Hibernate parameter logging - DISABLED -->
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="OFF" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </logger>
