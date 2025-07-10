@@ -1,6 +1,16 @@
 package com.uninote.backend.controller;
 
-import com.uninote.backend.service.SpaceAgentService;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,15 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import com.uninote.backend.service.SpaceAgentService;
 
 @RestController
 @RequestMapping("/api/health")
@@ -31,6 +33,13 @@ public class HealthCheckController {
 
     @Autowired
     private SpaceAgentService spaceAgentService;
+
+    @GetMapping({"/", "/robots933456.txt"})
+    public ResponseEntity<String> azureWarmupProbe() {
+        logger.info("Azure warm-up probe received");
+        return ResponseEntity.ok("OK");
+    }
+
 
     /**
      * Comprehensive health check endpoint
