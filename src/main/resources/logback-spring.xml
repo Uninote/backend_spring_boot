@@ -113,8 +113,38 @@
         <appender-ref ref="FILE"/>
     </logger>
     
+    <!-- Jackson databind logging - DISABLED -->
+    <logger name="com.fasterxml.jackson.databind" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- Jackson core logging - DISABLED -->
+    <logger name="com.fasterxml.jackson.core" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
     <!-- Spring HTTP client logging - DISABLED -->
     <logger name="org.springframework.http" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- Spring Web client logging - DISABLED -->
+    <logger name="org.springframework.web.client" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- Spring Boot HTTP client logging - DISABLED -->
+    <logger name="org.springframework.boot.web.client" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- HTTP request/response body logging - DISABLED -->
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod" level="OFF" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </logger>
