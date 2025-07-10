@@ -1,5 +1,12 @@
 package com.uninote.backend.service;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.entity.Questionnaire;
 import com.uninote.backend.entity.QuestionnaireResponse;
@@ -7,12 +14,6 @@ import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.QuestionnaireRepository;
 import com.uninote.backend.repository.QuestionnaireResponseRepository;
 import com.uninote.backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class QuestionnaireResponseStorageService {
@@ -75,11 +76,7 @@ public class QuestionnaireResponseStorageService {
             
             QuestionnaireResponse savedResponse = questionnaireResponseRepository.save(dbResponse);
 
-            System.out.println("✅ Questionnaire response stored successfully:");
-            System.out.println("  Database ID: " + savedResponse.getId());
-            System.out.println("  Response ID: " + responseId);
-            System.out.println("  User: " + user.getId());
-            System.out.println("  Questionnaire: " + questionnaire.getName());
+                    // Removed System.out.println statements to reduce log noise
 
             return responseId;
 

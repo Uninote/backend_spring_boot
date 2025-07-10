@@ -89,6 +89,36 @@
         <appender-ref ref="FILE"/>
     </logger>
     
+    <!-- HTTP client logging - DISABLED to prevent embedding vector logging -->
+    <logger name="org.springframework.web.client.RestTemplate" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- Apache HTTP client logging - DISABLED -->
+    <logger name="org.apache.http" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- OkHttp logging - DISABLED -->
+    <logger name="okhttp3" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- Jackson ObjectMapper logging - DISABLED -->
+    <logger name="com.fasterxml.jackson" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <!-- Spring HTTP client logging - DISABLED -->
+    <logger name="org.springframework.http" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+    
     <!-- Query performance logging -->
     <logger name="QUERY_PERFORMANCE" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>

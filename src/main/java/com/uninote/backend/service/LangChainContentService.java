@@ -1303,7 +1303,7 @@ public class LangChainContentService {
                     logger.info("Processing chunk index {}: {}...", chunkIndex[0], abbreviate(chunk, 100));
                     
                     float[] embedding = embeddingService.embed(chunk);
-                    logger.info("Generated embedding for chunk index {}", chunkIndex[0]);
+                    logger.debug("Generated embedding for chunk index {}", chunkIndex[0]);
                     
                     Map<String, Object> metadata = new HashMap<>();
                     metadata.put("resource_id", resource.getId());

@@ -34,6 +34,9 @@ public class EmbeddingService {
 
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    // Custom ObjectMapper for logging that excludes vector values
+    private final ObjectMapper loggingObjectMapper = new ObjectMapper();
 
     @Value("${pinecone.api-key}")
     private String pineconeApiKey;
@@ -86,6 +89,26 @@ public class EmbeddingService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to upsert vectors into Pinecone: " + e.getMessage(), e);
         }
+    }
+    
+    /**
+     * Create a safe payload for logging (excludes vector values)
+     */
+    private Map<String, Object> createSafePayloadForLogging(List<PineconeVector> vectors, String namespace) {
+        Map<String, Object> safePayload = new HashMap<>();
+        List<Map<String, Object>> safeVectorList = new ArrayList<>();
+
+        for (PineconeVector vec : vectors) {
+            Map<String, Object> safeVectorData = new HashMap<>();
+            safeVectorData.put("id", vec.getId());
+            safeVectorData.put("values", "[VECTOR_DATA_HIDDEN]");
+            safeVectorData.put("metadata", vec.getMetadata());
+            safeVectorList.add(safeVectorData);
+        }
+
+        safePayload.put("vectors", safeVectorList);
+        safePayload.put("namespace", namespace != null ? namespace : DEFAULT_NAMESPACE);
+        return safePayload;
     }
 
     public JsonNode searchVector(float[] queryVector, Map<String, Object> filter, int topK) {

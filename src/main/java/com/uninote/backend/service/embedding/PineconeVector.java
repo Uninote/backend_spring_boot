@@ -40,4 +40,10 @@ public class PineconeVector {
     public void setMetadata(Map<String, Object> metadata) {
         this.metadata = metadata;
     }
+    
+    @Override
+    public String toString() {
+        return String.format("PineconeVector{id='%s', values=[%d dimensions], metadata=%s}", 
+                           id, values != null ? values.size() : 0, metadata);
+    }
 }
