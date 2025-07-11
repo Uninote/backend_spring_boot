@@ -102,20 +102,9 @@ public class QuestionnaireTriggerService {
 
         Questionnaire questionnaire = questionnaireOpt.get();
         
-        // Use pagination to avoid loading all users into memory
-        int page = 0;
-        int pageSize = 100; // Process 100 users at a time
-        boolean hasMoreUsers = true;
-        
-        while (hasMoreUsers) {
-            // Get users who haven't answered this questionnaire yet (paginated)
-            List<User> eligibleUsers = questionnaireResponseRepository
-                    .findUsersWhoHaventAnsweredQuestionnairePaginated(questionnaireId, page, pageSize);
-            
-            if (eligibleUsers.isEmpty()) {
-                hasMoreUsers = false;
-                break;
-            }
+        // Get all users who haven't answered this questionnaire yet
+        List<User> eligibleUsers = questionnaireResponseRepository
+                .findUsersWhoHaventAnsweredQuestionnaire(questionnaireId);
             
             // Get target user IDs from criteria query first (more efficient)
             Set<Long> targetUserIds = getTargetUserIdsFromCriteria(questionnaire);
@@ -153,19 +142,6 @@ public class QuestionnaireTriggerService {
 
             // Send questionnaire to active users in batches
             sendQuestionnaireInBatches(activeUsers, questionnaire, batchSize, delayMs);
-            
-            page++;
-            
-            // Add delay between pages to prevent overwhelming the system
-            if (hasMoreUsers && delayMs > 0) {
-                try {
-                    Thread.sleep(delayMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }
     }
 
     /**
