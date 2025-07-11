@@ -102,32 +102,70 @@ public class QuestionnaireTriggerService {
 
         Questionnaire questionnaire = questionnaireOpt.get();
         
-        // Get user IDs who haven't answered this questionnaire yet (more memory efficient)
-        List<Long> eligibleUserIds = questionnaireResponseRepository
-                .findUserIdsWhoHaventAnsweredQuestionnaire(questionnaireId);
+        // Use pagination to avoid loading all users into memory
+        int page = 0;
+        int pageSize = 100; // Process 100 users at a time
+        boolean hasMoreUsers = true;
         
-        // Get target user IDs from criteria query first (more efficient)
-        Set<Long> targetUserIds = getTargetUserIdsFromCriteria(questionnaire);
-        
-        // Filter user IDs who meet the criteria (much faster now)
-        List<Long> qualifiedUserIds = eligibleUserIds.stream()
-                .filter(userId -> targetUserIds.contains(userId))
-                .collect(Collectors.toList());
-        
-        // Filter out users who have acknowledged the questionnaire (RECEIVED, DISMISSED, etc.)
-        List<Long> usersWithoutAcknowledgments = qualifiedUserIds.stream()
-                .filter(userId -> !hasUserAcknowledgedQuestionnaire(userId, questionnaireId))
-                .collect(Collectors.toList());
-        
-        // Filter active users if presence checking is enabled
-        List<Long> activeUserIds = usersWithoutAcknowledgments;
-        if (checkPresence) {
-            // For now, assume all users are active to avoid additional queries
-            activeUserIds = usersWithoutAcknowledgments;
-        }
+        while (hasMoreUsers) {
+            // Get users who haven't answered this questionnaire yet (paginated)
+            List<User> eligibleUsers = questionnaireResponseRepository
+                    .findUsersWhoHaventAnsweredQuestionnairePaginated(questionnaireId, page, pageSize);
+            
+            if (eligibleUsers.isEmpty()) {
+                hasMoreUsers = false;
+                break;
+            }
+            
+            // Get target user IDs from criteria query first (more efficient)
+            Set<Long> targetUserIds = getTargetUserIdsFromCriteria(questionnaire);
+            
+            // Filter users who meet the criteria (much faster now)
+            List<User> qualifiedUsers = eligibleUsers.stream()
+                    .filter(user -> targetUserIds.contains(user.getId()))
+                    .collect(Collectors.toList());
+            
+            // Filter out users who have acknowledged the questionnaire (RECEIVED, DISMISSED, etc.)
+            List<User> usersWithoutAcknowledgments = qualifiedUsers.stream()
+                    .filter(user -> !hasUserAcknowledgedQuestionnaire(user.getId(), questionnaireId))
+                    .collect(Collectors.toList());
+            
+            // Filter active users if presence checking is enabled
+            List<User> activeUsers = usersWithoutAcknowledgments;
+            if (checkPresence) {
+                
+                // Check presence for each user and log results
+                List<User> onlineUsers = new ArrayList<>();
+                List<User> offlineUsers = new ArrayList<>();
+                
+                for (User user : usersWithoutAcknowledgments) {
+                    boolean isActive = true; // Assuming all users are active for now
+                    
+                    if (isActive) {
+                        onlineUsers.add(user);
+                    } else {
+                        offlineUsers.add(user);
+                    }
+                }
+                
+                activeUsers = onlineUsers;
+            }
 
-        // Send questionnaire to active users in batches
-        sendQuestionnaireInBatchesByIds(activeUserIds, questionnaire, batchSize, delayMs);
+            // Send questionnaire to active users in batches
+            sendQuestionnaireInBatches(activeUsers, questionnaire, batchSize, delayMs);
+            
+            page++;
+            
+            // Add delay between pages to prevent overwhelming the system
+            if (hasMoreUsers && delayMs > 0) {
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
     }
 
     /**

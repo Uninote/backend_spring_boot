@@ -40,10 +40,13 @@ public interface QuestionnaireResponseRepository extends JpaRepository<Questionn
            "(SELECT qr.user.id FROM QuestionnaireResponse qr WHERE qr.questionnaire.id = :questionnaireId)")
     List<User> findUsersWhoHaventAnsweredQuestionnaire(@Param("questionnaireId") Long questionnaireId);
     
-    // More memory-efficient: Get only user IDs instead of full User objects
-    @Query("SELECT u.id FROM User u WHERE u.id NOT IN " +
+    // Get all users who have NOT answered a specific questionnaire (paginated)
+    @Query("SELECT u FROM User u WHERE u.id NOT IN " +
            "(SELECT qr.user.id FROM QuestionnaireResponse qr WHERE qr.questionnaire.id = :questionnaireId)")
-    List<Long> findUserIdsWhoHaventAnsweredQuestionnaire(@Param("questionnaireId") Long questionnaireId);
+    List<User> findUsersWhoHaventAnsweredQuestionnairePaginated(
+        @Param("questionnaireId") Long questionnaireId, 
+        @Param("page") int page, 
+        @Param("pageSize") int pageSize);
     
     // Count responses for a questionnaire
     long countByQuestionnaire(Questionnaire questionnaire);

@@ -1,13 +1,17 @@
 package com.uninote.backend.config;
 
+import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
+import org.springframework.boot.actuate.trace.http.InMemoryHttpTraceRepository;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class HttpTraceActuatorConfiguration {
 
-    // Disabled HTTP tracing to prevent embedding vector logging
-    // @Bean
-    // public HttpTraceRepository httpTraceRepository() {
-    //     return new InMemoryHttpTraceRepository();
-    // }
+    @Bean
+    public HttpTraceRepository httpTraceRepository() {
+        InMemoryHttpTraceRepository repository = new InMemoryHttpTraceRepository();
+        repository.setCapacity(100); // Limit to 100 traces to prevent memory leaks
+        return repository;
+    }
 }
