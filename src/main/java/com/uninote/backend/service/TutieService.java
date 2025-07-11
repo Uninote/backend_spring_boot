@@ -46,6 +46,13 @@ public class TutieService {
     
     private final ConcurrentLinkedQueue<Long> noteProcessingQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentHashMap<String, Long> taskNoteMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> sessionMap = new ConcurrentHashMap<>();
+    
+    // Add size limits to prevent unbounded growth
+    private static final int MAX_QUEUE_SIZE = 1000;
+    private static final int MAX_TASK_MAP_SIZE = 500;
+    private static final int MAX_SESSION_MAP_SIZE = 1000;
+    private static final long SESSION_TIMEOUT_MS = 3600000; // 1 hour
 
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String API_BASE_URL = "https://uninote-tutie-95d7811add59.herokuapp.com/";
@@ -62,8 +69,6 @@ public class TutieService {
 
     @Autowired
     private TokenQuotaService tokenQuotaService;
-
-    private final ConcurrentHashMap<String, Long> sessionMap = new ConcurrentHashMap<>();
 
     
 
@@ -377,6 +382,12 @@ public class TutieService {
             return;
         }
 
+        // Check queue size limit
+        if (noteProcessingQueue.size() >= MAX_QUEUE_SIZE) {
+            logger.warn("Processing queue is full ({} items). Skipping note ID {}.", MAX_QUEUE_SIZE, noteId);
+            return;
+        }
+
         noteProcessingQueue.add(noteId);
 
         note.setStatus("PENDING");
@@ -389,6 +400,29 @@ public class TutieService {
         }
     }
 
+    /**
+     * Clean up old sessions and tasks to prevent memory leaks
+     */
+    @Scheduled(fixedRate = 300000) // Every 5 minutes
+    public void cleanupMemory() {
+        long currentTime = System.currentTimeMillis();
+        
+        // Clean up old sessions
+        sessionMap.entrySet().removeIf(entry -> 
+            currentTime - entry.getValue() > SESSION_TIMEOUT_MS);
+        
+        // Clean up old tasks (keep only recent ones)
+        if (taskNoteMap.size() > MAX_TASK_MAP_SIZE) {
+            int toRemove = taskNoteMap.size() - MAX_TASK_MAP_SIZE;
+            taskNoteMap.entrySet().stream()
+                .limit(toRemove)
+                .forEach(entry -> taskNoteMap.remove(entry.getKey()));
+        }
+        
+        logger.debug("Memory cleanup completed. Sessions: {}, Tasks: {}", 
+                    sessionMap.size(), taskNoteMap.size());
+    }
+    
     
     private NoteProcessingResult fetchSummaryAndQuizzes(Long noteId) {
         String path = String.format("%s","/process");
