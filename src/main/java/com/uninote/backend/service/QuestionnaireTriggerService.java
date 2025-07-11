@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -103,46 +102,32 @@ public class QuestionnaireTriggerService {
 
         Questionnaire questionnaire = questionnaireOpt.get();
         
-        // Get all users who haven't answered this questionnaire yet
-        List<User> eligibleUsers = questionnaireResponseRepository
-                .findUsersWhoHaventAnsweredQuestionnaire(questionnaireId);
+        // Get user IDs who haven't answered this questionnaire yet (more memory efficient)
+        List<Long> eligibleUserIds = questionnaireResponseRepository
+                .findUserIdsWhoHaventAnsweredQuestionnaire(questionnaireId);
         
         // Get target user IDs from criteria query first (more efficient)
         Set<Long> targetUserIds = getTargetUserIdsFromCriteria(questionnaire);
         
-        // Filter users who meet the criteria (much faster now)
-        List<User> qualifiedUsers = eligibleUsers.stream()
-                .filter(user -> targetUserIds.contains(user.getId()))
+        // Filter user IDs who meet the criteria (much faster now)
+        List<Long> qualifiedUserIds = eligibleUserIds.stream()
+                .filter(userId -> targetUserIds.contains(userId))
                 .collect(Collectors.toList());
         
         // Filter out users who have acknowledged the questionnaire (RECEIVED, DISMISSED, etc.)
-        List<User> usersWithoutAcknowledgments = qualifiedUsers.stream()
-                .filter(user -> !hasUserAcknowledgedQuestionnaire(user.getId(), questionnaireId))
+        List<Long> usersWithoutAcknowledgments = qualifiedUserIds.stream()
+                .filter(userId -> !hasUserAcknowledgedQuestionnaire(userId, questionnaireId))
                 .collect(Collectors.toList());
         
         // Filter active users if presence checking is enabled
-        List<User> activeUsers = usersWithoutAcknowledgments;
+        List<Long> activeUserIds = usersWithoutAcknowledgments;
         if (checkPresence) {
-            
-            // Check presence for each user and log results
-            List<User> onlineUsers = new ArrayList<>();
-            List<User> offlineUsers = new ArrayList<>();
-            
-            for (User user : usersWithoutAcknowledgments) {
-                boolean isActive = true; // Assuming all users are active for now
-                
-                if (isActive) {
-                    onlineUsers.add(user);
-                } else {
-                    offlineUsers.add(user);
-                }
-            }
-            
-            activeUsers = onlineUsers;
+            // For now, assume all users are active to avoid additional queries
+            activeUserIds = usersWithoutAcknowledgments;
         }
 
         // Send questionnaire to active users in batches
-        sendQuestionnaireInBatches(activeUsers, questionnaire, batchSize, delayMs);
+        sendQuestionnaireInBatchesByIds(activeUserIds, questionnaire, batchSize, delayMs);
     }
 
     /**
@@ -166,6 +151,44 @@ public class QuestionnaireTriggerService {
                     QuestionnaireContentDTO contentDTO = getQuestionnaireContent(questionnaire);
                     
                     questionnaireWebSocketController.sendQuestionnaireToUser(user.getId().toString(), questionnaireDTO, contentDTO);
+                } catch (Exception e) {
+                    // Silent error handling
+                }
+            }
+            
+            // Add delay between batches (except for the last batch)
+            if (i < batches - 1 && delayMs > 0) {
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Send questionnaire to users by IDs in batches with delay (more memory efficient)
+     */
+    private void sendQuestionnaireInBatchesByIds(List<Long> userIds, Questionnaire questionnaire, int batchSize, long delayMs) {
+        int totalUsers = userIds.size();
+        int batches = (int) Math.ceil((double) totalUsers / batchSize);
+        
+        for (int i = 0; i < batches; i++) {
+            int startIndex = i * batchSize;
+            int endIndex = Math.min(startIndex + batchSize, totalUsers);
+            
+            List<Long> batch = userIds.subList(startIndex, endIndex);
+            
+            // Send to current batch
+            for (Long userId : batch) {
+                try {
+                    // Convert Questionnaire entity to DTOs
+                    QuestionnaireDTO questionnaireDTO = convertToDTO(questionnaire);
+                    QuestionnaireContentDTO contentDTO = getQuestionnaireContent(questionnaire);
+                    
+                    questionnaireWebSocketController.sendQuestionnaireToUser(userId.toString(), questionnaireDTO, contentDTO);
                 } catch (Exception e) {
                     // Silent error handling
                 }
@@ -502,9 +525,10 @@ public class QuestionnaireTriggerService {
 
     /**
      * Check for eligible questionnaires and send them to users
+     * DISABLED: This was causing memory issues due to frequent execution
      * Runs every 30 seconds for testing
      */
-    @Scheduled(fixedRate = 30000)
+    // @Scheduled(fixedRate = 30000)
     public void checkAndSendQuestionnaires() {
         
         try {

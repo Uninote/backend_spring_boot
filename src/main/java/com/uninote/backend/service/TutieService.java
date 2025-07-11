@@ -506,7 +506,7 @@ public class TutieService {
     }
 
 
-    @Scheduled(fixedRate = 3000) // Run every 30 seconds
+    @Scheduled(fixedRate = 300000) // Changed from 3 seconds to 5 minutes
     public void checkPendingTaskStatuses() {
         //logger.info("Checking status for pending tasks...");
 
