@@ -134,9 +134,9 @@ public class LangChainContentService {
         logger.info("Document size: {} characters", contentLength);
         
         try {
-            if (contentLength > 100000) {
-                logger.info("Using map-reduce approach for very large document");
-                Resource result = processVeryLargeDocument(resource);
+            if (contentLength > 50000) { // Reduced threshold for memory safety
+                logger.info("Using sequential processing for large document to prevent memory issues");
+                Resource result = processLargeDocumentSequential(resource);
                 
                 long endTime = System.currentTimeMillis();
                 logger.info("Content generation completed in {} ms", (endTime - startTime));
@@ -204,6 +204,82 @@ public class LangChainContentService {
             logger.info("Content generation failed after {} ms, switching to fallback", (endTime - startTime));
 
             return generateAllContentFallback(resourceId);
+        }
+    }
+    
+    /**
+     * Process large documents sequentially to prevent memory issues
+     */
+    private Resource processLargeDocumentSequential(Resource resource) {
+        logger.info("Processing large document sequentially to prevent memory issues");
+        
+        String content = handleLargeContent(resource.getContent(), 4000);
+        ChatLanguageModel chatModel = getChatModel();
+        
+        try {
+            // Generate content sequentially instead of in parallel
+            logger.info("Generating summary sequentially...");
+            SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            String summary = summaryGenerator.generateSummary(prepareSummaryPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            resource.setSummary(summary);
+            resourceRepository.save(resource);
+            logger.info("Summary generated and saved");
+            
+            // Force GC after each generation
+            System.gc();
+            Thread.sleep(1000);
+            
+            logger.info("Generating flashcards sequentially...");
+            FlashcardGenerator flashcardGenerator = AiServices.builder(FlashcardGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            String flashcardsJson = flashcardGenerator.generateFlashcards(prepareFlashcardsPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            String flashcards = validateAndCleanJson(flashcardsJson, "flashcards");
+            resource.setFlashcards(flashcards);
+            resourceRepository.save(resource);
+            logger.info("Flashcards generated and saved");
+            
+            // Force GC after each generation
+            System.gc();
+            Thread.sleep(1000);
+            
+            logger.info("Generating quiz sequentially...");
+            QuizGenerator quizGenerator = AiServices.builder(QuizGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            String quizJson = quizGenerator.generateQuiz(prepareQuizPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            String quiz = validateAndCleanJson(quizJson, "quiz");
+            resource.setQuiz(quiz);
+            resourceRepository.save(resource);
+            logger.info("Quiz generated and saved");
+            
+            // Force GC after each generation
+            System.gc();
+            Thread.sleep(1000);
+            
+            logger.info("Generating chapters sequentially...");
+            ChapterGenerator chapterGenerator = AiServices.builder(ChapterGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            String chaptersJson = chapterGenerator.generateChapters(prepareChaptersPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            String chapters = validateAndCleanJson(chaptersJson, "chapters");
+            resource.setChapters(chapters);
+            resourceRepository.save(resource);
+            logger.info("Chapters generated and saved");
+            
+            // Final GC
+            System.gc();
+            
+            // Process embeddings with ultra-efficiency
+            processEmbeddingsUltraEfficient(resource);
+            
+            return resourceRepository.save(resource);
+            
+        } catch (Exception e) {
+            logger.error("Error in sequential content generation: {}", e.getMessage(), e);
+            throw new RuntimeException("Sequential content generation failed", e);
         }
     }
 
@@ -1516,6 +1592,21 @@ public class LangChainContentService {
         String content = resource.getContent();
         int contentLength = content.length();
         logger.info("Document size: {} characters", contentLength);
+        
+        // Check memory before starting parallel processing
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        double memoryUsage = (double) usedMemory / totalMemory;
+        
+        logger.info("Memory usage before parallel processing: {:.2f}% ({} MB used / {} MB total)", 
+                   String.format("%.2f", memoryUsage * 100), usedMemory / (1024 * 1024), totalMemory / (1024 * 1024));
+        
+        // Switch to sequential if memory usage is high
+        if (memoryUsage > 0.75) {
+            logger.warn("High memory usage detected ({:.2f}%), switching to sequential processing", String.format("%.2f", memoryUsage * 100));
+            return processLargeDocumentSequential(resource);
+        }
         
         // Handle large files with appropriate strategy
         final String processedContent;

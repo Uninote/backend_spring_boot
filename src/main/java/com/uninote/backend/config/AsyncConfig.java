@@ -16,22 +16,22 @@ public class AsyncConfig {
     @Bean(name = "contentGenerationExecutor")
     public Executor contentGenerationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4); // Reduced from 8 to prevent memory overload
-        executor.setMaxPoolSize(8); // Reduced from 16 to prevent memory overload
-        executor.setQueueCapacity(50); // Reduced from 100 to prevent memory buildup
+        executor.setCorePoolSize(2); // Further reduced to prevent memory overload
+        executor.setMaxPoolSize(4); // Further reduced to prevent memory overload
+        executor.setQueueCapacity(20); // Further reduced to prevent memory buildup
         executor.setThreadNamePrefix("ContentGen-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
         
-        // Add memory-aware rejection handler
+        // Add aggressive memory-aware rejection handler
         executor.setRejectedExecutionHandler(new RejectedExecutionHandler() {
             @Override
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                // Log rejection and force GC before retrying
+                // Force aggressive GC and wait longer
                 System.gc();
                 try {
-                    // Wait a bit and try again
-                    Thread.sleep(1000);
+                    // Wait longer and try again
+                    Thread.sleep(3000);
                     executor.execute(r);
                 } catch (Exception e) {
                     throw new RuntimeException("Task execution rejected after retry", e);
@@ -46,9 +46,9 @@ public class AsyncConfig {
     @Bean(name = "generalAsyncExecutor")
     public Executor generalAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(4);
-        executor.setQueueCapacity(25); // Reduced from 50
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(10); // Further reduced
         executor.setThreadNamePrefix("Async-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
@@ -59,7 +59,7 @@ public class AsyncConfig {
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 System.gc();
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(2000); // Longer wait
                     executor.execute(r);
                 } catch (Exception e) {
                     throw new RuntimeException("Task execution rejected after retry", e);
@@ -74,20 +74,20 @@ public class AsyncConfig {
     @Bean(name = "embeddingExecutor")
     public Executor embeddingExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2); // Small pool for memory-intensive embedding tasks
-        executor.setMaxPoolSize(4);
-        executor.setQueueCapacity(20);
+        executor.setCorePoolSize(1); // Single thread for memory-intensive embedding tasks
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(5); // Very small queue
         executor.setThreadNamePrefix("Embedding-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(120); // Longer timeout for embedding tasks
         
-        // Add memory-aware rejection handler
+        // Add aggressive memory-aware rejection handler
         executor.setRejectedExecutionHandler(new RejectedExecutionHandler() {
             @Override
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 System.gc();
                 try {
-                    Thread.sleep(2000); // Longer wait for embedding tasks
+                    Thread.sleep(5000); // Much longer wait for embedding tasks
                     executor.execute(r);
                 } catch (Exception e) {
                     throw new RuntimeException("Embedding task execution rejected after retry", e);
