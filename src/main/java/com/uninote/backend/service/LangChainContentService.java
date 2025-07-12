@@ -9,6 +9,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -59,6 +62,18 @@ public class LangChainContentService {
     @Autowired
     @Qualifier("contentGenerationExecutor")
     private Executor contentGenerationExecutor;
+    
+    // Memory optimization constants
+    private static final int MEMORY_CHECK_INTERVAL = 10; // Check memory every N chunks
+    private static final double MEMORY_THRESHOLD = 0.85; // 85% memory usage threshold
+    private static final int ULTRA_SMALL_BATCH_SIZE = 3; // Ultra-small batch for memory-constrained environments
+    private static final int MICRO_BATCH_SIZE = 1; // Process one chunk at a time
+    private static final long GC_INTERVAL_MS = 5000; // Force GC every 5 seconds during heavy processing
+    
+    // Memory monitoring
+    private final AtomicLong lastGCTime = new AtomicLong(0);
+    private final AtomicInteger processedChunks = new AtomicInteger(0);
+    private final Runtime runtime = Runtime.getRuntime();
     
     // All-in-one content generator
     @SystemMessage("You are an AI assistant that generates educational content in JSON format.")
@@ -1435,12 +1450,12 @@ public class LangChainContentService {
         
         // Process remaining records
         if (!records.isEmpty()) {
-            try {
-                embeddingService.upsertVectors(records);
+        try {
+            embeddingService.upsertVectors(records);
                 logger.debug("Successfully upserted final {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());
-            } catch (Exception e) {
+        } catch (Exception e) {
                 logger.error("Failed to upsert final vectors into Pinecone: {}", e.getMessage(), e);
-            }
+        }
         }
         
         // Final cleanup
@@ -2154,7 +2169,371 @@ public class LangChainContentService {
         return finalSummary;
     }
 
-
+    // ==================== ADVANCED MEMORY OPTIMIZATION METHODS ====================
     
+    /**
+     * Check current memory usage and trigger GC if needed
+     */
+    private void checkMemoryAndGC() {
+        long currentTime = System.currentTimeMillis();
+        long lastGC = lastGCTime.get();
+        
+        // Check if enough time has passed since last GC
+        if (currentTime - lastGC < GC_INTERVAL_MS) {
+            return;
+        }
+        
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        double memoryUsage = (double) usedMemory / totalMemory;
+        
+        logger.debug("Memory usage: {:.2f}% ({} MB used / {} MB total)", 
+                    String.format("%.2f", memoryUsage * 100), usedMemory / (1024 * 1024), totalMemory / (1024 * 1024));
+        
+        if (memoryUsage > MEMORY_THRESHOLD) {
+            logger.info("High memory usage detected ({}%), triggering garbage collection", String.format("%.2f", memoryUsage * 100));
+            System.gc();
+            lastGCTime.set(currentTime);
+            
+            // Wait a bit for GC to complete
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+    
+    /**
+     * Ultra-efficient streaming chunking that processes one chunk at a time
+     */
+    private void processChunksWithStreaming(String content, Consumer<String> chunkProcessor) {
+        int chunkSize = 800; // Optimal chunk size for memory efficiency
+        int overlap = 100;
+        int contentLength = content.length();
+        int chunkIndex = 0;
+        
+        logger.info("Starting streaming chunk processing for {} characters", contentLength);
+        
+        for (int i = 0; i < contentLength; i += chunkSize - overlap) {
+            int endIndex = Math.min(i + chunkSize, contentLength);
+            String chunk = content.substring(i, endIndex);
+            
+            // Process the chunk
+            chunkProcessor.accept(chunk);
+            
+            chunkIndex++;
+            processedChunks.incrementAndGet();
+            
+            // Check memory every N chunks
+            if (chunkIndex % MEMORY_CHECK_INTERVAL == 0) {
+                checkMemoryAndGC();
+            }
+            
+            // Clear the chunk reference immediately
+            chunk = null;
+        }
+        
+        logger.info("Completed streaming chunk processing: {} chunks processed", chunkIndex);
+    }
+    
+    /**
+     * Ultra-efficient embedding processing with micro-batching
+     */
+    public void processEmbeddingsUltraEfficient(Resource resource) {
+        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+            logger.warn("Resource content is empty, skipping embedding processing");
+            return;
+        }
+        
+        logger.info("Starting ultra-efficient embedding processing for resource: {}", resource.getId());
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            // Use streaming chunking with immediate processing
+            AtomicInteger chunkCount = new AtomicInteger(0);
+            AtomicInteger embeddingCount = new AtomicInteger(0);
+            
+            processChunksWithStreaming(resource.getContent(), chunk -> {
+                try {
+                    // Generate embedding for this single chunk
+                    float[] embedding = embeddingService.embed(chunk);
+                    
+                    // Create vector and upload immediately
+                    PineconeVector vector = new PineconeVector();
+                    vector.setId(generateChunkId(resource.getId(), chunkCount.get()));
+                    vector.setValues(toFloatList(embedding));
+                    vector.setMetadata(Map.of(
+                        "resourceId", resource.getId().toString(),
+                        "chunkIndex", String.valueOf(chunkCount.get()),
+                        "content", chunk.substring(0, Math.min(chunk.length(), 100)) + "..."
+                    ));
+                    
+                    // Upload to Pinecone immediately
+                    List<PineconeVector> vectors = List.of(vector);
+                    embeddingService.upsertVectors(vectors);
+                    embeddingCount.incrementAndGet();
+                    
+                    // Clear references immediately
+                    embedding = null;
+                    vector = null;
+                    vectors = null;
+                    
+                    logger.debug("Processed chunk {}: {} characters -> embedding uploaded", 
+                                chunkCount.get(), chunk.length());
+                    
+                } catch (Exception e) {
+                    logger.error("Error processing chunk {}: {}", chunkCount.get(), e.getMessage());
+                }
+                
+                chunkCount.incrementAndGet();
+            });
+            
+            long endTime = System.currentTimeMillis();
+            logger.info("Ultra-efficient embedding processing completed: {} chunks, {} embeddings in {} ms", 
+                       chunkCount.get(), embeddingCount.get(), (endTime - startTime));
+            
+        } catch (Exception e) {
+            logger.error("Error in ultra-efficient embedding processing: {}", e.getMessage(), e);
+            throw new RuntimeException("Embedding processing failed", e);
+        }
+    }
+    
+    /**
+     * Memory-aware content generation with automatic scaling
+     */
+    public Resource generateAllContentMemoryOptimized(Long resourceId) {
+        long startTime = System.currentTimeMillis();
+        logger.info("Starting memory-optimized content generation for resource: {}", resourceId);
+        
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
+        
+        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+            throw new IllegalStateException("Resource content is empty. Extract content first.");
+        }
+        
+        int contentLength = resource.getContent().length();
+        logger.info("Document size: {} characters", contentLength);
+        
+        // Check initial memory state
+        checkMemoryAndGC();
+        
+        try {
+            // Choose processing strategy based on content size and memory availability
+            if (contentLength > 200000) {
+                logger.info("Very large document detected, using ultra-streaming approach");
+                return processUltraLargeDocument(resource);
+            } else if (contentLength > 100000) {
+                logger.info("Large document detected, using streaming approach");
+                return processLargeDocumentStreaming(resource);
+            } else {
+                logger.info("Standard document size, using optimized unified approach");
+                return processStandardDocumentOptimized(resource);
+            }
+        } catch (Exception e) {
+            logger.error("Error in memory-optimized content generation: {}", e.getMessage(), e);
+            return generateAllContentFallback(resourceId);
+        } finally {
+            // Final memory cleanup
+            checkMemoryAndGC();
+            long endTime = System.currentTimeMillis();
+            logger.info("Memory-optimized content generation completed in {} ms", (endTime - startTime));
+        }
+    }
+    
+    /**
+     * Process ultra-large documents with extreme memory efficiency
+     */
+    private Resource processUltraLargeDocument(Resource resource) {
+        logger.info("Processing ultra-large document with extreme memory efficiency");
+        
+        // Use micro-batching for content generation
+        String content = resource.getContent();
+        int sectionSize = 15000; // Smaller sections for ultra-large docs
+        int overlap = 1000;
+        
+        List<String> sections = new ArrayList<>();
+        for (int i = 0; i < content.length(); i += sectionSize - overlap) {
+            int endIndex = Math.min(i + sectionSize, content.length());
+            sections.add(content.substring(i, endIndex));
+        }
+        
+        logger.info("Split ultra-large document into {} sections", sections.size());
+        
+        // Process sections with memory monitoring
+        ChatLanguageModel chatModel = getChatModel();
+        StringBuilder combinedSummary = new StringBuilder();
+        
+        for (int i = 0; i < sections.size(); i++) {
+            String section = sections.get(i);
+            logger.info("Processing section {}/{} ({} characters)", i + 1, sections.size(), section.length());
+            
+            try {
+                SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
+                        .chatLanguageModel(chatModel)
+                        .build();
+                
+                String sectionSummary = summaryGenerator.generateSummary(
+                    prepareSummaryPrompt(section, resource.getTitle(), resource.getClass().getSimpleName())
+                );
+                
+                combinedSummary.append("Section ").append(i + 1).append(": ").append(sectionSummary).append("\n\n");
+                
+                // Clear section reference immediately
+                section = null;
+                sectionSummary = null;
+                
+                // Check memory after each section
+                checkMemoryAndGC();
+                
+            } catch (Exception e) {
+                logger.error("Error processing section {}: {}", i + 1, e.getMessage());
+                combinedSummary.append("Section ").append(i + 1).append(": Error processing section\n\n");
+            }
+        }
+        
+        // Generate final summary from combined sections
+        String finalSummary = generateFinalSummaryFromSections(combinedSummary.toString(), resource, chatModel);
+        resource.setSummary(finalSummary);
+        
+        // Clear large objects
+        combinedSummary = null;
+        sections = null;
+        
+        // Process embeddings with ultra-efficiency
+        processEmbeddingsUltraEfficient(resource);
+        
+        return resourceRepository.save(resource);
+    }
+    
+    /**
+     * Process large documents with streaming approach
+     */
+    private Resource processLargeDocumentStreaming(Resource resource) {
+        logger.info("Processing large document with streaming approach");
+        
+        String content = handleLargeContent(resource.getContent(), 4000);
+        ChatLanguageModel chatModel = getChatModel();
+        
+        // Generate content with memory monitoring
+        UnifiedContentGenerator generator = AiServices.builder(UnifiedContentGenerator.class)
+                .chatLanguageModel(chatModel)
+                .build();
+        
+        String unifiedPrompt = createUnifiedPrompt(resource, content);
+        String generatedJson = generator.generateContent(unifiedPrompt);
+        
+        // Process the response
+        String extractedJson = extractJsonObject(generatedJson);
+        JSONObject allContent = new JSONObject(extractedJson);
+        
+        // Set content with memory cleanup
+        if (allContent.has("summary")) {
+            resource.setSummary(allContent.getString("summary"));
+        }
+        if (allContent.has("flashcards")) {
+            resource.setFlashcards(allContent.getJSONArray("flashcards").toString());
+        }
+        if (allContent.has("quiz")) {
+            resource.setQuiz(allContent.getJSONArray("quiz").toString());
+        }
+        if (allContent.has("chapters")) {
+            resource.setChapters(allContent.getJSONArray("chapters").toString());
+        }
+        
+        resource.setGeneratedContent(allContent.toString());
+        
+        // Clear large objects
+        content = null;
+        generatedJson = null;
+        extractedJson = null;
+        allContent = null;
+        
+        // Process embeddings efficiently
+        processEmbeddingsUltraEfficient(resource);
+        
+        return resourceRepository.save(resource);
+    }
+    
+    /**
+     * Process standard documents with optimization
+     */
+    private Resource processStandardDocumentOptimized(Resource resource) {
+        logger.info("Processing standard document with optimization");
+        
+        String content = handleLargeContent(resource.getContent(), 4000);
+        ChatLanguageModel chatModel = getChatModel();
+        
+        UnifiedContentGenerator generator = AiServices.builder(UnifiedContentGenerator.class)
+                .chatLanguageModel(chatModel)
+                .build();
+        
+        String unifiedPrompt = createUnifiedPrompt(resource, content);
+        String generatedJson = generator.generateContent(unifiedPrompt);
+        
+        String extractedJson = extractJsonObject(generatedJson);
+        JSONObject allContent = new JSONObject(extractedJson);
+        
+        // Set content
+        if (allContent.has("summary")) {
+            resource.setSummary(allContent.getString("summary"));
+        }
+        if (allContent.has("flashcards")) {
+            resource.setFlashcards(allContent.getJSONArray("flashcards").toString());
+        }
+        if (allContent.has("quiz")) {
+            resource.setQuiz(allContent.getJSONArray("quiz").toString());
+        }
+        if (allContent.has("chapters")) {
+            resource.setChapters(allContent.getJSONArray("chapters").toString());
+        }
+        
+        resource.setGeneratedContent(allContent.toString());
+        
+        // Process embeddings
+        processEmbeddingsUltraEfficient(resource);
+        
+        return resourceRepository.save(resource);
+    }
+    
+    /**
+     * Generate final summary from combined section summaries
+     */
+    private String generateFinalSummaryFromSections(String combinedSections, Resource resource, ChatLanguageModel chatModel) {
+        try {
+            SummaryGenerator summaryGenerator = AiServices.builder(SummaryGenerator.class)
+                    .chatLanguageModel(chatModel)
+                    .build();
+            
+            String finalPrompt = prepareSummaryPrompt(combinedSections, resource.getTitle(), resource.getClass().getSimpleName());
+            return summaryGenerator.generateSummary(finalPrompt);
+        } catch (Exception e) {
+            logger.error("Error generating final summary: {}", e.getMessage());
+            return "Error generating final summary: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Get current memory statistics
+     */
+    public Map<String, Object> getMemoryStatistics() {
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long maxMemory = runtime.maxMemory();
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalMemoryMB", totalMemory / (1024 * 1024));
+        stats.put("freeMemoryMB", freeMemory / (1024 * 1024));
+        stats.put("usedMemoryMB", usedMemory / (1024 * 1024));
+        stats.put("maxMemoryMB", maxMemory / (1024 * 1024));
+        stats.put("memoryUsagePercent", (double) usedMemory / totalMemory * 100);
+        stats.put("processedChunks", processedChunks.get());
+        stats.put("lastGCTime", lastGCTime.get());
+        
+        return stats;
+    }
 
 }
