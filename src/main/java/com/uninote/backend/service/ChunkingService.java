@@ -14,6 +14,7 @@ public class ChunkingService {
     private static final int DEFAULT_CHUNK_SIZE = 1000;
     private static final int DEFAULT_CHUNK_OVERLAP = 200;
     private static final int DEFAULT_MIN_CHUNK_SIZE = 100;
+    private static final int LARGE_DOCUMENT_THRESHOLD = 50000; // 50KB threshold
     
     // Patterns for different splitting strategies
     private static final Pattern SENTENCE_PATTERN = Pattern.compile("(?<=[.!?])\\s+");
@@ -25,7 +26,7 @@ public class ChunkingService {
     }
     
     /**
-     * Fixed-size chunking strategy
+     * Fixed-size chunking strategy with memory optimization
      * Simple character-based splitting with overlap
      */
     public List<String> fixedSizeChunking(String text) {
@@ -33,15 +34,20 @@ public class ChunkingService {
     }
     
     public List<String> fixedSizeChunking(String text, int chunkSize, int overlap) {
-        List<String> chunks = new ArrayList<>();
-        if (text == null || text.isEmpty()) return chunks;
+        if (text == null || text.isEmpty()) return new ArrayList<>();
         
-        // For large documents, use character array approach to prevent OutOfMemoryError
+        // For very large documents, use streaming approach
+        if (text.length() > LARGE_DOCUMENT_THRESHOLD) {
+            return fixedSizeChunkingStreaming(text, chunkSize, overlap);
+        }
+        
+        // For medium documents, use optimized character array approach
         if (text.length() > 20000) {
-            return fixedSizeChunkingLarge(text, chunkSize, overlap);
+            return fixedSizeChunkingOptimized(text, chunkSize, overlap);
         }
         
         // For smaller documents, use the original approach
+        List<String> chunks = new ArrayList<>();
         int start = 0;
         while (start < text.length()) {
             int end = Math.min(start + chunkSize, text.length());
@@ -54,9 +60,36 @@ public class ChunkingService {
     }
     
     /**
-     * Memory-efficient chunking for large documents using character arrays
+     * Memory-efficient streaming chunking for very large documents
      */
-    private List<String> fixedSizeChunkingLarge(String text, int chunkSize, int overlap) {
+    private List<String> fixedSizeChunkingStreaming(String text, int chunkSize, int overlap) {
+        List<String> chunks = new ArrayList<>();
+        int textLength = text.length();
+        
+        int start = 0;
+        while (start < textLength) {
+            int end = Math.min(start + chunkSize, textLength);
+            
+            // Use substring directly - more memory efficient for large texts
+            String chunk = text.substring(start, end);
+            chunks.add(chunk);
+            
+            start = end - overlap;
+            if (start < 0) start = 0;
+            
+            // Force GC every 100 chunks to prevent memory buildup
+            if (chunks.size() % 100 == 0) {
+                System.gc();
+            }
+        }
+        
+        return chunks;
+    }
+    
+    /**
+     * Optimized chunking for large documents using character arrays with better memory management
+     */
+    private List<String> fixedSizeChunkingOptimized(String text, int chunkSize, int overlap) {
         List<String> chunks = new ArrayList<>();
         char[] textArray = text.toCharArray();
         int textLength = textArray.length;
@@ -78,29 +111,32 @@ public class ChunkingService {
             if (start < 0) start = 0;
         }
         
+        // Clear the large text array reference
+        textArray = null;
+        System.gc();
+        
         return chunks;
     }
     
     /**
      * Process large documents in batches to prevent memory issues
+     * Enhanced with better memory management and progress tracking
      */
     public void processLargeDocumentInBatches(String text, int batchSize, Consumer<List<String>> batchProcessor) {
         if (text == null || text.isEmpty()) return;
         
         List<String> chunks = new ArrayList<>();
-        char[] textArray = text.toCharArray();
-        int textLength = textArray.length;
+        int textLength = text.length();
         
         int start = 0;
+        int processedChunks = 0;
+        
         while (start < textLength) {
             int end = Math.min(start + DEFAULT_CHUNK_SIZE, textLength);
             
-            // Create new character array for this chunk
-            char[] chunkArray = new char[end - start];
-            System.arraycopy(textArray, start, chunkArray, 0, end - start);
-            
-            chunks.add(new String(chunkArray));
-            chunkArray = null;
+            // Use substring directly for better memory efficiency
+            String chunk = text.substring(start, end);
+            chunks.add(chunk);
             
             start = end - DEFAULT_CHUNK_OVERLAP;
             if (start < 0) start = 0;
@@ -108,8 +144,13 @@ public class ChunkingService {
             // Process batch when it reaches the batch size
             if (chunks.size() >= batchSize) {
                 batchProcessor.accept(new ArrayList<>(chunks));
+                processedChunks += chunks.size();
                 chunks.clear();
-                System.gc(); // Force garbage collection
+                
+                // Force garbage collection every few batches
+                if (processedChunks % (batchSize * 5) == 0) {
+                    System.gc();
+                }
             }
         }
         
@@ -120,7 +161,7 @@ public class ChunkingService {
     }
     
     /**
-     * Recursive chunking strategy
+     * Memory-efficient recursive chunking strategy
      * Splits on multiple separators in order of preference
      */
     public List<String> recursiveChunking(String text) {
@@ -128,14 +169,21 @@ public class ChunkingService {
     }
     
     public List<String> recursiveChunking(String text, int chunkSize, int overlap) {
-        List<String> chunks = new ArrayList<>();
-        if (text == null || text.isEmpty()) return chunks;
+        if (text == null || text.isEmpty()) return new ArrayList<>();
         
         // If text is small enough, return as single chunk
         if (text.length() <= chunkSize) {
+            List<String> chunks = new ArrayList<>();
             chunks.add(text);
             return chunks;
         }
+        
+        // For very large documents, fall back to fixed-size chunking
+        if (text.length() > LARGE_DOCUMENT_THRESHOLD) {
+            return fixedSizeChunking(text, chunkSize, overlap);
+        }
+        
+        List<String> chunks = new ArrayList<>();
         
         // Try to split on different separators in order of preference
         String[] separators = {"\n\n", "\n", ". ", "! ", "? ", " ", ""};
@@ -227,7 +275,7 @@ public class ChunkingService {
     }
     
     /**
-     * Get chunking statistics
+     * Get chunking statistics with memory-efficient implementation
      */
     public ChunkingStats getChunkingStats(List<String> chunks) {
         if (chunks == null || chunks.isEmpty()) {

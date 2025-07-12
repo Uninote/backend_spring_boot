@@ -1288,19 +1288,25 @@ public class LangChainContentService {
     
     /**
      * Process embeddings in batches for very large documents
+     * Enhanced with memory monitoring and smaller batch sizes
      */
     private void processEmbeddingsInBatches(Resource resource) {
         logger.info("Using batch processing for large document ({} chars)", resource.getContent().length());
         
         final int[] chunkIndex = {0};
-        final int batchSize = 50;
+        final int batchSize = 25; // Reduced from 50 to prevent memory buildup
+        
+        // Monitor memory usage
+        Runtime runtime = Runtime.getRuntime();
+        long initialMemory = runtime.totalMemory() - runtime.freeMemory();
+        logger.info("Initial memory usage: {} MB", initialMemory / (1024 * 1024));
         
         chunkingService.processLargeDocumentInBatches(resource.getContent(), batchSize, chunks -> {
             List<PineconeVector> batchRecords = new ArrayList<>();
             
             for (String chunk : chunks) {
                 try {
-                    logger.info("Processing chunk index {}: {}...", chunkIndex[0], abbreviate(chunk, 100));
+                    logger.debug("Processing chunk index {}: {}...", chunkIndex[0], abbreviate(chunk, 100));
                     
                     float[] embedding = embeddingService.embed(chunk);
                     logger.debug("Generated embedding for chunk index {}", chunkIndex[0]);
@@ -1315,6 +1321,9 @@ public class LangChainContentService {
                     batchRecords.add(vector);
                     
                     chunkIndex[0]++;
+                    
+                    // Clear embedding array to help GC
+                    embedding = null;
                 } catch (Exception e) {
                     logger.error("Failed to process embedding for chunk index {}: {}", chunkIndex[0], e.getMessage(), e);
                     chunkIndex[0]++;
@@ -1325,21 +1334,49 @@ public class LangChainContentService {
             try {
                 embeddingService.upsertVectors(batchRecords);
                 logger.debug("Successfully upserted batch of {} vectors for resource ID: {}", batchRecords.size(), resource.getId());
+                
+                // Monitor memory after batch processing
+                long currentMemory = runtime.totalMemory() - runtime.freeMemory();
+                logger.debug("Memory usage after batch {}: {} MB", chunkIndex[0] / batchSize, currentMemory / (1024 * 1024));
+                
+                // Force GC if memory usage is high
+                if (currentMemory > initialMemory * 2) {
+                    logger.warn("High memory usage detected, forcing garbage collection");
+                    System.gc();
+                }
             } catch (Exception e) {
                 logger.error("Failed to upsert batch vectors: {}", e.getMessage(), e);
+            } finally {
+                // Clear batch records to help GC
+                batchRecords.clear();
             }
         });
+        
+        // Final memory cleanup
+        System.gc();
+        long finalMemory = runtime.totalMemory() - runtime.freeMemory();
+        logger.info("Final memory usage: {} MB", finalMemory / (1024 * 1024));
     }
     
     /**
      * Normal embedding processing for smaller documents
+     * Enhanced with memory monitoring and chunk size limits
      */
     private void processEmbeddingsNormal(Resource resource) {
         logger.debug("Using normal processing for document ({} chars)", resource.getContent().length());
         
-        List<String> chunks = chunkingService.splitIntoChunks(resource.getContent());
+        // For medium documents, use smaller chunk sizes to prevent memory issues
+        List<String> chunks;
+        if (resource.getContent().length() > 50000) {
+            chunks = chunkingService.fixedSizeChunking(resource.getContent(), 800, 150); // Smaller chunks
+        } else {
+            chunks = chunkingService.splitIntoChunks(resource.getContent());
+        }
+        
         logger.debug("Split content into {} chunks", chunks.size());
         
+        // Process chunks in smaller batches even for "normal" processing
+        final int batchSize = 20;
         List<PineconeVector> records = new ArrayList<>();
         int chunkIndex = 0;
         
@@ -1358,19 +1395,41 @@ public class LangChainContentService {
                 List<Float> embeddingList = toFloatList(embedding);
                 PineconeVector vector = new PineconeVector(generateChunkId(resource.getId(), chunkIndex), embeddingList, metadata);
                 records.add(vector);
+                
+                // Clear embedding array to help GC
+                embedding = null;
             } catch (Exception e) {
                 logger.error("Failed to process embedding for chunk index {}: {}", chunkIndex, e.getMessage(), e);
             }
             
             chunkIndex++;
+            
+            // Process in batches to prevent memory buildup
+            if (records.size() >= batchSize) {
+                try {
+                    embeddingService.upsertVectors(new ArrayList<>(records));
+                    logger.debug("Processed batch of {} vectors", records.size());
+                } catch (Exception e) {
+                    logger.error("Failed to upsert batch vectors: {}", e.getMessage(), e);
+                }
+                records.clear();
+                System.gc(); // Force GC after each batch
+            }
         }
         
-        try {
-            embeddingService.upsertVectors(records);
-            logger.debug("Successfully upserted {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());
-        } catch (Exception e) {
-            logger.error("Failed to upsert vectors into Pinecone: {}", e.getMessage(), e);
+        // Process remaining records
+        if (!records.isEmpty()) {
+            try {
+                embeddingService.upsertVectors(records);
+                logger.debug("Successfully upserted final {} vectors into Pinecone for resource ID: {}", records.size(), resource.getId());
+            } catch (Exception e) {
+                logger.error("Failed to upsert final vectors into Pinecone: {}", e.getMessage(), e);
+            }
         }
+        
+        // Final cleanup
+        records.clear();
+        System.gc();
     }
     
     private String abbreviate(String text, int maxLength) {
