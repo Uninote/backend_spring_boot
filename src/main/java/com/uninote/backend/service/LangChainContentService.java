@@ -1278,6 +1278,13 @@ public class LangChainContentService {
         String content = resource.getContent();
         int contentLength = content.length();
         
+        // Check for extremely large documents that could cause memory issues
+        if (contentLength > 1000000) { // 1MB limit
+            logger.error("Document too large for processing: {} chars ({} MB). Skipping embedding generation.", 
+                        contentLength, contentLength / (1024 * 1024));
+            throw new RuntimeException("Document too large for processing: " + contentLength + " characters");
+        }
+        
         // Use batch processing for very large documents to prevent OutOfMemoryError
         if (contentLength > 100000) {
             processEmbeddingsInBatches(resource);
@@ -1294,12 +1301,16 @@ public class LangChainContentService {
         logger.info("Using batch processing for large document ({} chars)", resource.getContent().length());
         
         final int[] chunkIndex = {0};
-        final int batchSize = 25; // Reduced from 50 to prevent memory buildup
+        final int batchSize = 20; // Further reduced to prevent memory buildup
         
         // Monitor memory usage
         Runtime runtime = Runtime.getRuntime();
         long initialMemory = runtime.totalMemory() - runtime.freeMemory();
-        logger.info("Initial memory usage: {} MB", initialMemory / (1024 * 1024));
+        long maxMemory = runtime.maxMemory();
+        logger.info("Initial memory usage: {} MB / {} MB ({}%)", 
+                   initialMemory / (1024 * 1024), 
+                   maxMemory / (1024 * 1024),
+                   (initialMemory * 100) / maxMemory);
         
         chunkingService.processLargeDocumentInBatches(resource.getContent(), batchSize, chunks -> {
             List<PineconeVector> batchRecords = new ArrayList<>();
@@ -1337,11 +1348,16 @@ public class LangChainContentService {
                 
                 // Monitor memory after batch processing
                 long currentMemory = runtime.totalMemory() - runtime.freeMemory();
-                logger.debug("Memory usage after batch {}: {} MB", chunkIndex[0] / batchSize, currentMemory / (1024 * 1024));
+                long memoryPercentage = (currentMemory * 100) / maxMemory;
+                logger.debug("Memory usage after batch {}: {} MB / {} MB ({}%)", 
+                           chunkIndex[0] / batchSize, 
+                           currentMemory / (1024 * 1024),
+                           maxMemory / (1024 * 1024),
+                           memoryPercentage);
                 
                 // Force GC if memory usage is high
-                if (currentMemory > initialMemory * 2) {
-                    logger.warn("High memory usage detected, forcing garbage collection");
+                if (memoryPercentage > 80) {
+                    logger.warn("High memory usage detected ({}%), forcing garbage collection", memoryPercentage);
                     System.gc();
                 }
             } catch (Exception e) {
