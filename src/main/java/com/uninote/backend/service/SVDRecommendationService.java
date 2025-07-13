@@ -1,9 +1,28 @@
 package com.uninote.backend.service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
 import com.uninote.backend.dto.NoteDTO;
-import com.uninote.backend.entity.NoteLike;
 import com.uninote.backend.entity.NoteSave;
 import com.uninote.backend.entity.NoteView;
 import com.uninote.backend.entity.UserNoteMatrixEntry;
@@ -13,21 +32,6 @@ import com.uninote.backend.repository.NoteSaveRepository;
 import com.uninote.backend.repository.NoteViewRepository;
 import com.uninote.backend.repository.UserNoteMatrixRepository;
 import com.uninote.backend.repository.UserRepository;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.springframework.context.event.EventListener;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import javax.annotation.PostConstruct;
 
 
 @Service
@@ -71,23 +75,39 @@ public class SVDRecommendationService {
             return;
         }
 
-        userIds = getAllUserIds();
-        noteIds = getAllNoteIds();
+        try {
+            userIds = getAllUserIds();
+            noteIds = getAllNoteIds();
 
-        if (userNoteMatrixRepository.count() > 0) {
-            logger.info("Loading existing user-note matrix from the database.");
-            userNoteMatrix = loadUserNoteMatrix(userIds, noteIds);
-        } else {
-            logger.info("No existing matrix found. Building new user-note matrix.");
-            refreshUserNoteMatrix();  
-            saveUserNoteMatrix(userNoteMatrix, userIds, noteIds);
+            // Use a separate transaction for the count operation
+            long matrixCount = 0;
+            try {
+                matrixCount = userNoteMatrixRepository.count();
+            } catch (Exception e) {
+                logger.warn("Could not count existing matrix entries: {}", e.getMessage());
+                matrixCount = 0;
+            }
+
+            if (matrixCount > 0) {
+                logger.info("Loading existing user-note matrix from the database.");
+                userNoteMatrix = loadUserNoteMatrix(userIds, noteIds);
+            } else {
+                logger.info("No existing matrix found. Building new user-note matrix.");
+                refreshUserNoteMatrix();  
+                saveUserNoteMatrix(userNoteMatrix, userIds, noteIds);
+            }
+
+            svdMatrices = performSVD(userNoteMatrix);
+            matrixLoaded = true;
+            likesMap = getUserLikesMap();
+            savesMap = getUserSavesMap();
+            viewsMap = getUserViewsMap();
+            
+            logger.info("User-note matrix initialization completed successfully.");
+        } catch (Exception e) {
+            logger.error("Error during user-note matrix initialization: {}", e.getMessage(), e);
+            // Don't fail the application startup, just log the error
         }
-
-        svdMatrices = performSVD(userNoteMatrix);
-        matrixLoaded = true;
-        likesMap = getUserLikesMap();
-        savesMap = getUserSavesMap();
-        viewsMap = getUserViewsMap();
     }
 
     @Scheduled(cron = "0 0 0 * * *")  
@@ -288,27 +308,33 @@ public class SVDRecommendationService {
 
     public void saveUserNoteMatrix(RealMatrix matrix, List<Long> userIds, List<Long> noteIds) {
         logger.info("Clearing previous entries and saving the user-note interaction matrix to the database.");
-        userNoteMatrixRepository.deleteAll();
-        List<UserNoteMatrixEntry> entries = new ArrayList<>();
+        
+        try {
+            userNoteMatrixRepository.deleteAll();
+            List<UserNoteMatrixEntry> entries = new ArrayList<>();
 
-        for (int i = 0; i < userIds.size(); i++) {
-            Long userId = userIds.get(i);
-            for (int j = 0; j < noteIds.size(); j++) {
-                Long noteId = noteIds.get(j);
-                double score = matrix.getEntry(i, j);
+            for (int i = 0; i < userIds.size(); i++) {
+                Long userId = userIds.get(i);
+                for (int j = 0; j < noteIds.size(); j++) {
+                    Long noteId = noteIds.get(j);
+                    double score = matrix.getEntry(i, j);
 
-                if (score != 0.0) {  
-                    UserNoteMatrixEntry entry = new UserNoteMatrixEntry(userId, noteId, score);
-                    entries.add(entry);
+                    if (score != 0.0) {  
+                        UserNoteMatrixEntry entry = new UserNoteMatrixEntry(userId, noteId, score);
+                        entries.add(entry);
+                    }
                 }
             }
-        }
 
-        if (!entries.isEmpty()) {
-            userNoteMatrixRepository.saveAll(entries);
-            logger.info("Successfully saved {} non-zero entries to the user-note matrix table.", entries.size());
-        } else {
-            logger.warn("No non-zero entries to save to the user-note matrix table.");
+            if (!entries.isEmpty()) {
+                userNoteMatrixRepository.saveAll(entries);
+                logger.info("Successfully saved {} non-zero entries to the user-note matrix table.", entries.size());
+            } else {
+                logger.warn("No non-zero entries to save to the user-note matrix table.");
+            }
+        } catch (Exception e) {
+            logger.error("Error saving user-note matrix: {}", e.getMessage(), e);
+            // Don't fail the entire operation, just log the error
         }
     }
 }
