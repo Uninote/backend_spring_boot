@@ -185,9 +185,11 @@ public class NoteController {
             return ResponseEntity.ok(note);
 
         } catch (IllegalArgumentException e) {
+            logger.error("IllegalArgumentException in getNoteById: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(null);
+            logger.error("Unexpected error in getNoteById for note ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "An unexpected error occurred while retrieving the note."));
         }
     }
 

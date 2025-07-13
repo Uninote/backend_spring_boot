@@ -468,42 +468,88 @@ public class NoteService {
     }
     
         
+    @Transactional(readOnly = true)
     @Cacheable("notes")
     public NoteDTO getNoteById(Long id, String languageCode) {
-        Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
-        NoteDTO dto =  convertToDTO(note, languageCode);
-        Optional<UserCourseGrade> usg  = userCourseGradeRepository.findByUserIdAndCourseId(note.getUser().getId(), note.getCourse().getId());
-        if (usg.isPresent()) {
-            dto.setGrade(usg.get().getGrade());
-        }
-        dto.setSemester(note.getCourse().getSemester());
-        dto.setUsername(note.getUser().getUsername());
-        dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
-        dto.setCertified(note.getUser().getCertified());
-        if (note.getNoteType() != null) {
-            List<NoteTypeName> tn = note.getNoteType().getTypeNames();
-            dto.setNoteTypeId(note.getNoteType().getTypeId());
-            dto.setNoteType(tn.stream().filter(name -> languageCode.equals(name.getLanguage().getCode())).map(NoteTypeName::getTypeName).findFirst().orElse(null));
-        }
+        try {
+            logger.debug("Starting getNoteById for note ID: {} with language: {}", id, languageCode);
+            
+            Note note = noteRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Note not found"));
+            logger.debug("Note found: ID={}, Title={}", note.getId(), note.getTitle());
+            
+            NoteDTO dto = convertToDTO(note, languageCode);
+            logger.debug("DTO converted successfully");
+            
+            // Add null checks for related entities
+            if (note.getUser() != null && note.getCourse() != null) {
+                logger.debug("User and Course are not null, checking UserCourseGrade");
+                Optional<UserCourseGrade> usg = userCourseGradeRepository.findByUserIdAndCourseId(note.getUser().getId(), note.getCourse().getId());
+                if (usg.isPresent()) {
+                    dto.setGrade(usg.get().getGrade());
+                    logger.debug("Grade set: {}", usg.get().getGrade());
+                }
+            } else {
+                logger.warn("User or Course is null - User: {}, Course: {}", 
+                    note.getUser() != null ? note.getUser().getId() : "NULL", 
+                    note.getCourse() != null ? note.getCourse().getId() : "NULL");
+            }
+            
+            // Safe access to course semester
+            if (note.getCourse() != null) {
+                dto.setSemester(note.getCourse().getSemester());
+                logger.debug("Semester set: {}", note.getCourse().getSemester());
+            } else {
+                logger.warn("Course is null, cannot set semester");
+            }
+            
+            // Safe access to user properties
+            if (note.getUser() != null) {
+                dto.setUsername(note.getUser().getUsername());
+                dto.setProfileImageUrl(note.getUser().getProfileImageUrl());
+                dto.setCertified(note.getUser().getCertified());
+                logger.debug("User properties set - Username: {}, Certified: {}", 
+                    note.getUser().getUsername(), note.getUser().getCertified());
+            } else {
+                logger.warn("User is null, cannot set user properties");
+            }
+            
+            if (note.getNoteType() != null) {
+                List<NoteTypeName> tn = note.getNoteType().getTypeNames();
+                dto.setNoteTypeId(note.getNoteType().getTypeId());
+                dto.setNoteType(tn.stream().filter(name -> languageCode.equals(name.getLanguage().getCode())).map(NoteTypeName::getTypeName).findFirst().orElse(null));
+                logger.debug("NoteType set: {}", dto.getNoteType());
+            } else {
+                logger.debug("NoteType is null");
+            }
+            
             dto.setIsDigitized(note.getContent() != null && !note.getContent().trim().isEmpty());
+            logger.debug("IsDigitized set: {}", dto.getIsDigitized());
 
-        
-        
-        if (note.getAcademicYear() != null) {
-            dto.setAcademicYear(note.getAcademicYear());
+            if (note.getAcademicYear() != null) {
+                dto.setAcademicYear(note.getAcademicYear());
+                logger.debug("AcademicYear set: {}", note.getAcademicYear());
+            }
+            
+            if (note.getProfessor() != null) {
+                dto.setProfessor(note.getProfessor());
+                logger.debug("Professor set: {}", note.getProfessor());
+            }
+            
+            boolean hasPro = noteRepository.countNotesByUserId(dto.getUserId()) >= 5;
+            if (hasPro) {
+                dto.setSubscriptionPlan(SubscriptionPlan.BASIC);
+            } else {
+                dto.setSubscriptionPlan(SubscriptionPlan.FREE);
+            }
+            logger.debug("SubscriptionPlan set: {}", dto.getSubscriptionPlan());
+            
+            logger.debug("getNoteById completed successfully for note ID: {}", id);
+            return dto;
+            
+        } catch (Exception e) {
+            logger.error("Error in getNoteById for note ID {}: {}", id, e.getMessage(), e);
+            throw e;
         }
-        
-        if (note.getProfessor() != null) {
-            dto.setProfessor(note.getProfessor());
-        }
-        boolean hasPro = noteRepository.countNotesByUserId(dto.getUserId()) >= 5 ;
-        if (hasPro) {
-            dto.setSubscriptionPlan(SubscriptionPlan.BASIC);
-        } else
-        dto.setSubscriptionPlan(SubscriptionPlan.FREE);
-        
-        
-        return dto;
     }
 
     public List<NoteDTO> getNotesByUser(Long userId, String languageCode) {
