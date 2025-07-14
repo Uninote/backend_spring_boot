@@ -1,24 +1,25 @@
 package com.uninote.backend.service;
 
+import java.util.EnumMap;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
+
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Price;
-import com.stripe.model.checkout.Session;
 import com.stripe.model.Subscription;
+import com.stripe.model.checkout.Session;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.checkout.SessionCreateParams;
 import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.HashMap;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import com.uninote.backend.service.SubscriptionService;
 
 @Service
 public class StripeService {
@@ -124,5 +125,40 @@ public class StripeService {
     public void handleSubscriptionCancelled(Subscription stripeSubscription) throws StripeException {
         String stripeSubId = stripeSubscription.getId();
         // Optional: subscriptionRepository.markCancelled(stripeSubId);
+    }
+
+    /**
+     * Creates a Stripe Checkout Session for a user for a given plan and duration.
+     * @param userId The user's ID
+     * @param plan The subscription plan
+     * @param duration The subscription duration
+     * @param successUrl The URL to redirect to after successful payment
+     * @param cancelUrl The URL to redirect to if payment is cancelled
+     * @return The Stripe Checkout Session URL
+     * @throws StripeException if Stripe API fails
+     */
+    public String createCheckoutSession(Long userId, SubscriptionPlan plan, SubscriptionDuration duration, String successUrl, String cancelUrl) throws StripeException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        Customer customer = createOrRetrieveCustomer(user);
+        String priceId = getPriceId(plan, duration);
+
+        SessionCreateParams params = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setCustomer(customer.getId())
+                .addLineItem(
+                        SessionCreateParams.LineItem.builder()
+                                .setPrice(priceId)
+                                .setQuantity(1L)
+                                .build()
+                )
+                .setSuccessUrl(successUrl)
+                .setCancelUrl(cancelUrl)
+                .setClientReferenceId(userId.toString())
+                .setCustomerEmail(user.getEmail())
+                .build();
+
+        Session session = Session.create(params);
+        return session.getUrl();
     }
 }

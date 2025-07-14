@@ -54,6 +54,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "http://localhost:8080",
                 "https://uninote.gr",
                 "https://www.uninote.gr",
+                "https://www.tutie.ai/",
+                "https://tutie.ai/",
                 "https://uninote-creators-portal.vercel.app",
                 "https://uninote-creators-portal-eiz6j2q68-uninotes-projects.vercel.app",
                 "https://uninote-node-dashboard-2fa17dd3fc4c.herokuapp.com",
