@@ -4,6 +4,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -15,10 +17,29 @@ public class AsyncConfig {
 
     @Bean(name = "contentGenerationExecutor")
     public Executor contentGenerationExecutor() {
+        Logger logger = LoggerFactory.getLogger("ContentGenerationExecutorConfig");
+        long maxMemoryMb = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+        int corePoolSize;
+        int maxPoolSize;
+        int queueCapacity;
+        if (maxMemoryMb > 4096) { // More than 4GB
+            corePoolSize = 4;
+            maxPoolSize = 8;
+            queueCapacity = 100;
+        } else if (maxMemoryMb > 2048) { // 2-4GB
+            corePoolSize = 2;
+            maxPoolSize = 4;
+            queueCapacity = 40;
+        } else { // <= 2GB
+            corePoolSize = 1;
+            maxPoolSize = 2;
+            queueCapacity = 10;
+        }
+        logger.info("Configuring contentGenerationExecutor: maxMemory={}MB, corePoolSize={}, maxPoolSize={}, queueCapacity={}", maxMemoryMb, corePoolSize, maxPoolSize, queueCapacity);
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2); // Further reduced to prevent memory overload
-        executor.setMaxPoolSize(4); // Further reduced to prevent memory overload
-        executor.setQueueCapacity(20); // Further reduced to prevent memory buildup
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
         executor.setThreadNamePrefix("ContentGen-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);

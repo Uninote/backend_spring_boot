@@ -1086,7 +1086,7 @@ public class LangChainContentService {
         return baseIndex;
     }
     
-    /**
+    /** 
      * Split document into major sections for map-reduce processing
      */
     private List<TextSegment> splitIntoMajorSections(String content) {
@@ -1603,7 +1603,7 @@ public class LangChainContentService {
                    String.format("%.2f", memoryUsage * 100), usedMemory / (1024 * 1024), totalMemory / (1024 * 1024));
         
         // Switch to sequential if memory usage is high
-        if (memoryUsage > 0.75) {
+        if (memoryUsage > 0.85) {
             logger.warn("High memory usage detected ({:.2f}%), switching to sequential processing", String.format("%.2f", memoryUsage * 100));
             return processLargeDocumentSequential(resource);
         }
