@@ -19,7 +19,6 @@ import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
-import com.uninote.backend.service.SubscriptionService;
 
 @Service
 public class StripeService {
@@ -155,7 +154,6 @@ public class StripeService {
                 .setSuccessUrl(successUrl)
                 .setCancelUrl(cancelUrl)
                 .setClientReferenceId(userId.toString())
-                .setCustomerEmail(user.getEmail())
                 .build();
 
         Session session = Session.create(params);
