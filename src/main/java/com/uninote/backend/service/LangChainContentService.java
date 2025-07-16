@@ -1091,7 +1091,7 @@ public class LangChainContentService {
      */
     private List<TextSegment> splitIntoMajorSections(String content) {
         // Use a larger chunk size for major sections
-        DocumentSplitter splitter = DocumentSplitters.recursive(20000, 2000);
+        DocumentSplitter splitter = DocumentSplitters.recursive(40000, 2000);
         Document document = Document.from(content);
         return splitter.split(document);
     }
