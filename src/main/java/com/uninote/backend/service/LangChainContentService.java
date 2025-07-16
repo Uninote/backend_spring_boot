@@ -1091,7 +1091,7 @@ public class LangChainContentService {
      */
     private List<TextSegment> splitIntoMajorSections(String content) {
         // Use a larger chunk size for major sections
-        DocumentSplitter splitter = DocumentSplitters.recursive(40000, 2000);
+        DocumentSplitter splitter = DocumentSplitters.recursive(60000, 2000);
         Document document = Document.from(content);
         return splitter.split(document);
     }
@@ -1616,6 +1616,8 @@ public class LangChainContentService {
                 Resource result = processVeryLargeDocument(resource);
                 long endTime = System.currentTimeMillis();
                 logger.info("Map-reduce content generation completed in {} ms", (endTime - startTime));
+                long totalTime = endTime - startTime;
+                logger.info("Total content generation time for resource {}: {} ms ({} seconds)", resourceId, totalTime, totalTime / 1000.0);
                 return result;
             } catch (Exception e) {
                 logger.error("Map-reduce approach failed, falling back to content reduction: {}", e.getMessage());
@@ -2431,6 +2433,8 @@ public class LangChainContentService {
             checkMemoryAndGC();
             long endTime = System.currentTimeMillis();
             logger.info("Memory-optimized content generation completed in {} ms", (endTime - startTime));
+            long totalTime = endTime - startTime;
+            logger.info("Total content generation time for resource {}: {} ms ({} seconds)", resourceId, totalTime, totalTime / 1000.0);
         }
     }
     

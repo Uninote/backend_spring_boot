@@ -59,6 +59,7 @@ public class ChunkingService {
         while (start < text.length()) {
             int end = Math.min(start + chunkSize, text.length());
             chunks.add(text.substring(start, end));
+            if (end == text.length()) {break;}
             start = end - overlap;
             if (start < 0) start = 0;
         }
