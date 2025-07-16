@@ -141,7 +141,7 @@ public class StripeService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
         // Find the user's active subscription
         com.uninote.backend.entity.Subscription activeSub = subscriptionService
-                .findActiveSubscriptionByUserId(userId)
+                .findLatestActiveSubscriptionByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("No active subscription found for user."));
         String stripeSubId = activeSub.getStripeSubscriptionId();
         if (stripeSubId == null || stripeSubId.isEmpty()) {
@@ -154,7 +154,6 @@ public class StripeService {
         // SubscriptionUpdateParams params = SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(true).build();
         // Subscription updatedSub = stripeSub.update(params);
         // Update local DB
-        activeSub.setStatus("canceled");
         subscriptionService.saveSubscription(activeSub);
     }
 
@@ -228,7 +227,7 @@ public class StripeService {
     }
 
     // Add this method to allow controller to get the latest active subscription entity
-    public java.util.Optional<com.uninote.backend.entity.Subscription> getLatestActiveSubscriptionEntity(Long userId) {
+    public java.util.Optional<com.uninote.backend.entity.Subscription>  getLatestActiveSubscriptionEntity(Long userId) {
         return subscriptionService.findLatestActiveSubscriptionByUserId(userId);
     }
 }

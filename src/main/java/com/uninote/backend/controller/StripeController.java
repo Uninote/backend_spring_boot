@@ -178,13 +178,23 @@ public class StripeController {
             } else {
                 logger.warn("[getSubscriptionInfo] Could not determine priceId for userId={}", user.getId());
             }
+            // Transform canceled_at to ISO 8601 if present and numeric
+            Object canceledAt = sub.getCanceledAt();
+            if (canceledAt instanceof Number) {
+                long epochSeconds = ((Number) canceledAt).longValue();
+                canceledAt = Instant.ofEpochSecond(epochSeconds)
+                    .atOffset(ZoneOffset.UTC)
+                    .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                logger.debug("[getSubscriptionInfo] Converted canceled_at {} to ISO string {}", sub.getCanceledAt(), canceledAt);
+            }
+            // Build response map with defensive null handling
             Map<String, Object> info = new java.util.HashMap<>();
             info.put("plan", planType);
             info.put("id", sub.getId() != null ? sub.getId() : "");
             info.put("status", sub.getStatus() != null ? sub.getStatus() : "");
             info.put("current_period_end", currentPeriodEnd);
             info.put("cancel_at_period_end", sub.getCancelAtPeriodEnd());
-            info.put("canceled_at", sub.getCanceledAt());
+            info.put("canceled_at", canceledAt);
             info.put("price_id", priceId != null ? priceId : "");
             logger.info("[getSubscriptionInfo] Returning info: {}", info);
             return ResponseEntity.ok(info);
