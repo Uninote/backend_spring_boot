@@ -46,4 +46,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     Optional<Subscription> findByUser_IdAndDuration(Long userId, SubscriptionDuration duration);
 
+    Optional<Subscription> findByUser_IdAndStatus(Long userId, String status);
 }

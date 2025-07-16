@@ -2,6 +2,7 @@ package com.uninote.backend.service;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -19,9 +20,13 @@ import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class StripeService {
+
+    private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
 
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
@@ -127,6 +132,68 @@ public class StripeService {
     }
 
     /**
+     * Cancels the user's active Stripe subscription so it does not renew.
+     * @param userId The user's ID
+     */
+    public void cancelStripeSubscriptionRenewal(Long userId) throws StripeException {
+        // Find the user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        // Find the user's active subscription
+        com.uninote.backend.entity.Subscription activeSub = subscriptionService
+                .findActiveSubscriptionByUserId(userId)
+                .orElseThrow(() -> new IllegalStateException("No active subscription found for user."));
+        String stripeSubId = activeSub.getStripeSubscriptionId();
+        if (stripeSubId == null || stripeSubId.isEmpty()) {
+            throw new IllegalStateException("No Stripe subscription ID found for user.");
+        }
+        // Cancel the subscription in Stripe (set cancel_at_period_end = true)
+        Subscription stripeSub = Subscription.retrieve(stripeSubId);
+        Subscription updatedSub = stripeSub.cancel(Map.of("invoice_now", false, "prorate", false));
+        // Optionally, you can also set cancel_at_period_end = true instead of immediate cancel:
+        // SubscriptionUpdateParams params = SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(true).build();
+        // Subscription updatedSub = stripeSub.update(params);
+        // Update local DB
+        activeSub.setStatus("canceled");
+        subscriptionService.saveSubscription(activeSub);
+    }
+
+    /**
+     * Retrieves the user's latest active Stripe subscription info from Stripe.
+     * @param userId The user's ID
+     * @return The Stripe Subscription object
+     */
+    public Subscription getStripeSubscriptionInfo(Long userId) throws StripeException {
+        logger.info("[getStripeSubscriptionInfo] Start for userId={}", userId);
+        Optional<com.uninote.backend.entity.Subscription> opt = subscriptionService.findLatestActiveSubscriptionByUserId(userId);
+        if (opt.isEmpty()) {
+            logger.warn("[getStripeSubscriptionInfo] No active subscription found for user {}", userId);
+            throw new IllegalStateException("No active subscription found for user.");
+        }
+        com.uninote.backend.entity.Subscription latestActiveSub = opt.get();
+        String stripeSubId = latestActiveSub.getStripeSubscriptionId();
+        if (stripeSubId == null || stripeSubId.isEmpty()) {
+            logger.warn("[getStripeSubscriptionInfo] No Stripe subscription ID found for user {}", userId);
+            throw new IllegalStateException("No Stripe subscription ID found for user.");
+        }
+        try {
+            logger.debug("[getStripeSubscriptionInfo] Retrieving Stripe subscription from Stripe API: {}", stripeSubId);
+            Subscription stripeSub = Subscription.retrieve(stripeSubId);
+            if (stripeSub == null) {
+                logger.error("[getStripeSubscriptionInfo] Stripe API returned null for subscription ID {} (user {})", stripeSubId, userId);
+                throw new IllegalStateException("Stripe subscription not found.");
+            }
+            logger.info("[getStripeSubscriptionInfo] Successfully retrieved Stripe subscription for user {}: {}", userId, stripeSubId);
+            return stripeSub;
+        } catch (Exception e) {
+            logger.error("[getStripeSubscriptionInfo] Error retrieving Stripe subscription from Stripe for user {}: {}", userId, e.getMessage(), e);
+            throw e;
+        } finally {
+            logger.info("[getStripeSubscriptionInfo] End for userId={}", userId);
+        }
+    }
+
+    /**
      * Creates a Stripe Checkout Session for a user for a given plan and duration.
      * @param userId The user's ID
      * @param plan The subscription plan
@@ -158,5 +225,10 @@ public class StripeService {
 
         Session session = Session.create(params);
         return session.getUrl();
+    }
+
+    // Add this method to allow controller to get the latest active subscription entity
+    public java.util.Optional<com.uninote.backend.entity.Subscription> getLatestActiveSubscriptionEntity(Long userId) {
+        return subscriptionService.findLatestActiveSubscriptionByUserId(userId);
     }
 }

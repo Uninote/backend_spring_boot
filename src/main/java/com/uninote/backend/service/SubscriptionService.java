@@ -221,4 +221,32 @@ public class SubscriptionService {
         return subscriptionRepository.findByUser_IdAndDuration(userId, duration);
     }
 
+    /**
+     * Finds the active subscription for a user (status = 'active').
+     */
+    public Optional<Subscription> findActiveSubscriptionByUserId(Long userId) {
+        return subscriptionRepository.findByUser_IdAndStatus(userId, "active");
+    }
+
+    /**
+     * Finds the latest active (paid) subscription for a user.
+     * "Active" means:
+     *   - status = 'active'
+     *   - startDate <= now
+     *   - (endDate is null OR endDate >= now)
+     *   - plan != FREE
+     * Returns the most recent by startDate.
+     */
+    public Optional<Subscription> findLatestActiveSubscriptionByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        return subscriptionRepository.findLatestActiveByUser(user, LocalDateTime.now(), SubscriptionPlan.FREE);
+    }
+
+    /**
+     * Saves the given Subscription entity.
+     */
+    public Subscription saveSubscription(Subscription subscription) {
+        return subscriptionRepository.save(subscription);
+    }
 }
