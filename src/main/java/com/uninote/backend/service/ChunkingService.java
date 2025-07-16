@@ -88,6 +88,8 @@ public class ChunkingService {
             chunks.add(chunk);
             
             chunkCount++;
+            if (end == text.length()) {break;}
+
             start = end - overlap;
             if (start < 0) start = 0;
             
@@ -171,7 +173,8 @@ public class ChunkingService {
             // Use substring directly for better memory efficiency
             String chunk = text.substring(start, end);
             chunks.add(chunk);
-            
+            if (end == text.length()) {break;}
+
             start = end - DEFAULT_CHUNK_OVERLAP;
             if (start < 0) start = 0;
             
