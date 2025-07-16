@@ -14,13 +14,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.SubscriptionPlan;
+import com.uninote.backend.entity.User;
+import com.uninote.backend.repository.UserRepository;
 import com.uninote.backend.service.StripeService;
+import com.uninote.backend.config.security.FirebaseAuthentication;
+
 
 @RestController
 @RequestMapping("/api/stripe")
 public class StripeController {
 
     private final StripeService stripeService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     public StripeController(StripeService stripeService) {
@@ -33,11 +40,16 @@ public class StripeController {
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Authorization token missing or invalid."));
         }
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        User user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user UID: " + userUid));
         try {
             String url;
             try {
                 url = stripeService.createCheckoutSession(
-                        request.getUserId(),
+                        user.getId(),
                         request.getPlan(),
                         request.getDuration(),
                         request.getSuccessUrl(),
@@ -54,14 +66,11 @@ public class StripeController {
 
     // DTO for request body
     public static class CreateCheckoutSessionRequest {
-        private Long userId;
         private SubscriptionPlan plan;
         private SubscriptionDuration duration;
         private String successUrl;
         private String cancelUrl;
 
-        public Long getUserId() { return userId; }
-        public void setUserId(Long userId) { this.userId = userId; }
         public SubscriptionPlan getPlan() { return plan; }
         public void setPlan(SubscriptionPlan plan) { this.plan = plan; }
         public SubscriptionDuration getDuration() { return duration; }
