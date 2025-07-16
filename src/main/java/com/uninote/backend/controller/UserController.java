@@ -227,12 +227,40 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/info")
-    public ResponseEntity<UserInfoProjection> getUserInfo(@PathVariable Long userId, @RequestParam(defaultValue = "EN") String language) {
+    public ResponseEntity<Map<String, Object>> getUserInfo(@PathVariable Long userId, @RequestParam(defaultValue = "EN") String language) {
         UserInfoProjection userInfo = userService.getUserInfo(userId, language);
         if (userInfo == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(userInfo);
+        // Fetch latest active subscription plan
+        String plan = "FREE";
+        try {
+            java.util.Optional<com.uninote.backend.entity.Subscription> opt = subscriptionService.findLatestActiveSubscriptionByUserId(userId);
+            if (opt.isPresent() && opt.get().getPlan() != null) {
+                plan = opt.get().getPlan().name();
+            }
+        } catch (Exception e) {
+            // Log and default to FREE
+            org.slf4j.LoggerFactory.getLogger(UserController.class).warn("Could not fetch subscription plan for user {}: {}", userId, e.getMessage());
+        }
+        // Build response map with all userInfo fields and plan
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("userId", userInfo.getUserId());
+        response.put("username", userInfo.getUsername());
+        response.put("profileImageUrl", userInfo.getProfileImageUrl());
+        response.put("rankName", userInfo.getRankName());
+        response.put("departmentId", userInfo.getDepartmentId());
+        response.put("universityId", userInfo.getUniversityId());
+        response.put("uniscore", userInfo.getUniscore());
+        response.put("departmentName", userInfo.getDepartmentName());
+        response.put("universityName", userInfo.getUniversityName());
+        response.put("instagramUsername", userInfo.getInstagramUsername());
+        response.put("seasonScore", userInfo.getSeasonScore());
+        response.put("certified", userInfo.getCertified());
+        response.put("freeTrialCompleted", userInfo.getFreeTrialCompleted());
+        response.put("plan", plan);
+        org.slf4j.LoggerFactory.getLogger(UserController.class).info("[getUserInfo] Returning plan for user {}: {}", userId, plan);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{userId}/rank/department")
