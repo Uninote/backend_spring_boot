@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -21,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.uninote.backend.config.AzureOpenAiConfig;
 import com.uninote.backend.entity.Resource;
 import com.uninote.backend.repository.ResourceRepository;
@@ -37,6 +38,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
+import org.springframework.transaction.support.TransactionTemplate;
 
 
 @Service
@@ -70,10 +72,18 @@ public class LangChainContentService {
     private static final int MICRO_BATCH_SIZE = 1; // Process one chunk at a time
     private static final long GC_INTERVAL_MS = 5000; // Force GC every 5 seconds during heavy processing
     
+    private static final int SUMMARY_CONTEXT_CHAR_LIMIT = 1_500_000;
+    private static final int FLASHCARDS_CONTEXT_CHAR_LIMIT = 1_500_000;
+    private static final int QUIZ_CONTEXT_CHAR_LIMIT = 1_500_000;
+    private static final int CHAPTERS_CONTEXT_CHAR_LIMIT = 1_500_000;
+    
     // Memory monitoring
     private final AtomicLong lastGCTime = new AtomicLong(0);
     private final AtomicInteger processedChunks = new AtomicInteger(0);
     private final Runtime runtime = Runtime.getRuntime();
+    
+    @Autowired
+    private TransactionTemplate transactionTemplate;
     
     // All-in-one content generator
     @SystemMessage("You are an AI assistant that generates educational content in JSON format.")
@@ -922,7 +932,13 @@ public class LangChainContentService {
                     .chatLanguageModel(chatModel)
                     .build();
             
-            String finalPrompt = createFinalSummaryWrapUpPrompt(resource, combinedSections);
+            String finalPrompt;
+            try {
+                finalPrompt = promptService.createFinalSummaryWrapUpPrompt(resource.getTitle(), resource.getClass().getSimpleName(), combinedSections);
+            } catch (Exception e) {
+                logger.error("Error loading final summary wrap-up prompt, using fallback", e);
+                finalPrompt = "You are given a set of section summaries. Combine and summarize them into a single, cohesive, comprehensive summary for the entire document. Eliminate redundancy, ensure logical flow, and preserve all important information.\n\nSection Summaries:\n" + combinedSections;
+            }
             finalSummary = finalGenerator.generateSummary(finalPrompt);
             
             logger.debug("Final summary response from map-reduce generation for resource {}: {}", resource.getId(), finalSummary);
@@ -1171,91 +1187,251 @@ public class LangChainContentService {
         }
     }
     
-    // Individual generation methods are kept for backward compatibility
-    public Resource generateSummary(Long resourceId) {
-        logger.info("Generating summary for resource: {}", resourceId);
-        
-        Resource resource = resourceRepository.findById(resourceId)
-                .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
-        
-        if (resource.getContent() == null || resource.getContent().isEmpty()) {
-            throw new IllegalStateException("Resource content is empty. Extract content first.");
-        }
-        
+    public String generateSummary(Long resourceId) {
+        long startTime = System.currentTimeMillis();
         ChatLanguageModel chatModel = getChatModel();
         SummaryGenerator generator = AiServices.builder(SummaryGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-        
-        String summary = generator.generateSummary(prepareSummaryPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
-        
-        // Add debug logging for summary response
-        logger.debug("Summary response for resource {}: {}", resourceId, summary);
-        logger.debug("Summary response length for resource {}: {} characters", resourceId, summary.length());
-        
-        resource.setSummary(summary);
-        return resourceRepository.save(resource);
+        logger.info("[ContentGen] Starting summary generation for resource: {}", resourceId);
+        try {
+            Resource resource = resourceRepository.findById(resourceId)
+                    .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
+            String content = resource.getContent();
+            if (content == null || content.isEmpty()) {
+                throw new IllegalStateException("Resource content is empty. Extract content first.");
+            }
+            if (content.length() <= SUMMARY_CONTEXT_CHAR_LIMIT) {
+                String summary = generator.generateSummary(prepareSummaryPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                transactionTemplate.execute(status -> {
+                    resourceRepository.updateSummaryById(resourceId, summary);
+                    return null;
+                });
+                logger.info("[ContentGen] Finished summary generation for resource: {} in {} ms", resourceId, System.currentTimeMillis() - startTime);
+                return summary;
+            } else {
+                logger.info("[ContentGen] Splitting content into sections for summary generation (length: {})", content.length());
+                List<String> sections = splitIntoLargeSections(content, SUMMARY_CONTEXT_CHAR_LIMIT);
+                List<CompletableFuture<String>> futures = new ArrayList<>();
+                for (int i = 0; i < sections.size(); i++) {
+                    final int idx = i;
+                    futures.add(CompletableFuture.supplyAsync(() -> {
+                        long sectionStart = System.currentTimeMillis();
+                        logger.info("[ContentGen] Generating summary for section {} of {} (resource: {})", idx + 1, sections.size(), resourceId);
+                        String sectionSummary = generator.generateSummary(prepareSummaryPrompt(sections.get(idx), resource.getTitle(), resource.getClass().getSimpleName()));
+                        logger.info("[ContentGen] Finished section {} summary in {} ms (resource: {})", idx + 1, System.currentTimeMillis() - sectionStart, resourceId);
+                        return sectionSummary;
+                    }, contentGenerationExecutor));
+                }
+                List<String> allSummaries = futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+                String combinedSummaries = String.join("\n", allSummaries);
+                logger.info("[ContentGen] Generating final summary from section summaries for resource: {}", resourceId);
+                String finalPrompt;
+                try {
+                    finalPrompt = promptService.createFinalSummaryWrapUpPrompt(resource.getTitle(), resource.getClass().getSimpleName(), combinedSummaries);
+                } catch (Exception e) {
+                    logger.error("[ContentGen] Error loading final summary wrap-up prompt, using fallback", e);
+                    finalPrompt = "You are given a set of section summaries. Write a single, comprehensive summary that covers all the main points.";
+                }
+                String finalSummary = generator.generateSummary(finalPrompt);
+                transactionTemplate.execute(status -> {
+                    resourceRepository.updateSummaryById(resourceId, finalSummary);
+                    return null;
+                });
+                logger.info("[ContentGen] Finished final summary generation for resource: {} in {} ms", resourceId, System.currentTimeMillis() - startTime);
+                return finalSummary;
+            }
+        } catch (Exception e) {
+            logger.error("[ContentGen] Error generating summary for resource: {}", resourceId, e);
+            throw e;
+        }
     }
-    
-    public Resource generateFlashcards(Resource resource) {
-        logger.info("Generating flashcards for resource: {}", resource.getId());
-        
-        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+
+    public String generateFlashcards(Resource resource) {
+        long startTime = System.currentTimeMillis();
+        logger.info("[ContentGen] Starting flashcards generation for resource: {}", resource.getId());
+        String content = resource.getContent();
+        if (content == null || content.isEmpty()) {
+            logger.error("[ContentGen] Resource content is empty for flashcards. Extract content first. Resource: {}", resource.getId());
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-        
         ChatLanguageModel chatModel = getChatModel();
         FlashcardGenerator generator = AiServices.builder(FlashcardGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-        
-        String flashcardsJson = generator.generateFlashcards(prepareFlashcardsPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
-        String cleanJson = validateAndCleanJson(flashcardsJson, "flashcards");
-        
-        resource.setFlashcards(cleanJson);
-        return resourceRepository.save(resource);
+        String flashcards;
+        try {
+            if (content.length() <= FLASHCARDS_CONTEXT_CHAR_LIMIT) {
+                flashcards = generator.generateFlashcards(prepareFlashcardsPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            } else {
+                logger.info("[ContentGen] Splitting content into sections for flashcards generation (length: {})", content.length());
+                List<String> sections = splitIntoLargeSections(content, FLASHCARDS_CONTEXT_CHAR_LIMIT);
+                List<CompletableFuture<String>> futures = new ArrayList<>();
+                for (int i = 0; i < sections.size(); i++) {
+                    final int idx = i;
+                    futures.add(CompletableFuture.supplyAsync(() -> {
+                        long sectionStart = System.currentTimeMillis();
+                        logger.info("[ContentGen] Generating flashcards for section {} of {} (resource: {})", idx + 1, sections.size(), resource.getId());
+                        String sectionFlashcards = generator.generateFlashcards(prepareFlashcardsPrompt(sections.get(idx), resource.getTitle(), resource.getClass().getSimpleName()));
+                        logger.info("[ContentGen] Finished section {} flashcards in {} ms (resource: {})", idx + 1, System.currentTimeMillis() - sectionStart, resource.getId());
+                        return sectionFlashcards;
+                    }, contentGenerationExecutor));
+                }
+                JSONArray allFlashcards = new JSONArray();
+                for (CompletableFuture<String> future : futures) {
+                    try {
+                        JSONArray sectionFlashcards = new JSONArray(future.get());
+                        for (int i = 0; i < sectionFlashcards.length(); i++) {
+                            allFlashcards.put(sectionFlashcards.getJSONObject(i));
+                        }
+                    } catch (Exception e) {
+                        logger.error("[ContentGen] Error generating flashcards for section: {}", e.getMessage());
+                    }
+                }
+                flashcards = allFlashcards.toString();
+            }
+            logger.info("[ContentGen] Calling updateFlashcardsById for resource: {} (flashcards length: {})", resource.getId(), flashcards.length());
+            String cleaned = extractJsonArrayIfCodeBlock(flashcards);
+            transactionTemplate.execute(status -> {
+                resourceRepository.updateFlashcardsById(resource.getId(), cleaned);
+                return null;
+            });
+            logger.info("[ContentGen] Finished flashcards generation for resource: {} in {} ms", resource.getId(), System.currentTimeMillis() - startTime);
+            return cleaned;
+        } catch (Exception e) {
+            logger.error("[ContentGen] Error generating flashcards for resource: {}", resource.getId(), e);
+            throw e;
+        }
     }
 
-    
     public String generateQuiz(Long resourceId) {
-        logger.info("Generating quiz for resource: {}", resourceId);
-        
+        long startTime = System.currentTimeMillis();
+        logger.info("[ContentGen] Starting quiz generation for resource: {}", resourceId);
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
-        
-        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+        String content = resource.getContent();
+        if (content == null || content.isEmpty()) {
+            logger.error("[ContentGen] Resource content is empty for quiz. Extract content first. Resource: {}", resourceId);
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-        
         ChatLanguageModel chatModel = getChatModel();
         QuizGenerator generator = AiServices.builder(QuizGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-        
-        String quizJson = generator.generateQuiz(prepareQuizPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
-        return validateAndCleanJson(quizJson, "quiz");
+        String quiz;
+        try {
+            if (content.length() <= QUIZ_CONTEXT_CHAR_LIMIT) {
+                quiz = generator.generateQuiz(prepareQuizPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            } else {
+                logger.info("[ContentGen] Splitting content into sections for quiz generation (length: {})", content.length());
+                List<String> sections = splitIntoLargeSections(content, QUIZ_CONTEXT_CHAR_LIMIT);
+                List<CompletableFuture<String>> futures = new ArrayList<>();
+                for (int i = 0; i < sections.size(); i++) {
+                    final int idx = i;
+                    futures.add(CompletableFuture.supplyAsync(() -> {
+                        long sectionStart = System.currentTimeMillis();
+                        logger.info("[ContentGen] Generating quiz for section {} of {} (resource: {})", idx + 1, sections.size(), resourceId);
+                        String sectionQuiz = generator.generateQuiz(prepareQuizPrompt(sections.get(idx), resource.getTitle(), resource.getClass().getSimpleName()));
+                        logger.info("[ContentGen] Finished section {} quiz in {} ms (resource: {})", idx + 1, System.currentTimeMillis() - sectionStart, resourceId);
+                        return sectionQuiz;
+                    }, contentGenerationExecutor));
+                }
+                JSONArray allQuiz = new JSONArray();
+                for (CompletableFuture<String> future : futures) {
+                    try {
+                        JSONArray sectionQuiz = new JSONArray(future.get());
+                        for (int i = 0; i < sectionQuiz.length(); i++) {
+                            allQuiz.put(sectionQuiz.getJSONObject(i));
+                        }
+                    } catch (Exception e) {
+                        logger.error("[ContentGen] Error generating quiz for section: {}", e.getMessage());
+                    }
+                }
+                quiz = allQuiz.toString();
+            }
+            logger.info("[ContentGen] Calling updateQuizById for resource: {} (quiz length: {})", resourceId, quiz.length());
+            String cleaned = extractJsonArrayIfCodeBlock(quiz);
+            transactionTemplate.execute(status -> {
+                resourceRepository.updateQuizById(resourceId, cleaned);
+                return null;
+            });
+            logger.info("[ContentGen] Finished quiz generation for resource: {} in {} ms", resourceId, System.currentTimeMillis() - startTime);
+            return cleaned;
+        } catch (Exception e) {
+            logger.error("[ContentGen] Error generating quiz for resource: {}", resourceId, e);
+            throw e;
+        }
     }
 
-    
-    public Resource generateChapters(Long resourceId) {
-        logger.info("Generating chapters for resource: {}", resourceId);
-        
+    public String generateChapters(Long resourceId) {
+        long startTime = System.currentTimeMillis();
+        logger.info("[ContentGen] Starting chapters generation for resource: {}", resourceId);
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
-        
-        if (resource.getContent() == null || resource.getContent().isEmpty()) {
+        String content = resource.getContent();
+        if (content == null || content.isEmpty()) {
+            logger.error("[ContentGen] Resource content is empty for chapters. Extract content first. Resource: {}", resourceId);
             throw new IllegalStateException("Resource content is empty. Extract content first.");
         }
-        
         ChatLanguageModel chatModel = getChatModel();
         ChapterGenerator generator = AiServices.builder(ChapterGenerator.class)
                 .chatLanguageModel(chatModel)
                 .build();
-        
-        String chapters = generator.generateChapters(prepareChaptersPrompt(resource.getContent(), resource.getTitle(), resource.getClass().getSimpleName()));
-        
-        resource.setChapters(chapters);
-        return resourceRepository.save(resource);
+        String chapters;
+        try {
+            if (content.length() <= CHAPTERS_CONTEXT_CHAR_LIMIT) {
+                chapters = generator.generateChapters(prepareChaptersPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+            } else {
+                logger.info("[ContentGen] Splitting content into sections for chapters generation (length: {})", content.length());
+                List<String> sections = splitIntoLargeSections(content, CHAPTERS_CONTEXT_CHAR_LIMIT);
+                List<CompletableFuture<String>> futures = new ArrayList<>();
+                for (int i = 0; i < sections.size(); i++) {
+                    final int idx = i;
+                    futures.add(CompletableFuture.supplyAsync(() -> {
+                        long sectionStart = System.currentTimeMillis();
+                        logger.info("[ContentGen] Generating chapters for section {} of {} (resource: {})", idx + 1, sections.size(), resourceId);
+                        String sectionChapters = generator.generateChapters(prepareChaptersPrompt(sections.get(idx), resource.getTitle(), resource.getClass().getSimpleName()));
+                        logger.info("[ContentGen] Finished section {} chapters in {} ms (resource: {})", idx + 1, System.currentTimeMillis() - sectionStart, resourceId);
+                        return sectionChapters;
+                    }, contentGenerationExecutor));
+                }
+                JSONArray allChapters = new JSONArray();
+                for (CompletableFuture<String> future : futures) {
+                    try {
+                        JSONArray sectionChapters = new JSONArray(future.get());
+                        for (int i = 0; i < sectionChapters.length(); i++) {
+                            allChapters.put(sectionChapters.getJSONObject(i));
+                        }
+                    } catch (Exception e) {
+                        logger.error("[ContentGen] Error generating chapters for section: {}", e.getMessage());
+                    }
+                }
+                chapters = allChapters.toString();
+            }
+            logger.info("[ContentGen] Calling updateChaptersById for resource: {} (chapters length: {})", resourceId, chapters.length());
+            String cleaned = extractJsonArrayIfCodeBlock(chapters);
+            transactionTemplate.execute(status -> {
+                resourceRepository.updateChaptersById(resourceId, cleaned);
+                return null;
+            });
+            logger.info("[ContentGen] Finished chapters generation for resource: {} in {} ms", resourceId, System.currentTimeMillis() - startTime);
+            return cleaned;
+        } catch (Exception e) {
+            logger.error("[ContentGen] Error generating chapters for resource: {}", resourceId, e);
+            throw e;
+        }
+    }
+
+    // Helper to split content into large sections for chapter generation
+    private List<String> splitIntoLargeSections(String content, int maxSectionLength) {
+        List<String> sections = new ArrayList<>();
+        int start = 0;
+        while (start < content.length()) {
+            int end = Math.min(start + maxSectionLength, content.length());
+            sections.add(content.substring(start, end));
+            start = end;
+        }
+        return sections;
     }
 
     @Async
@@ -1495,6 +1671,7 @@ public class LangChainContentService {
     /**
      * Generate all content types in parallel with chunk timing tracking
      */
+    @Transactional
     public Resource generateAllContentParallel(Long resourceId) {
         long startTime = System.currentTimeMillis();
         logger.info("Starting parallel content generation with chunk timing for resource: {}", resourceId);
@@ -1517,31 +1694,8 @@ public class LangChainContentService {
                    String.format("%.2f", memoryUsage * 100), usedMemory / (1024 * 1024), totalMemory / (1024 * 1024));
         
         // Handle large files with appropriate strategy
-        final String processedContent;
-        if (contentLength > 40000) {
-            logger.info("Large document detected ({} chars), using map-reduce approach", contentLength);
-            try {
-                Resource result = processVeryLargeDocument(resource);
-                long endTime = System.currentTimeMillis();
-                logger.info("Map-reduce content generation completed in {} ms", (endTime - startTime));
-                long totalTime = endTime - startTime;
-                logger.info("Total content generation time for resource {}: {} ms ({} seconds)", resourceId, totalTime, totalTime / 1000.0);
-                return result;
-            } catch (Exception e) {
-                logger.error("Map-reduce approach failed, falling back to content reduction: {}", e.getMessage());
-                // Fall back to content reduction approach
-                processedContent = content;
-                logger.info("Content reduced to {} characters for parallel processing", processedContent.length());
-            }
-        } else if (contentLength > 15000) {
-            // Medium files: use content reduction
-            logger.info("Medium document detected ({} chars), using content reduction", contentLength);
-            processedContent = content;
-            logger.info("Content reduced to {} characters for parallel processing", processedContent.length());
-        } else {
-            // Small files: use original content
-            processedContent = content;
-        }
+        final String processedContent = content;
+       
         
         ChatLanguageModel chatModel = getChatModel();
         
@@ -1551,25 +1705,10 @@ public class LangChainContentService {
             final int[] completedTasks = {0};
             
             // Generate all content types in parallel with chunk timing and immediate saving
-            CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Summary", 1, 4, processedContent, resource, chatModel, 
-                    (c, t, rt) -> prepareSummaryPrompt(c, t, rt), SummaryGenerator.class, completedTasks, startTime);
-            }, contentGenerationExecutor);
-            
-            CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Flashcards", 2, 4, processedContent, resource, chatModel, 
-                    (c, t, rt) -> prepareFlashcardsPrompt(c, t, rt), FlashcardGenerator.class, completedTasks, startTime);
-            }, contentGenerationExecutor);
-            
-            CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Quiz", 3, 4, processedContent, resource, chatModel, 
-                    (c, t, rt) -> prepareQuizPrompt(c, t, rt), QuizGenerator.class, completedTasks, startTime);
-            }, contentGenerationExecutor);
-            
-            CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> {
-                return generateContentWithChunkTiming("Chapters", 4, 4, processedContent, resource, chatModel, 
-                    (c, t, rt) -> prepareChaptersPrompt(c, t, rt), ChapterGenerator.class, completedTasks, startTime);
-            }, contentGenerationExecutor);
+            CompletableFuture<String> summaryFuture = CompletableFuture.supplyAsync(() -> generateSummary(resource.getId()), contentGenerationExecutor);
+            CompletableFuture<String> flashcardsFuture = CompletableFuture.supplyAsync(() -> generateFlashcards(resource), contentGenerationExecutor);
+            CompletableFuture<String> quizFuture = CompletableFuture.supplyAsync(() -> generateQuiz(resource.getId()), contentGenerationExecutor);
+            CompletableFuture<String> chaptersFuture = CompletableFuture.supplyAsync(() -> generateChapters(resource.getId()), contentGenerationExecutor);
             
             // Wait for all parallel tasks to complete with timeout
             logger.info("⏳ Waiting for all parallel content generation tasks to complete...");
@@ -1620,7 +1759,7 @@ public class LangChainContentService {
             }
             
             // Save the combined generated content
-            resource.setGeneratedContent(generatedContent.toString());
+            //resource.setGeneratedContent(generatedContent.toString());
             
             // Process embeddings
             try {
@@ -1777,13 +1916,13 @@ public class LangChainContentService {
                     resource.setChapters(result);
                 }
                 resourceRepository.save(resource);
-                logger.debug("💾 [{}/{}] {} saved immediately", taskNumber, totalTasks, contentType);
+                logger.debug("💾 [{}/{}] {} saved immediately", taskNumber, totalTasks, contentType, result);
             }
             
             completedTasks[0]++;
             long taskEndTime = System.currentTimeMillis();
             long totalTaskTime = taskEndTime - taskStartTime;
-            logger.debug("✅ [{}/{}] {} generation completed and saved", taskNumber, totalTasks, contentType);
+            logger.debug("✅ [{}/{}] {} generation completed and saved", taskNumber, totalTasks, contentType, result);
             logger.debug("📊 [{}/{}] {} total task time: {} ms", taskNumber, totalTasks, contentType, totalTaskTime);
             
             return result;
@@ -2537,6 +2676,24 @@ public class LangChainContentService {
         stats.put("lastGCTime", lastGCTime.get());
         
         return stats;
+    }
+
+    private String extractJsonArrayIfCodeBlock(String text) {
+        String trimmed = text.trim();
+        if (trimmed.startsWith("```json")) {
+            int start = trimmed.indexOf("```json") + 7;
+            int end = trimmed.indexOf("```", start);
+            if (end > start) {
+                return trimmed.substring(start, end).trim();
+            }
+        } else if (trimmed.startsWith("```")) {
+            int start = trimmed.indexOf("```") + 3;
+            int end = trimmed.indexOf("```", start);
+            if (end > start) {
+                return trimmed.substring(start, end).trim();
+            }
+        }
+        return text;
     }
 
 }

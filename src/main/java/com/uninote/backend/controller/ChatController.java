@@ -198,8 +198,7 @@ public class ChatController {
                         Resource updated = langChainContentService.generateAdditionalFlashcards(resource);
                         flashcardsJson = updated.getFlashcards();
                     } else {
-                        Resource updated = langChainContentService.generateFlashcards(resource);
-                        flashcardsJson = updated.getFlashcards();
+                        flashcardsJson = langChainContentService.generateFlashcards(resource);
                     }
 
                     return ResponseEntity.ok()
