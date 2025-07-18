@@ -119,7 +119,7 @@ public class SpaceService {
     public SpaceChat getFirstSpaceChat(Space space) {
         return spaceChatRepository.findFirstBySpace(space);
     }
-
+    @Transactional
     public List<MessageDTO> getChatMessagesById(Long chatId) {
         Chat chat = chatRepository.findById(chatId).orElse(null);
         if (chat == null) return List.of();
