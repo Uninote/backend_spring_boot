@@ -72,7 +72,7 @@ public class LangChainContentService {
     private static final int MICRO_BATCH_SIZE = 1; // Process one chunk at a time
     private static final long GC_INTERVAL_MS = 5000; // Force GC every 5 seconds during heavy processing
     
-    private static final int SUMMARY_CONTEXT_CHAR_LIMIT = 100_000;
+    private static final int SUMMARY_CONTEXT_CHAR_LIMIT = 1_500_000;
     private static final int FLASHCARDS_CONTEXT_CHAR_LIMIT = 1_500_000;
     private static final int QUIZ_CONTEXT_CHAR_LIMIT = 1_500_000;
     private static final int CHAPTERS_CONTEXT_CHAR_LIMIT = 1_500_000;
@@ -1199,16 +1199,18 @@ public class LangChainContentService {
                     .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + resourceId));
             String content = resource.getContent();
             if (content == null || content.isEmpty()) {
+                logger.error("[ContentGen] Resource content is empty for summary. Extract content first. Resource: {}", resourceId);
                 throw new IllegalStateException("Resource content is empty. Extract content first.");
             }
             if (content.length() <= SUMMARY_CONTEXT_CHAR_LIMIT) {
                 String summary = generator.generateSummary(prepareSummaryPrompt(content, resource.getTitle(), resource.getClass().getSimpleName()));
+                String cleaned = extractJsonArrayIfCodeBlock(summary); // For summary, this will just remove code block markers if present
                 transactionTemplate.execute(status -> {
-                    resourceRepository.updateSummaryById(resourceId, summary);
+                    resourceRepository.updateSummaryById(resourceId, cleaned);
                     return null;
                 });
                 logger.info("[ContentGen] Finished summary generation for resource: {} in {} ms", resourceId, System.currentTimeMillis() - startTime);
-                return summary;
+                return cleaned;
             } else {
                 logger.info("[ContentGen] Splitting content into sections for summary generation (length: {})", content.length());
                 List<String> sections = splitIntoLargeSections(content, SUMMARY_CONTEXT_CHAR_LIMIT);
@@ -1219,8 +1221,9 @@ public class LangChainContentService {
                         long sectionStart = System.currentTimeMillis();
                         logger.info("[ContentGen] Generating summary for section {} of {} (resource: {})", idx + 1, sections.size(), resourceId);
                         String sectionSummary = generator.generateSummary(prepareSummaryPrompt(sections.get(idx), resource.getTitle(), resource.getClass().getSimpleName()));
+                        String cleanedSection = extractJsonArrayIfCodeBlock(sectionSummary);
                         logger.info("[ContentGen] Finished section {} summary in {} ms (resource: {})", idx + 1, System.currentTimeMillis() - sectionStart, resourceId);
-                        return sectionSummary;
+                        return cleanedSection;
                     }, contentGenerationExecutor));
                 }
                 List<String> allSummaries = futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
@@ -1234,12 +1237,13 @@ public class LangChainContentService {
                     finalPrompt = "You are given a set of section summaries. Write a single, comprehensive summary that covers all the main points.";
                 }
                 String finalSummary = generator.generateSummary(finalPrompt);
+                String cleanedFinal = extractJsonArrayIfCodeBlock(finalSummary);
                 transactionTemplate.execute(status -> {
-                    resourceRepository.updateSummaryById(resourceId, finalSummary);
+                    resourceRepository.updateSummaryById(resourceId, cleanedFinal);
                     return null;
                 });
                 logger.info("[ContentGen] Finished final summary generation for resource: {} in {} ms", resourceId, System.currentTimeMillis() - startTime);
-                return finalSummary;
+                return cleanedFinal;
             }
         } catch (Exception e) {
             logger.error("[ContentGen] Error generating summary for resource: {}", resourceId, e);
