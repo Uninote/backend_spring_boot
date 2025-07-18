@@ -72,7 +72,7 @@ public class LangChainContentService {
     private static final int MICRO_BATCH_SIZE = 1; // Process one chunk at a time
     private static final long GC_INTERVAL_MS = 5000; // Force GC every 5 seconds during heavy processing
     
-    private static final int SUMMARY_CONTEXT_CHAR_LIMIT = 1_500_000;
+    private static final int SUMMARY_CONTEXT_CHAR_LIMIT = 100_000;
     private static final int FLASHCARDS_CONTEXT_CHAR_LIMIT = 1_500_000;
     private static final int QUIZ_CONTEXT_CHAR_LIMIT = 1_500_000;
     private static final int CHAPTERS_CONTEXT_CHAR_LIMIT = 1_500_000;

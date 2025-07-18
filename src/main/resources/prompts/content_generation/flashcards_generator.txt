@@ -18,8 +18,9 @@ If you are provided with a resource that is an exam or a sheet with questions, m
 
 If the questions or answers contain math or arithmetic expressions, include LaTeX and make sure it is correctly formatted. 
 
-The question, the hint, and the answer should be concise. The question should be one sentence, while the hint should only contain a few words. You should create at least 5 flashcards. 
+The question, the hint, and the answer should be concise. The question should be one sentence, while the hint should only contain a few words. You should create at least 5 flashcards.
 
+If the document is large genearte more.
 </Flashcards> 
 
 <Content Format> 
@@ -50,4 +51,4 @@ Return as strict JSON in this format:
 ]
 ```
 
-Make sure to respond in Greek language and create at least 5 flashcards. 
+Make sure to respond in Greek language. 
