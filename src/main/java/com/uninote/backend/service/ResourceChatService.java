@@ -28,9 +28,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ResourceChatService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceChatService.class);
 
     @Autowired
     private ChatRepository chatRepository;
@@ -52,17 +56,22 @@ public class ResourceChatService {
 
     @Transactional
     public ResourceChat createWithFileResource(MultipartFile file, String userUid) {
+        long overallStart = System.currentTimeMillis();
+        logger.info("[createWithFileResource] Start for userUid={}", userUid);
+        long t0 = System.currentTimeMillis();
         Chat chat = new Chat(); 
         chat.setUuid(UUID.randomUUID().toString());
-
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
         chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
-
+        long t1 = System.currentTimeMillis();
+        logger.info("[createWithFileResource] Chat created in {} ms", (t1-t0));
         FileResource fileResource = resourceService.createFileResource(file);
+        long t2 = System.currentTimeMillis();
+        logger.info("[createWithFileResource] FileResource created in {} ms", (t2-t1));
         chat.setTitle(fileResource.getTitle());
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
@@ -70,20 +79,31 @@ public class ResourceChatService {
         JSONObject props = new JSONObject();
         props.put("type", "file");
         mixPanelService.trackEvent(user.getId(), "Chat Creation", props);
-        return resourceChatRepository.save(resourceChat);
+        long t3 = System.currentTimeMillis();
+        logger.info("[createWithFileResource] MixPanel tracked in {} ms", (t3-t2));
+        ResourceChat saved = resourceChatRepository.save(resourceChat);
+        long t4 = System.currentTimeMillis();
+        logger.info("[createWithFileResource] ResourceChat saved in {} ms", (t4-t3));
+        logger.info("[createWithFileResource] Total time: {} ms", (t4-overallStart));
+        return saved;
     }
 
     @Transactional
     public ResourceChat createWithYouTubeResource(String youtubeUrl, String userUid) {
+        long overallStart = System.currentTimeMillis();
+        logger.info("[createWithYouTubeResource] Start for userUid={}", userUid);
+        long t0 = System.currentTimeMillis();
         Chat chat = new Chat(); 
         chat.setUuid(UUID.randomUUID().toString());
-
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
         chat = chatRepository.save(chat);
-
+        long t1 = System.currentTimeMillis();
+        logger.info("[createWithYouTubeResource] Chat created in {} ms", (t1-t0));
         YouTubeResource ytResource = resourceService.createYouTubeResource(youtubeUrl);
+        long t2 = System.currentTimeMillis();
+        logger.info("[createWithYouTubeResource] YouTubeResource created in {} ms", (t2-t1));
         chat.setTitle(ytResource.getTitle());
         ResourceChat resourceChat = new ResourceChat();
         chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
@@ -93,7 +113,13 @@ public class ResourceChatService {
         JSONObject props = new JSONObject();
         props.put("type", "youtube");
         mixPanelService.trackEvent(user.getId(), "Chat Creation", props);
-        return resourceChatRepository.save(resourceChat);
+        long t3 = System.currentTimeMillis();
+        logger.info("[createWithYouTubeResource] MixPanel tracked in {} ms", (t3-t2));
+        ResourceChat saved = resourceChatRepository.save(resourceChat);
+        long t4 = System.currentTimeMillis();
+        logger.info("[createWithYouTubeResource] ResourceChat saved in {} ms", (t4-t3));
+        logger.info("[createWithYouTubeResource] Total time: {} ms", (t4-overallStart));
+        return saved;
     }
 
     public List<Object> getAllByUser(User user) {
@@ -124,9 +150,11 @@ public class ResourceChatService {
 
 
     public ResourceChat createWithNote(Long noteId, String userUid) {
+        long overallStart = System.currentTimeMillis();
+        logger.info("[createWithNote] Start for userUid={}", userUid);
+        long t0 = System.currentTimeMillis();
         Chat chat = new Chat(); 
         chat.setUuid(UUID.randomUUID().toString());
-
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
@@ -135,36 +163,53 @@ public class ResourceChatService {
         chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
+        long t1 = System.currentTimeMillis();
+        logger.info("[createWithNote] Chat created in {} ms", (t1-t0));
         NoteResource nr = resourceService.createNoteResource(note);
+        long t2 = System.currentTimeMillis();
+        logger.info("[createWithNote] NoteResource created in {} ms", (t2-t1));
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
         resourceChat.setResource(nr);
         JSONObject props = new JSONObject();
         props.put("type", "note");
         mixPanelService.trackEvent(user.getId(), "Chat Creation", props);
-
-        return resourceChatRepository.save(resourceChat);    }
+        long t3 = System.currentTimeMillis();
+        logger.info("[createWithNote] MixPanel tracked in {} ms", (t3-t2));
+        ResourceChat saved = resourceChatRepository.save(resourceChat);
+        long t4 = System.currentTimeMillis();
+        logger.info("[createWithNote] ResourceChat saved in {} ms", (t4-t3));
+        logger.info("[createWithNote] Total time: {} ms", (t4-overallStart));
+        return saved;
+    }
 
 
     @Transactional
     public ResourceChat createWithNoteResource(Note note, String userUid) {
+        long overallStart = System.currentTimeMillis();
+        logger.info("[createWithNoteResource] Start for userUid={}", userUid);
+        long t0 = System.currentTimeMillis();
         Chat chat = new Chat(); 
         chat.setUuid(UUID.randomUUID().toString());
-
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
         chat.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         chat.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         chat = chatRepository.save(chat);
-
+        long t1 = System.currentTimeMillis();
+        logger.info("[createWithNoteResource] Chat created in {} ms", (t1-t0));
         NoteResource noteResource = resourceService.createNoteResource(note);
-
+        long t2 = System.currentTimeMillis();
+        logger.info("[createWithNoteResource] NoteResource created in {} ms", (t2-t1));
         ResourceChat resourceChat = new ResourceChat();
         resourceChat.setChat(chat);
         resourceChat.setResource(noteResource);
-
-        return resourceChatRepository.save(resourceChat);
+        ResourceChat saved = resourceChatRepository.save(resourceChat);
+        long t3 = System.currentTimeMillis();
+        logger.info("[createWithNoteResource] ResourceChat saved in {} ms", (t3-t2));
+        logger.info("[createWithNoteResource] Total time: {} ms", (t3-overallStart));
+        return saved;
     }
 
     public Chat createSimpleChat(String userUid) {

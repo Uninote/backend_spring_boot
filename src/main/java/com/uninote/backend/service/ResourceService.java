@@ -47,8 +47,7 @@ import java.net.URLEncoder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
+import org.springframework.scheduling.annotation.Async;
 
 
 @Service
@@ -78,6 +77,7 @@ public class ResourceService {
 
 
     public FileResource createFileResource(MultipartFile file) {
+        long overallStart = System.currentTimeMillis();
         logger.info("=== STARTING FILE UPLOAD ===");
 
         if (file == null || file.isEmpty()) {
@@ -88,6 +88,7 @@ public class ResourceService {
         String fileId = UUID.randomUUID().toString();
         String originalFilename = file.getOriginalFilename();
         logger.info("File upload: ID={}, Name={}", fileId, originalFilename);
+        long t0 = System.currentTimeMillis();
 
         try {
             // Get extension
@@ -108,6 +109,7 @@ public class ResourceService {
             logger.info("Got bucket: {}", bucketName);
 
             // Upload to Firebase using input stream
+            long t1 = System.currentTimeMillis();
             try (InputStream inputStream = file.getInputStream()) {
                 Blob blob = bucket.create(
                     storagePath,
@@ -116,6 +118,7 @@ public class ResourceService {
                 );
                 logger.info("Uploaded file: {}, Size: {}", blob.getName(), blob.getSize());
             }
+            logger.info("File uploaded in {} ms", (t1-t0));
 
             String downloadUrl = String.format(
                 "https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media",
@@ -128,26 +131,54 @@ public class ResourceService {
             fr.setFileUrl(downloadUrl);
             fr.setTitle(originalFilename);
             fr.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            logger.info("About to save FileResource to DB: title={}, url={}", fr.getTitle(), fr.getFileUrl());
+            long saveStart = System.currentTimeMillis();
             FileResource savedResource = fileResourceRepository.save(fr);
+            long saveEnd = System.currentTimeMillis();
+            logger.info("FileResource saved to DB: id={}, title={}, url={}, time={} ms", savedResource.getId(), savedResource.getTitle(), savedResource.getFileUrl(), (saveEnd-saveStart));
+            logger.debug("Saved FileResource entity: {}", savedResource);
+            long t2 = saveEnd;
+            logger.info("Resource saved in {} ms", (t2-t1));
 
-            Resource updatedResource = contentExtractionService.extractContent(file, savedResource);
+            // Trigger content extraction asynchronously
+            logger.info("Triggering async content extraction for resource ID: {}", savedResource.getId());
+            extractContentAsync(file, savedResource);
+
+            logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
+            logger.info("Total createFileResource time for file {}: {} ms", originalFilename, (t2-overallStart));
+            return savedResource;
+
+        } catch (Exception e) {
+            logger.error("Error in createFileResource for file {}: {}", originalFilename, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Async("contentGenerationExecutor")
+    public void extractContentAsync(MultipartFile file, FileResource resource) {
+        long extractionStart = System.currentTimeMillis();
+        logger.info("Starting async content extraction for resource ID: {}, file: {}", resource.getId(), file.getOriginalFilename());
+        
+        try {
+            Resource updatedResource = contentExtractionService.extractContent(file, resource);
             String content = updatedResource.getContent();
-
+            logger.info("Async content extraction completed for resource ID: {}, content length: {}", resource.getId(), content != null ? content.length() : 0);
+            
             if (content != null && !content.trim().isEmpty()) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCommit() {
+                        logger.info("Triggering async content generation for resource ID: {}", resource.getId());
                         langChainContentService.generateAllContentAsync(updatedResource.getId());
                     }
                 });
             }
-
-            logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
-            return savedResource;
-
+            
+            long extractionEnd = System.currentTimeMillis();
+            logger.info("Async content extraction finished for resource ID: {} in {} ms", resource.getId(), (extractionEnd - extractionStart));
+            
         } catch (Exception e) {
-            logger.error("File upload failed: {}", e.getMessage(), e);
-            throw new RuntimeException("File upload failed: " + e.getMessage(), e);
+            logger.error("Error in async content extraction for resource ID: {}, file: {}", resource.getId(), file.getOriginalFilename(), e);
         }
     }
 

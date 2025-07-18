@@ -84,8 +84,7 @@ public class StripeWebhookController {
             }
         } else if ("invoice.paid".equals(event.getType())) {
             logger.info("[Stripe Webhook] Handling invoice.paid event");
-            // TODO: Implement renewal logic in stripeService.handleInvoicePaid(event)
-            // stripeService.handleInvoicePaid(event);
+            stripeService.handleInvoicePaid(event);
         } else if ("customer.subscription.updated".equals(event.getType())) {
             logger.info("[Stripe Webhook] Handling customer.subscription.updated event");
             // TODO: Implement subscription update logic in stripeService.handleSubscriptionUpdated(event)

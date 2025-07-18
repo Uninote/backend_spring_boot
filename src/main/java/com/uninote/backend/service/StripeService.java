@@ -6,11 +6,14 @@ import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
+import com.stripe.model.Invoice;
 import com.stripe.model.Price;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
@@ -20,8 +23,6 @@ import com.uninote.backend.entity.SubscriptionDuration;
 import com.uninote.backend.entity.SubscriptionPlan;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class StripeService {
@@ -229,5 +230,92 @@ public class StripeService {
     // Add this method to allow controller to get the latest active subscription entity
     public java.util.Optional<com.uninote.backend.entity.Subscription>  getLatestActiveSubscriptionEntity(Long userId) {
         return subscriptionService.findLatestActiveSubscriptionByUserId(userId);
+    }
+
+    /**
+     * Handles a Stripe invoice.paid event for subscription renewals.
+     * @param event The Stripe event object
+     */
+    public void handleInvoicePaid(com.stripe.model.Event event) {
+        logger.info("[handleInvoicePaid] Start processing invoice.paid event");
+        try {
+            // Get the invoice object from the event
+            Invoice invoice = null;
+            if (event.getDataObjectDeserializer().getObject().isPresent()) {
+                Object obj = event.getDataObjectDeserializer().getObject().get();
+                if (obj instanceof Invoice) {
+                    invoice = (Invoice) obj;
+                }
+            }
+            if (invoice == null) {
+                logger.error("[handleInvoicePaid] Invoice object is null in event data");
+                return;
+            }
+            String stripeSubId = null;
+            try {
+                stripeSubId = (String) Invoice.class.getMethod("getSubscription").invoke(invoice);
+            } catch (Exception e) {
+                logger.error("[handleInvoicePaid] Could not get subscription ID from invoice: {}", e.getMessage(), e);
+                return;
+            }
+            if (stripeSubId == null) {
+                logger.error("[handleInvoicePaid] No subscription ID in invoice");
+                return;
+            }
+            // Retrieve the Stripe subscription
+            com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(stripeSubId);
+            String customerId = stripeSub.getCustomer();
+            com.stripe.model.Customer customer = com.stripe.model.Customer.retrieve(customerId);
+            String email = customer.getEmail();
+            if (email == null) {
+                logger.error("[handleInvoicePaid] No email found for customer {}", customerId);
+                return;
+            }
+            // Get priceId from the subscription's first item
+            String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+            SubscriptionPlan plan = null;
+            SubscriptionDuration duration = null;
+            outer:
+            for (Map.Entry<SubscriptionPlan, Map<SubscriptionDuration, String>> entry : priceIdMap.entrySet()) {
+                for (Map.Entry<SubscriptionDuration, String> inner : entry.getValue().entrySet()) {
+                    if (inner.getValue().equals(priceId)) {
+                        plan = entry.getKey();
+                        duration = inner.getKey();
+                        break outer;
+                    }
+                }
+            }
+            if (plan == null || duration == null) {
+                logger.error("[handleInvoicePaid] Price ID {} not mapped to plan/duration", priceId);
+                return;
+            }
+            // Check if a subscription for this period already exists (avoid duplicate renewals)
+            Optional<com.uninote.backend.entity.Subscription> latest = subscriptionService.findLatestActiveSubscriptionByUserId(
+                userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found")).getId()
+            );
+            if (latest.isPresent()) {
+                com.uninote.backend.entity.Subscription last = latest.get();
+                if (last.getEndDate() != null) {
+                    java.time.LocalDate today = java.time.LocalDate.now();
+                    java.time.LocalDate endDate = last.getEndDate().toLocalDate();
+                    // If the end date is after today, skip renewal. If it's today or before, allow renewal.
+                    if (endDate.isAfter(today)) {
+                        logger.info("[handleInvoicePaid] User already has an active subscription ending at {} (after today). Skipping renewal.", last.getEndDate());
+                        return;
+                    }
+                }
+            }
+            // Create a new subscription period in the DB
+            subscriptionService.createSubscription(
+                email,
+                plan,
+                duration,
+                stripeSubId,
+                customerId
+            );
+            logger.info("[handleInvoicePaid] Successfully renewed subscription for {} (plan={}, duration={})", email, plan, duration);
+        } catch (Exception e) {
+            logger.error("[handleInvoicePaid] Error processing invoice.paid event: {}", e.getMessage(), e);
+        }
     }
 }
