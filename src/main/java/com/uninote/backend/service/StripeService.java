@@ -252,11 +252,21 @@ public class StripeService {
                 return;
             }
             String stripeSubId = null;
-            try {
-                stripeSubId = (String) Invoice.class.getMethod("getSubscription").invoke(invoice);
-            } catch (Exception e) {
-                logger.error("[handleInvoicePaid] Could not get subscription ID from invoice: {}", e.getMessage(), e);
-                return;
+            if (invoice.getLines() != null &&
+                invoice.getLines().getData() != null &&
+                !invoice.getLines().getData().isEmpty()) {
+                Object parentObj = invoice.getLines().getData().get(0).getParent();
+                if (parentObj instanceof Map) {
+                    Map<?, ?> parentMap = (Map<?, ?>) parentObj;
+                    Object subItemDetailsObj = parentMap.get("subscription_item_details");
+                    if (subItemDetailsObj instanceof Map) {
+                        Map<?, ?> subItemDetailsMap = (Map<?, ?>) subItemDetailsObj;
+                        Object subscriptionObj = subItemDetailsMap.get("subscription");
+                        if (subscriptionObj != null) {
+                            stripeSubId = subscriptionObj.toString();
+                        }
+                    }
+                }
             }
             if (stripeSubId == null) {
                 logger.error("[handleInvoicePaid] No subscription ID in invoice");
