@@ -3,7 +3,6 @@ package com.uninote.backend.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.uninote.backend.entity.EmailTemplate;
@@ -16,7 +15,7 @@ public class EmailSchedulerService {
     @Autowired
     private EmailTriggerService emailTriggerService;
 
-    @Scheduled(fixedRate = 3600000) // every hour
+    //@Scheduled(fixedRate = 30000) // every 30 seconds
     public void processEmailTemplates() {
         List<EmailTemplate> templates = emailTemplateRepository.findByEnabledTrue();
         for (EmailTemplate template : templates) {

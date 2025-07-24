@@ -43,9 +43,9 @@ public class EmailTriggerService {
             String personalizedSubject = subject.replace("{{user.name}}", name);
             String personalizedHtml = html.replace("{{user.name}}", name);
 
-            // 4. Send email
+            // 4. Send email (override recipient for testing)
             try {
-                resendEmailService.sendEmail(email, personalizedSubject, personalizedHtml);
+                resendEmailService.sendEmail("uninotefounders@gmail.com", personalizedSubject, personalizedHtml);
                 // 5. Log event
                 emailEventRepository.save(new EmailEvent(userId, conditionSql, LocalDateTime.now()));
             } catch (Exception e) {
