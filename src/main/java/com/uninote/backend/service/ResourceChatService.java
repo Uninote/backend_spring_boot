@@ -1,12 +1,27 @@
 package com.uninote.backend.service;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.transaction.Transactional;
+
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.uninote.backend.dto.ResourceChatSummaryDTO;
 import com.uninote.backend.dto.SimpleChatSummaryDTO;
 import com.uninote.backend.entity.Chat;
 import com.uninote.backend.entity.FileResource;
 import com.uninote.backend.entity.Note;
 import com.uninote.backend.entity.NoteResource;
-import com.uninote.backend.entity.Resource;
 import com.uninote.backend.entity.ResourceChat;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.YouTubeResource;
@@ -14,22 +29,6 @@ import com.uninote.backend.repository.ChatRepository;
 import com.uninote.backend.repository.NoteRepository;
 import com.uninote.backend.repository.ResourceChatRepository;
 import com.uninote.backend.repository.UserRepository;
-
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class ResourceChatService {
@@ -53,6 +52,9 @@ public class ResourceChatService {
 
     @Autowired
     private MixPanelService mixPanelService;
+
+    @Autowired
+    private PosthogService posthogService;
 
     @Transactional
     public ResourceChat createWithFileResource(MultipartFile file, String userUid) {
@@ -84,6 +86,12 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t4 = System.currentTimeMillis();
         logger.info("[createWithFileResource] ResourceChat saved in {} ms", (t4-t3));
+        // PostHog event
+        Map<String, Object> phProps = new HashMap<>();
+        phProps.put("type", "file");
+        phProps.put("chat_id", chat.getId());
+        phProps.put("chat_uuid", chat.getUuid());
+        posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
         logger.info("[createWithFileResource] Total time: {} ms", (t4-overallStart));
         return saved;
     }
@@ -118,6 +126,12 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t4 = System.currentTimeMillis();
         logger.info("[createWithYouTubeResource] ResourceChat saved in {} ms", (t4-t3));
+        // PostHog event
+        Map<String, Object> phProps = new HashMap<>();
+        phProps.put("type", "youtube");
+        phProps.put("chat_id", chat.getId());
+        phProps.put("chat_uuid", chat.getUuid());
+        posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
         logger.info("[createWithYouTubeResource] Total time: {} ms", (t4-overallStart));
         return saved;
     }
@@ -179,6 +193,12 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t4 = System.currentTimeMillis();
         logger.info("[createWithNote] ResourceChat saved in {} ms", (t4-t3));
+        // PostHog event
+        Map<String, Object> phProps = new HashMap<>();
+        phProps.put("type", "note");
+        phProps.put("chat_id", chat.getId());
+        phProps.put("chat_uuid", chat.getUuid());
+        posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
         logger.info("[createWithNote] Total time: {} ms", (t4-overallStart));
         return saved;
     }
