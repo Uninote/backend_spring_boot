@@ -1,0 +1,4 @@
+For development use:
+ ```bash
+    mvn spring-boot:run
+   ```
