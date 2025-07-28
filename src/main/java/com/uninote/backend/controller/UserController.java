@@ -56,10 +56,10 @@ public class UserController {
     @Autowired
     private UniversityRepository universityRepository;
 
-    @Autowired 
+    @Autowired
     private UserRepository userRepository;
 
-    @Autowired 
+    @Autowired
     private SubscriptionService subscriptionService;
 
     @Autowired
@@ -114,7 +114,7 @@ public class UserController {
         }
     }
 
-     
+
     @GetMapping("/leaderboard/university/{universityId}")
     public ResponseEntity<List<UserInfoProjection>> getLeaderboardByUniversity(@PathVariable Long universityId) {
         List<UserInfoProjection> leaderboard = userService.getTop100UsersByUniscoreByUniversity(universityId);
@@ -134,11 +134,11 @@ public class UserController {
 
         if(deviceId != null){
             sessionId = userService.loginUserAndUpdateStreak(id,deviceId);
- 
+
         } else {
-            
+
             sessionId = userService.loginUserAndUpdateStreak(id, anonymusSessionId);
-            
+
         }
         return ResponseEntity.ok(sessionId);
     }
@@ -203,7 +203,7 @@ public class UserController {
             return ResponseEntity.status(500).body(null);
         }
 
-    
+
     }
 
     @GetMapping("/check-username")
@@ -219,11 +219,51 @@ public class UserController {
     }
 
      @GetMapping("/{userId}/profile")
-    public ResponseEntity<UserProfileProjection> getUserProfile(
-            @PathVariable Long userId, 
+    public ResponseEntity<Map<String, Object>> getUserProfile(
+            @PathVariable Long userId,
             @RequestParam(defaultValue = "EN") String language) {
         UserProfileProjection userProfile = userService.getUserProfileById(userId, language);
-        return ResponseEntity.ok(userProfile);
+        if (userProfile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        // Fetch latest active subscription plan
+        String plan = "FREE";
+        try {
+            java.util.Optional<com.uninote.backend.entity.Subscription> opt = subscriptionService.findLatestActiveSubscriptionByUserId(userId);
+            if (opt.isPresent() && opt.get().getPlan() != null) {
+                plan = opt.get().getPlan().name();
+            }
+        } catch (Exception e) {
+            // Log and default to FREE
+            org.slf4j.LoggerFactory.getLogger(UserController.class).warn("Could not fetch subscription plan for user {}: {}", userId, e.getMessage());
+        }
+        // Build response map with all userProfile fields and updated plan
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", userProfile.getId());
+        response.put("firebaseUid", userProfile.getFirebaseUid());
+        response.put("name", userProfile.getName());
+        response.put("departmentName", userProfile.getDepartmentName());
+        response.put("universityName", userProfile.getUniversityName());
+        response.put("departmentFullName", userProfile.getDepartmentFullName());
+        response.put("universityFullName", userProfile.getUniversityFullName());
+        response.put("email", userProfile.getEmail());
+        response.put("username", userProfile.getUsername());
+        response.put("profileImageUrl", userProfile.getProfileImageUrl());
+        response.put("uniscore", userProfile.getUniscore());
+        response.put("roleId", userProfile.getRoleId());
+        response.put("bio", userProfile.getBio());
+        response.put("rank", userProfile.getRank());
+        response.put("streak", userProfile.getStreak());
+        response.put("totalNotes", userProfile.getTotalNotes());
+        response.put("totalPublicNotes", userProfile.getTotalPublicNotes());
+        response.put("totalLikes", userProfile.getTotalLikes());
+        response.put("instagramUsername", userProfile.getInstagramUsername());
+        response.put("seasonScore", userProfile.getSeasonScore());
+        response.put("certified", userProfile.getCertified());
+        response.put("subscriptionPlan", plan); // Use the newly found plan instead of userProfile.getSubscriptionPlan()
+        response.put("freeTrialCompleted", userProfile.getFreeTrialCompleted());
+        org.slf4j.LoggerFactory.getLogger(UserController.class).info("[getUserProfile] Returning plan for user {}: {}", userId, plan);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{userId}/info")
@@ -341,7 +381,7 @@ public class UserController {
 
         // Get the free trial subscription if it exists
         Optional<Subscription> freeTrialSub = subscriptionService.findByUser_IdAndDuration(user.getId(), SubscriptionDuration.THREE_DAYS);
-        
+
         boolean freeTrialEnded = false;
         LocalDateTime freeTrialEndDate = null;
         boolean hasUsedChatAfterTrial = false;
@@ -352,7 +392,7 @@ public class UserController {
             Subscription trial = freeTrialSub.get();
             freeTrialEndDate = trial.getEndDate();
             freeTrialEnded = freeTrialEndDate != null && freeTrialEndDate.isBefore(LocalDateTime.now());
-            
+
             // Check if user has used chat during trial period
             if (trial.getStartDate() != null && freeTrialEndDate != null) {
                 hasUsedChatDuringTrial = messageRepository.countByChat_UserAndCreatedAtBetween(
@@ -363,11 +403,11 @@ public class UserController {
                 // Set hasUsedFreeTrial based on whether they used chat during trial
                 hasUsedFreeTrial = hasUsedChatDuringTrial;
             }
-            
+
             // Check if user has used chat after trial ended
             if (freeTrialEnded) {
                 hasUsedChatAfterTrial = messageRepository.existsByChat_UserAndCreatedAtAfter(
-                    user, 
+                    user,
                     java.sql.Timestamp.valueOf(freeTrialEndDate)
                 );
             }
