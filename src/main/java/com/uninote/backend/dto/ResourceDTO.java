@@ -1,46 +1,44 @@
 package com.uninote.backend.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.util.RawValue;
 import java.sql.Timestamp;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.uninote.backend.utils.JsonUtils;
 
 public abstract class ResourceDTO {
     @JsonProperty("id")
     protected Long id;
-    
+
     @JsonProperty("title")
     protected String title;
-    
+
     @JsonProperty("createdAt")
     protected Timestamp createdAt;
-    
+
     @JsonProperty("summary")
     protected String summary;
-    
+
     @JsonProperty("content")
     protected String content;
-    
+
     @JsonProperty("type")
     protected String type;
-    
+
     @JsonProperty("chapters")
-    @JsonRawValue
-    protected String chapters;
-    
+    protected JsonNode chapters;
+
     @JsonProperty("flashcards")
-    @JsonRawValue
-    protected String flashcards;
-    
+    protected JsonNode flashcards;
+
     @JsonProperty("quizzes")
-    @JsonRawValue
-    protected String quizzes;
-    
+    protected JsonNode quizzes;
+
     @JsonProperty("relations")
-    @JsonRawValue
-    protected String relations;
+    protected JsonNode relations;
+
+
 
     // Getters
     public Long getId() {
@@ -67,19 +65,19 @@ public abstract class ResourceDTO {
         return type;
     }
 
-    public String getChapters() {
+    public JsonNode getChapters() {
         return chapters;
     }
 
-    public String getFlashcards() {
+    public JsonNode getFlashcards() {
         return flashcards;
     }
 
-    public String getQuizzes() {
+    public JsonNode getQuizzes() {
         return quizzes;
     }
-    
-    public String getRelations() {
+
+    public JsonNode getRelations() {
         return relations;
     }
 
@@ -108,32 +106,81 @@ public abstract class ResourceDTO {
     }
 
     public void setChapters(String chapters) {
-        this.chapters = (chapters != null && isValidJson(chapters)) ? chapters : "[]";
+        this.chapters = parseJsonString(chapters);
     }
 
     public void setFlashcards(String flashcards) {
-        this.flashcards = (flashcards != null && isValidJson(flashcards)) ? flashcards : "[]";
+        this.flashcards = parseJsonString(flashcards);
     }
 
     public void setQuizzes(String quizzes) {
-        this.quizzes = (quizzes != null && isValidJson(quizzes)) ? quizzes : "[]";
+        this.quizzes = parseJsonString(quizzes);
     }
-    
+
     public void setRelations(String relations) {
-        this.relations = (relations != null && isValidJson(relations)) ? relations : "[]";
+        this.relations = parseJsonString(relations);
     }
-    
-    
-    private boolean isValidJson(String json) {
-        try {
-            if (json == null || json.trim().isEmpty()) {
-                return false;
-            }
-            
-            return (json.trim().startsWith("[") && json.trim().endsWith("]")) || 
-                   (json.trim().startsWith("{") && json.trim().endsWith("}"));
-        } catch (Exception e) {
-            return false;
-        }
+
+        /**
+     * Parse a JSON string into a JsonNode, handling null/empty values and malformed JSON
+     */
+    private JsonNode parseJsonString(String jsonString) {
+        return JsonUtils.parseJsonString(jsonString);
+    }
+
+    /**
+     * Get chapters as a List of objects
+     */
+    public List<Object> getChaptersAsList() {
+        return JsonUtils.jsonNodeToList(chapters);
+    }
+
+    /**
+     * Get flashcards as a List of objects
+     */
+    public List<Object> getFlashcardsAsList() {
+        return JsonUtils.jsonNodeToList(flashcards);
+    }
+
+    /**
+     * Get quizzes as a List of objects
+     */
+    public List<Object> getQuizzesAsList() {
+        return JsonUtils.jsonNodeToList(quizzes);
+    }
+
+    /**
+     * Get relations as a List of objects
+     */
+    public List<Object> getRelationsAsList() {
+        return JsonUtils.jsonNodeToList(relations);
+    }
+
+    /**
+     * Set chapters from a List of objects
+     */
+    public void setChaptersFromList(List<?> chaptersList) {
+        this.chapters = JsonUtils.listToJsonNode(chaptersList);
+    }
+
+    /**
+     * Set flashcards from a List of objects
+     */
+    public void setFlashcardsFromList(List<?> flashcardsList) {
+        this.flashcards = JsonUtils.listToJsonNode(flashcardsList);
+    }
+
+    /**
+     * Set quizzes from a List of objects
+     */
+    public void setQuizzesFromList(List<?> quizzesList) {
+        this.quizzes = JsonUtils.listToJsonNode(quizzesList);
+    }
+
+    /**
+     * Set relations from a List of objects
+     */
+    public void setRelationsFromList(List<?> relationsList) {
+        this.relations = JsonUtils.listToJsonNode(relationsList);
     }
 }

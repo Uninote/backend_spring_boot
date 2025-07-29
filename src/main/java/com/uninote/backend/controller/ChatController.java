@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.uninote.backend.config.security.FirebaseAuthentication;
+import com.uninote.backend.utils.JsonUtils;
 import com.uninote.backend.dto.ChatHistoryDto;
 import com.uninote.backend.dto.ChatRequest;
 import com.uninote.backend.dto.MessageRatingDTO;
@@ -69,11 +70,11 @@ public class ChatController {
     public ResponseEntity<Map<String, Object>> getChatHistory(
             @PathVariable String chatUuid,
             @RequestParam String jwt) {
-        
+
         Map<String, Object> chatHistory = chatService.getChatHistory(chatUuid, jwt);
 
         if (chatHistory != null && !chatHistory.isEmpty()) {
-            return ResponseEntity.ok(chatHistory); 
+            return ResponseEntity.ok(chatHistory);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -93,7 +94,7 @@ public class ChatController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return new ResponseEntity<>("Authorization token missing or invalid.", HttpStatus.UNAUTHORIZED);
         }
-        
+
         FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
         String userUid = firebaseAuth.getUid();
 
@@ -201,19 +202,26 @@ public class ChatController {
                         flashcardsJson = langChainContentService.generateFlashcards(resource);
                     }
 
-                    return ResponseEntity.ok()
-                            .header("Content-Type", "application/json")
-                            .body(flashcardsJson);
+                    // Parse the JSON string and return as proper JSON object
+                    Object flashcardsObject = JsonUtils.parseJsonStringToObject(flashcardsJson);
+                    return ResponseEntity.ok(flashcardsObject);
                 }
 
+                case "chapters": {
+                    String chaptersJson = langChainContentService.generateChapters(resourceId);
 
-                case "chapters":
-                    return ResponseEntity.ok(langChainContentService.generateChapters(resourceId));
+                    // Parse the JSON string and return as proper JSON object
+                    Object chaptersObject = JsonUtils.parseJsonStringToObject(chaptersJson);
+                    return ResponseEntity.ok(chaptersObject);
+                }
 
-                case "quiz":
-                    return ResponseEntity.ok()
-                            .header("Content-Type", "application/json")
-                            .body(langChainContentService.generateQuiz(resourceId));
+                case "quiz": {
+                    String quizJson = langChainContentService.generateQuiz(resourceId);
+
+                    // Parse the JSON string and return as proper JSON object
+                    Object quizObject = JsonUtils.parseJsonStringToObject(quizJson);
+                    return ResponseEntity.ok(quizObject);
+                }
 
                 case "all":
                     return ResponseEntity.ok(langChainContentService.generateAllContentParallel(resourceId));
@@ -228,6 +236,5 @@ public class ChatController {
     }
 
 
-    
-}
 
+}
