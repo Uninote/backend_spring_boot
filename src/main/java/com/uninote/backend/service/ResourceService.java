@@ -136,12 +136,8 @@ public class ResourceService {
 
             // Trigger content extraction asynchronously
             logger.info("Triggering async content extraction for resource ID: {}", savedResource.getId());
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                @Override
-                public void afterCommit() {
-                    extractContentAsync(file, savedResource); // Already @Async
-                }
-            });
+            extractContentAsync(file, savedResource);
+
             logger.info("=== FILE UPLOAD COMPLETE: ID={} ===", savedResource.getId());
             logger.info("Total createFileResource time for file {}: {} ms", originalFilename, (t2-overallStart));
             return savedResource;
