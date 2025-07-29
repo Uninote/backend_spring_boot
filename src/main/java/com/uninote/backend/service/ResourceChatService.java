@@ -61,7 +61,7 @@ public class ResourceChatService {
         long overallStart = System.currentTimeMillis();
         logger.info("[createWithFileResource] Start for userUid={}", userUid);
         long t0 = System.currentTimeMillis();
-        Chat chat = new Chat(); 
+        Chat chat = new Chat();
         chat.setUuid(UUID.randomUUID().toString());
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
@@ -86,11 +86,19 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t4 = System.currentTimeMillis();
         logger.info("[createWithFileResource] ResourceChat saved in {} ms", (t4-t3));
-        // PostHog event
+        // PostHog event with detailed timing
         Map<String, Object> phProps = new HashMap<>();
         phProps.put("type", "file");
         phProps.put("chat_id", chat.getId());
         phProps.put("chat_uuid", chat.getUuid());
+        phProps.put("total_duration_ms", t4 - overallStart);
+        phProps.put("chat_creation_time_ms", t1 - t0);
+        phProps.put("resource_creation_time_ms", t2 - t1);
+        phProps.put("mixpanel_tracking_time_ms", t3 - t2);
+        phProps.put("final_save_time_ms", t4 - t3);
+        phProps.put("file_size_bytes", file.getSize());
+        phProps.put("file_name", file.getOriginalFilename());
+        phProps.put("file_content_type", file.getContentType());
         posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
         logger.info("[createWithFileResource] Total time: {} ms", (t4-overallStart));
         return saved;
@@ -101,7 +109,7 @@ public class ResourceChatService {
         long overallStart = System.currentTimeMillis();
         logger.info("[createWithYouTubeResource] Start for userUid={}", userUid);
         long t0 = System.currentTimeMillis();
-        Chat chat = new Chat(); 
+        Chat chat = new Chat();
         chat.setUuid(UUID.randomUUID().toString());
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
@@ -126,11 +134,17 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t4 = System.currentTimeMillis();
         logger.info("[createWithYouTubeResource] ResourceChat saved in {} ms", (t4-t3));
-        // PostHog event
+        // PostHog event with detailed timing
         Map<String, Object> phProps = new HashMap<>();
         phProps.put("type", "youtube");
         phProps.put("chat_id", chat.getId());
         phProps.put("chat_uuid", chat.getUuid());
+        phProps.put("total_duration_ms", t4 - overallStart);
+        phProps.put("chat_creation_time_ms", t1 - t0);
+        phProps.put("resource_creation_time_ms", t2 - t1);
+        phProps.put("mixpanel_tracking_time_ms", t3 - t2);
+        phProps.put("final_save_time_ms", t4 - t3);
+        phProps.put("youtube_url", youtubeUrl);
         posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
         logger.info("[createWithYouTubeResource] Total time: {} ms", (t4-overallStart));
         return saved;
@@ -159,7 +173,7 @@ public class ResourceChatService {
             return bTime.compareTo(aTime); // Descending
         });
 
-        return all;    
+        return all;
     }
 
 
@@ -167,7 +181,7 @@ public class ResourceChatService {
         long overallStart = System.currentTimeMillis();
         logger.info("[createWithNote] Start for userUid={}", userUid);
         long t0 = System.currentTimeMillis();
-        Chat chat = new Chat(); 
+        Chat chat = new Chat();
         chat.setUuid(UUID.randomUUID().toString());
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
@@ -193,11 +207,18 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t4 = System.currentTimeMillis();
         logger.info("[createWithNote] ResourceChat saved in {} ms", (t4-t3));
-        // PostHog event
+        // PostHog event with detailed timing
         Map<String, Object> phProps = new HashMap<>();
         phProps.put("type", "note");
         phProps.put("chat_id", chat.getId());
         phProps.put("chat_uuid", chat.getUuid());
+        phProps.put("total_duration_ms", t4 - overallStart);
+        phProps.put("chat_creation_time_ms", t1 - t0);
+        phProps.put("resource_creation_time_ms", t2 - t1);
+        phProps.put("mixpanel_tracking_time_ms", t3 - t2);
+        phProps.put("final_save_time_ms", t4 - t3);
+        phProps.put("note_id", noteId);
+        phProps.put("note_title", note.getTitle());
         posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
         logger.info("[createWithNote] Total time: {} ms", (t4-overallStart));
         return saved;
@@ -209,7 +230,7 @@ public class ResourceChatService {
         long overallStart = System.currentTimeMillis();
         logger.info("[createWithNoteResource] Start for userUid={}", userUid);
         long t0 = System.currentTimeMillis();
-        Chat chat = new Chat(); 
+        Chat chat = new Chat();
         chat.setUuid(UUID.randomUUID().toString());
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
@@ -228,21 +249,49 @@ public class ResourceChatService {
         ResourceChat saved = resourceChatRepository.save(resourceChat);
         long t3 = System.currentTimeMillis();
         logger.info("[createWithNoteResource] ResourceChat saved in {} ms", (t3-t2));
+
+        // PostHog event with detailed timing
+        Map<String, Object> phProps = new HashMap<>();
+        phProps.put("type", "note_resource");
+        phProps.put("chat_id", chat.getId());
+        phProps.put("chat_uuid", chat.getUuid());
+        phProps.put("total_duration_ms", t3 - overallStart);
+        phProps.put("chat_creation_time_ms", t1 - t0);
+        phProps.put("resource_creation_time_ms", t2 - t1);
+        phProps.put("final_save_time_ms", t3 - t2);
+        phProps.put("note_id", note.getId());
+        phProps.put("note_title", note.getTitle());
+        posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
+
         logger.info("[createWithNoteResource] Total time: {} ms", (t3-overallStart));
         return saved;
     }
 
     public Chat createSimpleChat(String userUid) {
-        Chat chat = new Chat(); 
+        long startTime = System.currentTimeMillis();
+        logger.info("[createSimpleChat] Start for userUid={}", userUid);
+
+        Chat chat = new Chat();
         chat.setUuid(UUID.randomUUID().toString());
 
         User user = userRepository.findByFirebaseUid(userUid)
             .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + userUid));
         chat.setUser(user);
 
-        return chat = chatRepository.save(chat);
-        
+        Chat savedChat = chatRepository.save(chat);
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+
+        // PostHog event with timing
+        Map<String, Object> phProps = new HashMap<>();
+        phProps.put("type", "simple");
+        phProps.put("chat_id", savedChat.getId());
+        phProps.put("chat_uuid", savedChat.getUuid());
+        phProps.put("total_duration_ms", duration);
+        posthogService.captureEvent("chat_created", user.getId().toString(), phProps);
+
+        logger.info("[createSimpleChat] Total time: {} ms", duration);
+        return savedChat;
     }
 
 }
-
