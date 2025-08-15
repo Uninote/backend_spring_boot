@@ -87,10 +87,10 @@ public class UserService {
 
     @Autowired
     private final DepartmentRepository departmentRepository = null;
-    
+
     @Autowired
     private final UniversityRepository universityRepository = null;
-    
+
     @Autowired
     private final RankRepository rankRepository = null;
 
@@ -126,7 +126,7 @@ public class UserService {
     private UserSessionService userSessionService;
 
     @Autowired
-    private NoteCollectionRepository noteCollectionRepository;  
+    private NoteCollectionRepository noteCollectionRepository;
 
     @Autowired
     private UserSessionRepository userSessionRepository;
@@ -140,7 +140,7 @@ public class UserService {
 
 
     private final Map<Long, Object> locks = new ConcurrentHashMap<>();
-    
+
 
     public Long getTotalUsers() {
         return userRepository.countTotalVerifiedUsers();
@@ -197,14 +197,14 @@ public class UserService {
                     //mixPanelService.identifyUser(anonymusSessionId, userId);
 
                 });
-                UserLogin userLogin = new UserLogin();  
+                UserLogin userLogin = new UserLogin();
                 userLogin.setUser(user);
                 userLogin.setLoginTimestamp(LocalDateTime.now());
                 userLoginRepository.save(userLogin);
                 Optional<UserSession> activeSession = userSessionRepository.findActiveSessionByUserId(userId);
                 Long sessionId;
                 if (activeSession.isPresent()) {
-                
+
                     sessionId = activeSession.get().getSessionId();
                 } else {
                     sessionId = userSessionService.startSession(userId);
@@ -269,7 +269,7 @@ public class UserService {
 
                 });
 
-                UserLogin userLogin = new UserLogin();  
+                UserLogin userLogin = new UserLogin();
                 userLogin.setUser(user);
                 userLogin.setLoginTimestamp(LocalDateTime.now());
                 userLogin.setDevice(deviceId);
@@ -277,7 +277,7 @@ public class UserService {
                 Optional<UserSession> activeSession = userSessionRepository.findActiveSessionByUserId(userId);
                 Long sessionId;
                 if (activeSession.isPresent()) {
-                
+
                     sessionId = activeSession.get().getSessionId();
                 } else {
                     sessionId = userSessionService.startSession(userId);
@@ -297,6 +297,7 @@ public class UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     public User findById(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
         return userOptional.orElse(null);
@@ -313,20 +314,20 @@ public void softDeleteUserById(Long userId) {
         commentLikeRepository.deleteByUserId(userId);
         commentRepository.deleteByUserId(userId);
 
-        
+
         noteRepository.softDeleteByUserId(userId);
 
-        
+
 
         noteCollectionRepository.softDeleteCollectionsByUserId(userId);
-       
+
         noteLikeRepository.setInactiveByUserId(userId);
 
-       
+
         noteSaveRepository.setInactiveByUserId(userId);
-        
-    
-        
+
+
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID"));
         user.setUsername(null);
@@ -338,7 +339,7 @@ public void softDeleteUserById(Long userId) {
         userRepository.save(user);
 
     } catch (Exception e) {
-        
+
         throw new RuntimeException("Failed to delete user", e);
     }
 }
@@ -347,7 +348,7 @@ public void softDeleteUserById(Long userId) {
         return userRepository.save(user);
     }
     public User createUser(UserDTO userDto) {
-        
+
         if (userDto.getFirebaseUid() == null || userDto.getFirebaseUid().isEmpty()) {
             throw new IllegalArgumentException("Firebase UID must not be null or empty");
         }
@@ -385,7 +386,7 @@ public void softDeleteUserById(Long userId) {
                 .orElseThrow(() -> new IllegalStateException("Default rank not found"));
 
         Role role = roleRepository.findById(userDto.getRoleId()).orElseThrow(() -> new IllegalArgumentException("Role not found"));
-        
+
         User user = new User();
         user.setFirebaseUid(userDto.getFirebaseUid());
         user.setName(userDto.getName());
@@ -410,7 +411,7 @@ public void softDeleteUserById(Long userId) {
             userSeasonPointsRepository.save(userSeasonPoints);
         }
 
-        
+
         Subscription freeSub = new Subscription();
         freeSub.setUser(savedUser);
         freeSub.setPlan(SubscriptionPlan.FREE);
@@ -423,8 +424,8 @@ public void softDeleteUserById(Long userId) {
         freeSub.setPlanName("Free");
 
         subscriptionRepository.save(freeSub);
-    
-        
+
+
         return savedUser;
     }
     public User updateUser(Long userId, UserDTO userDto) {
@@ -472,24 +473,24 @@ public void softDeleteUserById(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
         return userOptional.orElse(null);
     }
-    
+
 
     public List<UserInfoProjection> getTop100UsersByUniscore(){
         return userRepository.findTop100ByUniscore();
-        
+
     }
 
     public List<UserInfoProjection> getTop100UsersByUniscoreByDepartment(Long departmentId){
         return userRepository.findTop100ByUniscoreByDepartment(departmentId);
-        
+
     }
     public List<UserInfoProjection> getTop100UsersByUniscoreByUniversity(Long universityId){
         return userRepository.findTop100ByUniscoreByUniversity(universityId);
-       
+
     }
 
-    
-    
+
+
 
     @Transactional
     public void updateUniScore(User user, Long activityType) {
@@ -513,7 +514,7 @@ public void softDeleteUserById(Long userId) {
                     userSeasonPointsId.setSeasonId(currentSeason.getSeasonId());
                     userSeasonPointsId.setUserId(user.getId());
                     userSeasonPoints = new UserSeasonPoints(userSeasonPointsId, 0, null, false);
-                    
+
                 } else{
                     userSeasonPoints = userSeasonPointsOpt.get();
                 }
@@ -599,17 +600,17 @@ public void softDeleteUserById(Long userId) {
         return userRepository.findUserInfoById(userId,language);
     }
 
-    
+
     public Integer getUserRankInDepartment(Long userId) {
         return userRepository.findUserRankInDepartment(userId);
     }
 
-    
+
     public Integer getUserRankInUniversity(Long userId) {
         return userRepository.findUserRankInUniversity(userId);
     }
 
-    
+
     public Integer getUserGlobalRank(Long userId) {
         return userRepository.findUserGlobalRank(userId);
     }
@@ -617,14 +618,14 @@ public void softDeleteUserById(Long userId) {
     public Map<String, Integer> getUserRanks(Long userId) {
         Map<String, Integer> userRanks = new HashMap<>();
 
-        
+
         Integer rankInDepartment = userRepository.findUserRankInDepartment(userId);
         userRanks.put("department", rankInDepartment);
 
         Integer rankInUniversity = userRepository.findUserRankInUniversity(userId);
         userRanks.put("university", rankInUniversity);
 
-        
+
         Integer globalRank = userRepository.findUserGlobalRank(userId);
         userRanks.put("global", globalRank);
 
@@ -655,11 +656,11 @@ public void softDeleteUserById(Long userId) {
 
         UserSession session = activeSessionOpt.get();
 
-        session.setLogoutTime(LocalDateTime.now()); 
-        session.setSessionStatus(false);  
-        userSessionRepository.save(session);  
+        session.setLogoutTime(LocalDateTime.now());
+        session.setSessionStatus(false);
+        userSessionRepository.save(session);
 
-        return session.getSessionId();  
+        return session.getSessionId();
     }
 
 
@@ -685,14 +686,14 @@ public void softDeleteUserById(Long userId) {
 
     public GrowthStatisticsDTO fetchGrowthStatistics() {
         Logger logger = LoggerFactory.getLogger(UserService.class);
-    
+
         List<Object[]> rawData = userRepository.getGrowthStatisticsNative(
-            LocalDate.now().minusDays(7), 
-            LocalDate.now().minusMonths(1), 
-            LocalDate.now().minusMonths(3), 
+            LocalDate.now().minusDays(7),
+            LocalDate.now().minusMonths(1),
+            LocalDate.now().minusMonths(3),
             LocalDate.now().minusYears(1)
         );
-    
+
         if (rawData != null && !rawData.isEmpty()) {
             Object[] row = rawData.get(0);
             try {
@@ -713,11 +714,11 @@ public void softDeleteUserById(Long userId) {
         } else {
             logger.warn("No growth statistics data found.");
         }
-    
+
         return new GrowthStatisticsDTO(0L,0L,0L,0L);
     }
-    
-    
+
+
 
 
     public List<UserGrowthDTO> fetchGrowthOverTime() {
@@ -740,4 +741,4 @@ public void softDeleteUserById(Long userId) {
         return userRepository.getMonthlyActiveUserPercentage();
     }
 
-}   
+}

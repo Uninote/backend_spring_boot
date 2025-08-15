@@ -10,13 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.uninote.backend.dto.GrowthStatisticsDTO;
-import com.uninote.backend.dto.MAUChangeStatisticsDTO;
 import com.uninote.backend.dto.MonthlyActiveUsersDTO;
-import com.uninote.backend.dto.UserDTO;
 import com.uninote.backend.dto.UserGrowthDTO;
-import com.uninote.backend.entity.Department;
-import com.uninote.backend.entity.University;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.interfaceProjection.UserInfoProjection;
 import com.uninote.backend.interfaceProjection.UserProfileProjection;
@@ -27,10 +22,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
     @Query(value ="select count(*) from users where email_verified = true and role_id != 21", nativeQuery = true)
-    Long countTotalVerifiedUsers();    
+    Long countTotalVerifiedUsers();
 
     @Query(value ="select count(*) from users where email_verified = false and role_id != 21", nativeQuery = true)
-    Long countTotalUnverifiedUsers();  
+    Long countTotalUnverifiedUsers();
 
     @Query(value = "SELECT u.university_id AS universityId, u.department_id AS departmentId, u.uniscore AS uniscore, " +
                "u.username AS username, u.profile_image_url AS profileImageUrl, u.user_id as userId, r.rank_name AS rankName, CASE WHEN u.certified = true THEN true ELSE false END AS certified " +
@@ -38,7 +33,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                "JOIN ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) AND u.email_verified = true " +
                "ORDER BY u.uniscore DESC " +
-               "LIMIT 100", 
+               "LIMIT 100",
        nativeQuery = true)
    List<UserInfoProjection> findTop100ByUniscore();
 
@@ -47,7 +42,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                "FROM users u " +
                "JOIN ranks r ON u.rank_id = r.rank_id " +
                "WHERE u.role_id IN (1, 2) AND u.department_id = :departmentId AND u.email_verified = true " +
-               "ORDER BY u.uniscore DESC LIMIT 100", 
+               "ORDER BY u.uniscore DESC LIMIT 100",
        nativeQuery = true)
     List<UserInfoProjection> findTop100ByUniscoreByDepartment(@Param("departmentId") Long departmentId);
 
@@ -58,7 +53,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                "FROM users u " +
                "JOIN ranks r ON u.rank_id = r.rank_id " +
                " WHERE u.role_id IN (1, 2) AND u.university_id = :universityId AND u.email_verified = true " +
-               "ORDER BY u.uniscore DESC LIMIT 100", 
+               "ORDER BY u.uniscore DESC LIMIT 100",
        nativeQuery = true)
     List<UserInfoProjection> findTop100ByUniscoreByUniversity(@Param("universityId") Long universityId);
 
@@ -81,69 +76,86 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 
-    @Query("SELECT u.id AS id, u.firebaseUid AS firebaseUid, u.name AS name, " +
-        "dn.name AS departmentName, dn.fullName AS departmentFullName, " +
-        "un.name AS universityName, un.fullName AS universityFullName, " +
-        "u.email AS email, u.username AS username, u.profileImageUrl AS profileImageUrl, " +
-        "u.instagramUsername AS instagramUsername, COALESCE(u.seasonScore, 0) AS seasonScore, " +
-        "u.uniscore AS uniscore, u.role.id AS roleId, u.bio AS bio, r.rankName AS rank, u.streak AS streak, " +
-        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id and n.deleted = false) AS totalNotes, " +
-        "(SELECT COUNT(n) FROM Note n WHERE n.user.id = u.id AND n.isPublic = true AND n.deleted = false) AS totalPublicNotes, " +
-        "(SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user.id = u.id) AS totalLikes, " +
-        "u.certified AS certified, " +
-        "(SELECT s.plan FROM Subscription s WHERE s.user = u " +
-        " AND s.status = 'active' " +
-        " AND s.startDate <= CURRENT_DATE " +
-        " AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
-        " AND s.startDate = (SELECT MAX(s2.startDate) FROM Subscription s2 WHERE s2.user = u " +
-        "                   AND s2.status = 'active' " +
-        "                   AND s2.startDate <= CURRENT_DATE " +
-        "                   AND (s2.endDate IS NULL OR s2.endDate >= CURRENT_DATE))) AS subscriptionPlan, " +
-        "CASE WHEN EXISTS(SELECT 1 FROM Subscription trial WHERE trial.user = u AND trial.duration = 'THREE_DAYS') " +
-        "     THEN true ELSE false END AS freeTrialCompleted " +
-        "FROM User u " +
-        "JOIN DepartmentName dn ON dn.department = u.department " +
-        "JOIN UniversityName un ON un.university = u.university " +
-        "JOIN Rank r ON r.id = u.rank.id " +
-        "WHERE dn.language.code = :languageId " +
-        "AND un.language.code = :languageId " +
-        "AND u.id = :userId")
-UserProfileProjection findUserProfileById(@Param("userId") Long userId, @Param("languageId") String languageId);
+    @Query("SELECT " +
+       " u.id AS id, " +
+       " u.firebaseUid AS firebaseUid, " +
+       " u.name AS name, " +
+       " (SELECT dn1.name FROM DepartmentName dn1 WHERE dn1.department = u.department AND dn1.language.code = :languageId) AS departmentName, " +
+       " (SELECT dn2.fullName FROM DepartmentName dn2 WHERE dn2.department = u.department AND dn2.language.code = :languageId) AS departmentFullName, " +
+       " (SELECT un1.name FROM UniversityName un1 WHERE un1.university = u.university AND un1.language.code = :languageId) AS universityName, " +
+       " (SELECT un2.fullName FROM UniversityName un2 WHERE un2.university = u.university AND un2.language.code = :languageId) AS universityFullName, " +
+       " u.email AS email, " +
+       " u.username AS username, " +
+       " u.profileImageUrl AS profileImageUrl, " +
+       " u.instagramUsername AS instagramUsername, " +
+       " COALESCE(u.seasonScore, 0) AS seasonScore, " +
+       " u.uniscore AS uniscore, " +
+       " r.id AS roleId, " +
+       " u.bio AS bio, " +
+       " r.rankName AS rank, " +
+       " u.streak AS streak, " +
+       " (SELECT COUNT(n) FROM Note n WHERE n.user = u AND n.deleted = false) AS totalNotes, " +
+       " (SELECT COUNT(n) FROM Note n WHERE n.user = u AND n.isPublic = true AND n.deleted = false) AS totalPublicNotes, " +
+       " (SELECT COUNT(nl) FROM NoteLike nl WHERE nl.note.user = u) AS totalLikes, " +
+       " u.certified AS certified, " +
+       " (SELECT s.plan FROM Subscription s " +
+       "   WHERE s.user = u " +
+       "     AND s.status = 'active' " +
+       "     AND s.startDate <= CURRENT_DATE " +
+       "     AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+       "     AND s.startDate = (SELECT MAX(s2.startDate) FROM Subscription s2 " +
+       "                        WHERE s2.user = u " +
+       "                          AND s2.status = 'active' " +
+       "                          AND s2.startDate <= CURRENT_DATE " +
+       "                          AND (s2.endDate IS NULL OR s2.endDate >= CURRENT_DATE))) AS subscriptionPlan, " +
+       " CASE WHEN EXISTS (SELECT 1 FROM Subscription trial " +
+       "                   WHERE trial.user = u AND trial.duration = 'THREE_DAYS') " +
+       "      THEN true ELSE false END AS freeTrialCompleted " +
+       "FROM User u " +
+       "JOIN u.rank r " +
+       "WHERE u.id = :userId")
+UserProfileProjection findUserProfileById(@Param("userId") Long userId,
+                                          @Param("languageId") String languageId);
 
-@Query("SELECT u.university.id AS universityId, " +
-        "u.department.id AS departmentId, " +
-        "u.uniscore AS uniscore, " +
-        "u.username AS username, " +
-        "u.profileImageUrl AS profileImageUrl, " +
-        "u.instagramUsername AS instagramUsername, " +
-        "COALESCE(u.seasonScore, 0) AS seasonScore, " +
-        "dn.name AS departmentName, " +
-        "un.name AS universityName, " +
-        "u.certified AS certified, " +
-        "(SELECT s.plan FROM Subscription s WHERE s.user = u " +
-        " AND s.status = 'active' " +
-        " AND s.startDate <= CURRENT_DATE " +
-        " AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
-        " AND s.startDate = (SELECT MAX(s2.startDate) FROM Subscription s2 WHERE s2.user = u " +
-        "                   AND s2.status = 'active' " +
-        "                   AND s2.startDate <= CURRENT_DATE " +
-        "                   AND (s2.endDate IS NULL OR s2.endDate >= CURRENT_DATE))) AS subscriptionPlan, " +
-        "CASE WHEN EXISTS(SELECT 1 FROM Subscription trial WHERE trial.user = u AND trial.duration = 'THREE_DAYS') " +
-        "     THEN true ELSE false END AS freeTrialCompleted " +
-        "FROM User u " +
-        "JOIN DepartmentName dn ON dn.department = u.department " +
-        "JOIN UniversityName un ON un.university = u.university " +
-        "WHERE dn.language.code = :language " +
-        "AND un.language.code = :language " +
-        "AND u.id = :userId")
-UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("language") String language);
+
+@Query("SELECT " +
+       " u.university.id AS universityId, " +
+       " u.department.id AS departmentId, " +
+       " u.uniscore AS uniscore, " +
+       " u.username AS username, " +
+       " u.profileImageUrl AS profileImageUrl, " +
+       " u.instagramUsername AS instagramUsername, " +
+       " COALESCE(u.seasonScore, 0) AS seasonScore, " +
+       " (SELECT dn1.name FROM DepartmentName dn1 " +
+       "   WHERE dn1.department = u.department AND dn1.language.code = :language) AS departmentName, " +
+       " (SELECT un1.name FROM UniversityName un1 " +
+       "   WHERE un1.university = u.university AND un1.language.code = :language) AS universityName, " +
+       " u.certified AS certified, " +
+       " (SELECT s.plan FROM Subscription s " +
+       "   WHERE s.user = u " +
+       "     AND s.status = 'active' " +
+       "     AND s.startDate <= CURRENT_DATE " +
+       "     AND (s.endDate IS NULL OR s.endDate >= CURRENT_DATE) " +
+       "     AND s.startDate = (SELECT MAX(s2.startDate) FROM Subscription s2 " +
+       "                        WHERE s2.user = u " +
+       "                          AND s2.status = 'active' " +
+       "                          AND s2.startDate <= CURRENT_DATE " +
+       "                          AND (s2.endDate IS NULL OR s2.endDate >= CURRENT_DATE))) AS subscriptionPlan, " +
+       " CASE WHEN EXISTS (SELECT 1 FROM Subscription trial " +
+       "                   WHERE trial.user = u AND trial.duration = 'THREE_DAYS') " +
+       "      THEN true ELSE false END AS freeTrialCompleted " +
+       "FROM User u " +
+       "WHERE u.id = :userId")
+UserInfoProjection findUserInfoById(@Param("userId") Long userId,
+                                    @Param("language") String language);
+
 
 
    @Query(value = "SELECT rank FROM (" +
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.department_id ORDER BY u.uniscore DESC) AS rank " +
                "  FROM users u " +
                "  WHERE u.role_id IN (1, 2)" +
-               ") ranked_users WHERE ranked_users.user_id = :userId", 
+               ") ranked_users WHERE ranked_users.user_id = :userId",
        nativeQuery = true)
    Integer findUserRankInDepartment(@Param("userId") Long userId);
 
@@ -152,7 +164,7 @@ UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("langua
                "  SELECT u.user_id, RANK() OVER (PARTITION BY u.university_id ORDER BY u.uniscore DESC) AS rank " +
                "  FROM users u " +
                "  WHERE u.role_id IN (1, 2)" +
-               ") ranked_users WHERE ranked_users.user_id = :userId", 
+               ") ranked_users WHERE ranked_users.user_id = :userId",
        nativeQuery = true)
    Integer findUserRankInUniversity(@Param("userId") Long userId);
 
@@ -162,7 +174,7 @@ UserInfoProjection findUserInfoById(@Param("userId") Long userId, @Param("langua
                "  SELECT u.user_id, RANK() OVER (ORDER BY u.uniscore DESC) AS rank " +
                "  FROM users u " +
                "  WHERE u.role_id IN (1, 2)" +
-               ") ranked_users WHERE ranked_users.user_id = :userId", 
+               ") ranked_users WHERE ranked_users.user_id = :userId",
        nativeQuery = true)
 Integer findUserGlobalRank(@Param("userId") Long userId);
 
@@ -180,7 +192,7 @@ Integer findUserGlobalRank(@Param("userId") Long userId);
 
 
 
-        
+
         @Query("SELECT u.id FROM User u where u.emailVerified = true")
         List<Long> findUserIds();
 
@@ -228,12 +240,12 @@ List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenD
     List<MonthlyActiveUsersDTO> getMonthlyActiveUserPercentage();
 
 
-        
 
 
-        
 
-    @Query(value = 
+
+
+    @Query(value =
         "WITH registration_week AS (" +
         "    SELECT u.USER_ID, TO_CHAR(u.CREATED_AT, 'YYYY-IW') AS registration_week " +
         "    FROM users u " +
@@ -271,5 +283,5 @@ List<Object[]> getGrowthStatisticsNative(@Param("sevenDaysAgo") LocalDate sevenD
 
     Optional<User> findByEmail(String email);
 
-    
+
 }
