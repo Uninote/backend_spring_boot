@@ -1,11 +1,11 @@
 package com.uninote.backend.converter;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.uninote.backend.dto.BadgeDTO;
 import com.uninote.backend.dto.ChoiceDTO;
@@ -49,11 +49,6 @@ import com.uninote.backend.entity.UniversityName;
 import com.uninote.backend.entity.User;
 import com.uninote.backend.entity.UserBadge;
 import com.uninote.backend.service.CollectionLikeService;
-import com.uninote.backend.service.QuestionService;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 public class EntityToDTOConverter {
 
     @Autowired
@@ -120,7 +115,7 @@ public class EntityToDTOConverter {
             courseName.getLanguage().getCode(),
             courseName.getName()
         );
-    }  
+    }
     public static UserDTO convertUserToDTO(User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
@@ -202,7 +197,7 @@ public class EntityToDTOConverter {
             comment.getContent(),
             comment.getCreatedAt()
         );
-        
+
     }
 
     public static InviteDTO convertInviteToDTO(Invite invite) {
@@ -257,21 +252,21 @@ public class EntityToDTOConverter {
             .filter(courseName -> "EN".equals(courseName.getLanguage().getCode()))
             .map(CourseName::getName)
             .findFirst()
-            .orElse("Unknown Course Name");  
+            .orElse("Unknown Course Name");
 
-        dto.setCourseName(englishCourseName);   
+        dto.setCourseName(englishCourseName);
         String englishDepartmentName = note.getCourse().getDepartment().getDepartmentNames().stream()
             .filter(departmentName -> "EN".equals(departmentName.getLanguage().getCode()))
             .map(DepartmentName::getName)
             .findFirst()
-            .orElse("Unknown Department Name"); 
-        dto.setDepartmentName(englishDepartmentName);     
+            .orElse("Unknown Department Name");
+        dto.setDepartmentName(englishDepartmentName);
 
         String englishUniversityName = note.getCourse().getDepartment().getUniversity().getUniversityNames().stream()
             .filter(universityName -> "EN".equals(universityName.getLanguage().getCode()))
             .map(UniversityName::getName)
             .findFirst()
-            .orElse("Unknown University Name");  
+            .orElse("Unknown University Name");
         dto.setUniversityName(englishUniversityName);
         return dto;
     }
@@ -316,7 +311,7 @@ public class EntityToDTOConverter {
         dto.setDescription(noteCollection.getDescription());
         dto.setIsPublic(noteCollection.getIsPublic());
 
-       
+
 
         return dto;
     }

@@ -19,7 +19,7 @@ public class UserDTO {
     private String instagramUsername;
     public UserDTO() {}
 
-    
+
     public UserDTO( Long id,String firebaseUid, String name, Long departmentId, Long universityId, String email, String username, String profileImageUrl) {
         this.id = id;
         this.firebaseUid = firebaseUid;
@@ -123,7 +123,7 @@ public class UserDTO {
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
-    
+
     public Long getUniscore(){
         return uniscore;
     }

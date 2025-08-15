@@ -13,7 +13,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
-import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
@@ -83,7 +82,7 @@ public class User {
     @Column(name = "email", nullable = true, unique = true)
     private String email;
 
-   
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
@@ -97,7 +96,7 @@ public class User {
 
     @Column(name = "profile_image_url", nullable = true)
     private String profileImageUrl;
-    
+
     @Column(name = "banner_url")
     private String bannerUrl;
 
@@ -127,6 +126,10 @@ public class User {
     @Column(name = "metadata", nullable=true, columnDefinition = "text")
     private String metadata;
 
+    @Column(name = "onboarding_data", nullable=true, columnDefinition = "text")
+    private String onboardingData;
+
+
     @PrePersist
     protected void onCreate() {
         if (streak == 0) {
@@ -137,7 +140,7 @@ public class User {
         }
         if (rank == null) {
             rank = new Rank();
-            rank.setId(1L); 
+            rank.setId(1L);
         }
         if (profileImageUrl==null) {
             profileImageUrl = DEFAULT_PROFILE_URL;
@@ -164,7 +167,7 @@ public class User {
 
     public User() {}
 
-   
+
     public User(Long id, String firebaseUid, int streak, long uniscore, LocalDateTime updatedAt, LocalDateTime lastLogin, String name, Department department, University university, String email, Rank rank, String username, String profileImageUrl) {
         this.id = id;
         this.firebaseUid = firebaseUid;
@@ -179,7 +182,7 @@ public class User {
         this.rank = rank;
         this.username = username;
         this.profileImageUrl = profileImageUrl;
-        
+
     }
 
    public Long getId() {
@@ -361,7 +364,7 @@ public class User {
 
     public Boolean getCertified() {
         return certified;
-        
+
     }
 
     public void setCertified(Boolean certified) {
@@ -384,4 +387,14 @@ public class User {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readTree(this.metadata);
     }
+
+    public String getOnboardingData() {
+        return onboardingData;
+    }
+
+    public void setOnboardingData(String onboardingData) {
+        this.onboardingData = onboardingData;
+    }
+
+
 }

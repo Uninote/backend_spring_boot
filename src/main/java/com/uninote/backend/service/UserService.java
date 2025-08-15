@@ -741,4 +741,30 @@ public void softDeleteUserById(Long userId) {
         return userRepository.getMonthlyActiveUserPercentage();
     }
 
+                @Transactional
+    public boolean setOnboardingData(String firebaseUid, String onboardingData) {
+        try {
+            User user = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + firebaseUid));
+
+            user.setOnboardingData(onboardingData);
+            userRepository.save(user);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isOnboarded(String firebaseUid) {
+        try {
+            User user = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for Firebase UID: " + firebaseUid));
+
+            return user.getOnboardingData() != null && !user.getOnboardingData().trim().isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }

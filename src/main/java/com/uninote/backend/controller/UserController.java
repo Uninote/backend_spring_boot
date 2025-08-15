@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uninote.backend.config.security.FirebaseAuthentication;
 import com.uninote.backend.converter.EntityToDTOConverter;
 import com.uninote.backend.dto.FreeTrialStatusDTO;
@@ -440,5 +441,42 @@ public class UserController {
 
         UserLimitsDTO limits = usageLimitService.getUserLimits(user);
         return ResponseEntity.ok(limits);
+    }
+
+    @PostMapping("/onboarding-data")
+    public ResponseEntity<Boolean> setOnboardingData(@RequestBody Object onboardingData) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        try {
+            // Convert the Object to JSON string
+            ObjectMapper mapper = new ObjectMapper();
+            String onboardingDataString = mapper.writeValueAsString(onboardingData);
+            boolean success = userService.setOnboardingData(userUid, onboardingDataString);
+            return ResponseEntity.ok(success);
+        } catch (Exception e) {
+            return ResponseEntity.ok(false);
+        }
+    }
+
+    @GetMapping("/onboarded")
+    public ResponseEntity<Boolean> isOnboarded() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        FirebaseAuthentication firebaseAuth = (FirebaseAuthentication) authentication;
+        String userUid = firebaseAuth.getUid();
+
+        boolean isOnboarded = userService.isOnboarded(userUid);
+        return ResponseEntity.ok(isOnboarded);
     }
 }
