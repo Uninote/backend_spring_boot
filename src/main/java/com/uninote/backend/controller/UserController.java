@@ -466,7 +466,7 @@ public class UserController {
     }
 
     @GetMapping("/onboarded")
-    public ResponseEntity<Boolean> isOnboarded() {
+    public ResponseEntity<Map<String, Boolean>> isOnboarded() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -477,6 +477,8 @@ public class UserController {
         String userUid = firebaseAuth.getUid();
 
         boolean isOnboarded = userService.isOnboarded(userUid);
-        return ResponseEntity.ok(isOnboarded);
+        Map<String, Boolean> response = new java.util.HashMap<>();
+        response.put("onboarded", isOnboarded);
+        return ResponseEntity.ok(response);
     }
 }
