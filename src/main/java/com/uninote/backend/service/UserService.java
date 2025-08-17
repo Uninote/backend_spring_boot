@@ -428,6 +428,7 @@ public void softDeleteUserById(Long userId) {
 
         return savedUser;
     }
+    @Transactional
     public User updateUser(Long userId, UserDTO userDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -465,6 +466,11 @@ public void softDeleteUserById(Long userId) {
         }
 
         user.setUpdatedAt(LocalDateTime.now());
+
+        // Ensure Rank is loaded before returning
+        if (user.getRank() != null) {
+            user.getRank().getRankName(); // Force load the rank
+        }
 
         return userRepository.save(user);
     }

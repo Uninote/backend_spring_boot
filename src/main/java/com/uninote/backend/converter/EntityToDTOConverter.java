@@ -129,8 +129,21 @@ public class EntityToDTOConverter {
         userDTO.setProfileImageUrl(user.getProfileImageUrl());
         userDTO.setRoleId(user.getRole() != null ? user.getRole().getId() : null);
         userDTO.setBio(user.getBio());
-        userDTO.setRank(user.getRank() != null ? user.getRank().getRankName() : null);
+
+        // Safe handling of Rank entity to prevent lazy initialization
+        String rankName = null;
+        try {
+            if (user.getRank() != null) {
+                rankName = user.getRank().getRankName();
+            }
+        } catch (Exception e) {
+            // If rank cannot be loaded, set to null
+            rankName = null;
+        }
+        userDTO.setRank(rankName);
+
         userDTO.setStreak(user.getStreak());
+        userDTO.setInstagramUsername(user.getInstagramUsername());
         return userDTO;
     }
 

@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,8 @@ import com.uninote.backend.service.UserService;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -103,14 +107,23 @@ public class UserController {
         try {
             User updatedUser = userService.updateUser(userId, userDto);
             if (updatedUser != null) {
-                UserDTO updatedUserDTO = EntityToDTOConverter.convertUserToDTO(updatedUser);
-                return ResponseEntity.ok(updatedUserDTO);
+                try {
+                    UserDTO updatedUserDTO = EntityToDTOConverter.convertUserToDTO(updatedUser);
+                    return ResponseEntity.ok(updatedUserDTO);
+                } catch (Exception conversionException) {
+                    // Log the conversion error for debugging
+                    logger.error("Error converting user to DTO for userId {}: {}", userId, conversionException.getMessage(), conversionException);
+                    return ResponseEntity.internalServerError().build();
+                }
             } else {
                 return ResponseEntity.notFound().build();
             }
         } catch (IllegalArgumentException e) {
+            logger.warn("Invalid argument for user update - userId: {}, error: {}", userId, e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
+            // Log the general error for debugging
+            logger.error("Error updating user with userId {}: {}", userId, e.getMessage(), e);
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
