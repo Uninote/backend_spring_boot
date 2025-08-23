@@ -16,8 +16,6 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -61,13 +59,13 @@ public class SVDRecommendationService {
     private List<Long> userIds;
     private List<Long> noteIds;
 
-    private Map<Long, Set<Long>> likesMap; 
-    private Map<Long, Set<Long>> savesMap; 
-    private Map<Long, Map<Long, Integer>> viewsMap; 
+    private Map<Long, Set<Long>> likesMap;
+    private Map<Long, Set<Long>> savesMap;
+    private Map<Long, Map<Long, Integer>> viewsMap;
 
     private boolean matrixLoaded = false;
 
-    @EventListener(ApplicationReadyEvent.class)
+    //@EventListener(ApplicationReadyEvent.class)
     @Async
     public synchronized void initializeUserNoteMatrix() {
         if (matrixLoaded) {
@@ -93,7 +91,7 @@ public class SVDRecommendationService {
                 userNoteMatrix = loadUserNoteMatrix(userIds, noteIds);
             } else {
                 logger.info("No existing matrix found. Building new user-note matrix.");
-                refreshUserNoteMatrix();  
+                refreshUserNoteMatrix();
                 saveUserNoteMatrix(userNoteMatrix, userIds, noteIds);
             }
 
@@ -102,7 +100,7 @@ public class SVDRecommendationService {
             likesMap = getUserLikesMap();
             savesMap = getUserSavesMap();
             viewsMap = getUserViewsMap();
-            
+
             logger.info("User-note matrix initialization completed successfully.");
         } catch (Exception e) {
             logger.error("Error during user-note matrix initialization: {}", e.getMessage(), e);
@@ -110,7 +108,7 @@ public class SVDRecommendationService {
         }
     }
 
-    @Scheduled(cron = "0 0 0 * * *")  
+    @Scheduled(cron = "0 0 0 * * *")
     public void refreshUserNoteMatrix() {
         logger.info("Starting refresh of user-note interaction matrix and SVD.");
 
@@ -127,7 +125,7 @@ public class SVDRecommendationService {
             userNoteMatrix = buildUserNoteMatrix(userIds, noteIds, likesMap, savesMap, viewsMap);
             svdMatrices = performSVD(userNoteMatrix);
             logger.info("Successfully refreshed user-note matrix and SVD matrices");
-            matrixLoaded = true;    
+            matrixLoaded = true;
         } catch (Exception e) {
             logger.error("Error during scheduled matrix refresh", e);
         }
@@ -203,7 +201,7 @@ public class SVDRecommendationService {
 
         if (userNoteMatrix == null || svdMatrices == null || userIds == null || noteIds == null) {
             logger.warn("User-note matrix or SVD matrices not initialized; refreshing matrices");
-            new Thread(this::initializeUserNoteMatrix).start(); 
+            new Thread(this::initializeUserNoteMatrix).start();
             return recommendationService.getCachedRecommendations();
         }
 
@@ -308,7 +306,7 @@ public class SVDRecommendationService {
 
     public void saveUserNoteMatrix(RealMatrix matrix, List<Long> userIds, List<Long> noteIds) {
         logger.info("Clearing previous entries and saving the user-note interaction matrix to the database.");
-        
+
         try {
             userNoteMatrixRepository.deleteAll();
             List<UserNoteMatrixEntry> entries = new ArrayList<>();
@@ -319,7 +317,7 @@ public class SVDRecommendationService {
                     Long noteId = noteIds.get(j);
                     double score = matrix.getEntry(i, j);
 
-                    if (score != 0.0) {  
+                    if (score != 0.0) {
                         UserNoteMatrixEntry entry = new UserNoteMatrixEntry(userId, noteId, score);
                         entries.add(entry);
                     }
