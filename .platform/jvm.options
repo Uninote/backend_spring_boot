@@ -1,0 +1,4 @@
+# Minimum heap
+-Xms512m
+# Maximum heap (safe for t3.small = 2 GB RAM)
+-Xmx1500m
