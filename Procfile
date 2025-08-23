@@ -1,3 +1,1 @@
-web: java -Dserver.port=$PORT -Doracle.jdbc.fanEnabled=false -jar target/uninote_backend-1.0-SNAPSHOT.jar
-
-    
+web: java -Dserver.port=$PORT -jar app.jar

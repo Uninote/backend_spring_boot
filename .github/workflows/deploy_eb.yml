@@ -1,0 +1,86 @@
+name: Deploy to Elastic Beanstalk (Maven)
+
+on:
+  push:
+    branches: [ "production" ]
+  workflow_dispatch:
+
+concurrency:
+  group: eb-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: eu-central-1
+      EB_APP: Uninote_SpringBoot
+      EB_ENV: UninoteSpringBoot-env
+      EB_BUCKET: elasticbeanstalk-eu-central-1-051256155573
+      JAR_PATH: target/*.jar
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B -DskipTests package
+
+      - name: Package EB bundle
+        id: pkg
+        run: |
+          set -euo pipefail
+          VERSION="build-${GITHUB_SHA::7}-$(date +%Y%m%d%H%M%S)"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          rm -rf bundle app.zip
+          mkdir bundle
+          cp ${{ env.JAR_PATH }} bundle/app.jar
+          echo 'web: java -Dserver.port=$PORT -jar app.jar' > bundle/Procfile
+          (cd bundle && zip -r ../app.zip .)
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::051256155573:role/GitHubDeployRole
+          role-session-name: github-eb-deploy
+
+      - name: Upload to S3
+        run: aws s3 cp app.zip "s3://${{ env.EB_BUCKET }}/${{ steps.pkg.outputs.version }}.zip"
+
+      - name: Create EB application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "${{ env.EB_APP }}" \
+            --version-label "${{ steps.pkg.outputs.version }}" \
+            --source-bundle S3Bucket="${{ env.EB_BUCKET }}",S3Key="${{ steps.pkg.outputs.version }}.zip"
+
+      - name: Deploy to environment
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "${{ env.EB_ENV }}" \
+            --version-label "${{ steps.pkg.outputs.version }}"
+
+      - name: Wait for environment to be healthy
+        shell: bash
+        run: |
+          set -e
+          for i in {1..80}; do
+            STATUS=$(aws elasticbeanstalk describe-environments --environment-names "${{ env.EB_ENV }}" --query "Environments[0].Status" --output text)
+            HEALTH=$(aws elasticbeanstalk describe-environment-health --environment-name "${{ env.EB_ENV }}" --attribute-names HealthStatus --query "HealthStatus" --output text 2>/dev/null || echo "Unknown")
+            echo "[$i] Status=$STATUS Health=$HEALTH"
+            [ "$STATUS" = "Ready" ] && [ "$HEALTH" = "Ok" ] && exit 0
+            sleep 15
+          done
+          echo "Timed out waiting for health" >&2; exit 1
