@@ -47,7 +47,10 @@ jobs:
           mkdir bundle
           cp ${{ env.JAR_PATH }} bundle/app.jar
           echo 'web: java -Dserver.port=$PORT -jar app.jar' > bundle/Procfile
+          # ✅ Copy platform hooks
+          cp -r .platform bundle/.platform
           (cd bundle && zip -r ../app.zip .)
+
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
