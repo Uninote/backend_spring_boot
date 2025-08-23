@@ -10,7 +10,8 @@ mkdir -p "$(dirname "$DEST")"
 aws ssm get-parameter --name "$PARAM" --with-decryption \
   --query 'Parameter.Value' --output text > "$DEST"
 
-chmod 600 "$DEST"
+chown webapp:webapp "$DEST"
+chmod 640 "$DEST"
 
 # Export for app
 echo "export GOOGLE_APPLICATION_CREDENTIALS=$DEST" >> /opt/elasticbeanstalk/deployment/env
