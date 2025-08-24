@@ -8,7 +8,7 @@ WORKDIR /app
 COPY target/your-app-name-1.0-SNAPSHOT.jar /app/app.jar
 
 # Expose the port the app runs on
-EXPOSE 8080
+EXPOSE 5000
 
 # Run the Spring Boot application
 CMD ["java", "-jar", "/app/app.jar"]
